@@ -1,0 +1,105 @@
+**Output Requirements (Markdown Format):**
+
+1.  **Headers:**
+    *   Use bold text. **DO NOT use markdown headers like `##`**. Include all available details (e.g Org, Committee, Location, Date, Time). Use placeholders if unknown, these can also be excluded and be made into a simpler header depending on the amount of information available.
+
+2.  **Attendance Section (Integrates Roll Call Status - No Notes/Inference):**
+    *   Use bold text (`**Section Title**`) for section titles (e.g "**Committee Members**", "**Staff**", "**Guests**", replace if appropriate).
+    *   Use standard Markdown bullet points (`* `) for attendees. **List ALL attendees mentioned or provided.**
+{{~#if include_attendance_marker_note}}
+    *   Append attendance marker ` - P` or ` - A` *only if explicitly stated during roll call*. **If status unknown, list only label/role.** DO NOT add notes.
+{{~/if}}
+{{~#if include_speaker_label_constraint}}
+{{{{raw}}}}
+    *   **CRITICAL: List using ONLY speaker labels ({{A}}, {{B}}, etc.). NO real names.** Add role in parentheses if known from explicit context, e.g. '{{A}} (e.g. Chair)'.
+{{{{/raw}}}}
+{{~/if}}
+{{~#unless is_audio_upload}}
+    *   **CRITICAL: Preserve participant names exactly as written in the source material.** Do not replace them with generic labels or fabricate additional names.
+{{~/unless}}
+
+3.  **Body Structure (CRITICAL - No Separate Roll Call Item, No Extra Headers):**
+{{~#if include_emphasize_motions}}
+    *   Emphasize **motions** by **bolding them and bolding out actions** clearly.
+{{~/if}}
+    *   **CRITICAL: Flow directly from Attendance to the first main section/topic.** No intermediate headers.
+    *   **CRITICAL: Do not indent regular paragraphs**.
+    *   Start each main section item with a descriptive, concise, title using **double asterisk bolding (`**TITLE**`)**.
+    *   **CRITICAL: Content following other main titles MUST primarily use narrative paragraphs on a double new line (`\n\n`).** Summarize the discussion for the topic in a flowing paragraph format. Standard Markdown bullet points (`- ` or `* `) should be used *sparingly* within paragraphs only if essential for listing distinct items clearly (e.g., multiple specific recommendations from one proposal).
+    *   **Standard Markdown nested bullet points (`  - ` or `  * `) MAY be used if bullets are necessary.** **Limit nesting to ONE level deep (ONE-SPACE indent).** Use only standard markers.
+    *   Ensure consistent indentation (one space per level).
+
+4.  **Content Style (CRITICAL - Narrative, Substantive Completeness, Limited Attribution, NO Added Explanations):**
+    *   Write in formal, objective, third-person narrative. **Use clear, simple, direct language.**
+    *   **CRITICAL: Summarize discussions using a narrative style.** Connect different points and proposals logically within paragraphs. Use transition phrases to create a smooth flow.
+    *   **CRITICAL FOR COMPLETENESS: Ensure the narrative includes the **substantive core** of discussion points, key proposals, specific examples *used to illustrate main points*, essential data (figures like '$3.5 million', '$80,000'), important context, major concerns raised, decisions made, and official updates mentioned in the transcript. Focus on information crucial for an accurate record of proceedings.**
+    *   **CRITICAL: Avoid including minor conversational details, subjective descriptions of speaker tone (e.g., "frustration was expressed"), or meta-commentary on the discussion itself, unless quoting a particularly impactful statement verbatim.** Focus on *what* was discussed and decided, not *how* it felt.
+    *   **Use separate sentences or distinct bullet points for separate ideas.** Avoid cramming.
+{{~#if include_attribute_guidance}}
+  {{#if is_audio_upload}}
+{{{{raw}}}}
+    *   **Attribute statements using speaker labels ({{A}}, {{B}}, etc.) SPARINGLY within the narrative, only when necessary for clarity or context.** (Criteria: motions, specific distinct proposals attributed to an individual, official updates/data presentations, strong dissenting opinions, public comments). Integrate attribution smoothly.
+{{{{/raw}}}}
+  {{else}}
+    *   **Attribute statements using the participant names exactly as written in the source material.** Provide roles or affiliations when explicitly stated; do not synthesize new descriptions.
+  {{/if}}
+{{~/if}}
+{{~#unless is_audio_upload}}
+    *   **When attributing dialogue, use the participant names provided.** Only abbreviate or anonymize if the source material already does so.
+{{~/unless}}
+    *   **CRITICAL: DO NOT add explanatory text, examples (using "e.g."), or clarifications in parentheses or otherwise, unless explicitly spoken.** Report *only* what was stated.
+{{~#if include_record_motions}}
+  {{#if is_audio_upload}}
+{{{{raw}}}}
+    *   **Record **motions** accurately, including maker and seconder if specified:**
+
+        **Motion:** Made by {{A}}, seconded by {{B}} *(or "an unspecified speaker" if not explicitly stated)*, to **[Action/Details of Motion]**.  
+{{{{/raw}}}}
+        *(Include brief discussion summary here if applicable)*  
+        The motion passed/failed [Details of vote, Do not show individual votes]. *(If outcome unclear, state: Outcome not specified.)*
+  {{else}}
+    *   **Record **motions** accurately, including the participant names provided for the mover and seconder when stated.** If a name is not available, reference the role or descriptor given in the source material (e.g., "the Chair," "Finance Director"). You may note that the seconder was unspecified if no information is provided. Summaries should focus on explicit details only.
+  {{/if}}
+{{~/if}}
+{{~#if include_unassigned_guidance}}
+{{{{raw}}}}
+    *   **CRITICAL: Do not list any UNASSIGNED_X labels (e.g. {{UNASSIGNED_1}}, {{UNASSIGNED_2}}, etc.). You should omit these entirely and refrain from mentioning them but keep their dialogue if relevant.**
+{{{{/raw}}}}
+{{~/if}}
+
+5.  **Tone:** Maintain a professional, formal, and strictly **objective tone**. **NO INTERPRETATION, OPINION, EDITORIALIZING, ASSUMPTIONS, INFERENCES.**
+
+6.  **Action Items:**  
+    *   **This section is NON-NEGOTIABLE and must be included before the adjournment section.**  
+    *   Generate a clear, concise list of action items derived strictly from the transcript.  
+    *   Use a numbered or bulleted list with **bolded action descriptions**.  
+    *   Include only explicit, assigned tasks or agreed follow-ups. Do not infer or add implied actions.
+
+7.  **Closing:**
+    *   The last section should always be for adjournment with a bolded title like: `**Adjournment**`
+    *   State the exact time of adjournment *only if explicitly mentioned*. If not, state `The meeting concluded.`
+    *   Include next meeting details (Date/Time) *only if explicitly mentioned*. If not, state `**The next meeting date was not specified.**`
+
+8.  **Markdown Purity:**
+    *   Use only standard Markdown syntax. Indentation: **one space** per level. Use **double asterisks (`**text**`)** for all bolding.
+    *   **Ensure paragraphs are separated by a blank line (two newlines) for readability.**
+    *   **DO NOT** include the final output within a Markdown code block.
+    *   **DO NOT** use Markdown code blocks or inline code in the minutes.
+
+**Strict Constraints:**
+*   Adhere *exactly* to the specified Markdown structure and formatting. **No extra headers.**
+{{~#if include_speaker_label_constraint}}
+{{{{raw}}}}
+*   **ABSOLUTELY NO REAL NAMES. Use ONLY speaker labels like {{A}}, {{B}}.**
+{{{{/raw}}}}
+{{~/if}}
+{{~#unless is_audio_upload}}
+*   **ABSOLUTELY DO NOT replace provided participant names with generic labels.** Keep names exactly as written in the source material.
+{{~/unless}}
+{{~#if include_emphasize_motions}}
+*   **Emphasize motions and actions by bolding them and bolding out actions clearly.**
+{{~/if}}
+*   Use *only* information explicitly present. **DO NOT infer, assume, editorialize, or add ANY explanatory text/examples not explicitly spoken.** **Avoid minor conversational details and subjective tone descriptions.**
+*   **CRITICAL: Ensure content completeness focusing on the substantive core of the discussion, key data, proposals, and decisions.**
+*   Attribute statements appropriately within the narrative for clarity and context. Include motion seconders if stated.
+*   Use standard Markdown lists/indentation (one space). No detailed Roll Call body item. Use `**text**` for bolding. **Primarily use paragraphs for discussions, using bullets sparingly. Separate paragraphs with a blank line.**

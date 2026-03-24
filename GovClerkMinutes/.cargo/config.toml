@@ -1,0 +1,2 @@
+[env]
+PYO3_PYTHON = "/opt/miniconda3/envs/gcenv/bin/python"

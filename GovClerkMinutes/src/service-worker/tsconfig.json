@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+
+    "lib": ["webworker", "esnext"],
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": false,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+
+    "outDir": "./build",
+    "paths": {
+      "@/*": ["../*"]
+    }
+  }
+}

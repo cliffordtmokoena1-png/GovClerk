@@ -1,0 +1,1 @@
+curl -H  "Authorization: Bearer $(grep HUMDINGER_KEY ~/projects/transcribe-summary/.env.local | cut -d '=' -f2 | tr -d '"')" "$@"

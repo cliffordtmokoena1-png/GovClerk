@@ -1,0 +1,12 @@
+# Next.js runs on host port 3223 (GovClerk by default).
+# This proxy adds port 3224 as the GovClerkMinutes entrypoint.
+#
+# localhost:3223 → GovClerk  (direct to Next.js, no proxy needed)
+# localhost:3224 → GovClerkMinutes (proxied through Caddy)
+#
+# The Host header is NOT overridden so auth cookies (set on localhost)
+# are shared across both ports. Site detection uses the port number.
+
+:3224 {
+	reverse_proxy host.docker.internal:3223
+}

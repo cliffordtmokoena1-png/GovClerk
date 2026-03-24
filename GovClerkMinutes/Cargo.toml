@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "platform/server",
+]
+resolver = "2"

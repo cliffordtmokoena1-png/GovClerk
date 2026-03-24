@@ -1,0 +1,6 @@
+{
+  "entry": ["src/pages/**", "platform/sophon/src/entrypoints/**"],
+  "ignoreIssues": {
+    "src/components/ui/**": ["exports"]
+  }
+}

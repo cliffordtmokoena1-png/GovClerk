@@ -1,0 +1,20 @@
+{
+  "name": "WATI Admin Panel Button",
+  "description": "Adds a button into the WATI dashboard UI that links to the admin panel Whatsapps tool.",
+  "version": "0.2.0",
+  "manifest_version": 3,
+  "icons": { "256": "logo.png" },
+  "web_accessible_resources": [
+    {
+      "resources": ["logo.png", "new-tab-icon.svg"],
+      "matches": ["https://*.wati.io/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://*.wati.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

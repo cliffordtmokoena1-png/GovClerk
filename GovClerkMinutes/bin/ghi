@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+
+import json
+import os
+from datetime import datetime, timedelta, timezone
+import asyncio
+
+sections = {
+    "🟠 Needs Review": {
+        "cmd": 'gh pr list --search "org:GovClerkMinutes review-requested:@me -review:approved -review:changes_requested -is:draft" --state open --json number,title,reviewRequests,reviewDecision,url,state,mergedAt,updatedAt,author',
+        "on_done": lambda obj: process_result(obj),
+    },
+    "🟢 Approved": {
+        "cmd": 'gh pr list --search "org:GovClerkMinutes author:@me review:approved" --state open --json number,title,reviewRequests,reviewDecision,url,state,mergedAt,updatedAt,author',
+        "on_done": lambda obj: process_result(obj),
+    },
+    "🟡 Waiting for Reviewers": {
+        "cmd": 'gh pr list --search "org:GovClerkMinutes author:@me -review:changes_requested -review:approved -is:draft" --state open --json number,title,reviewRequests,reviewDecision,url,state,mergedAt,updatedAt,author',
+        "on_done": lambda obj: process_result(obj),
+    },
+    "🔵 Waiting for Author": {
+        "cmd": 'gh pr list --search "org:GovClerkMinutes reviewed-by:@me review:changes_requested" --state open --json number,title,reviewRequests,reviewDecision,url,state,mergedAt,updatedAt,author',
+        "on_done": lambda obj: process_result(obj),
+    },
+    "⚪️ Drafts": {
+        "cmd": 'gh pr list --search "org:GovClerkMinutes author:@me is:draft" --state open --json number,title,reviewRequests,reviewDecision,url,state,mergedAt,updatedAt,author',
+        "on_done": lambda obj: process_result(obj),
+    },
+    "🟣 Merged": {
+        "cmd": 'gh pr list --search "org:GovClerkMinutes author:@me" --state merged --json number,title,reviewRequests,reviewDecision,url,state,mergedAt,updatedAt,author',
+        "on_done": lambda obj: process_merged(obj),
+    },
+}
+
+
+async def run_command(command):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, ".."))
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=repo_root,
+    )
+    stdout, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise Exception(f"Error: {stderr.decode().strip()}")
+    return stdout.decode().strip()
+
+
+def process_result(obj):
+    data = json.loads(obj)
+
+    data.sort(
+        key=lambda pr: datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00")),
+        reverse=True,
+    )
+
+    for pr in data:
+        updated_date = datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
+        formatted_date = updated_date.strftime("%a %m/%d %I:%M%p")
+        print(
+            f"{formatted_date: <15} | {pr['title'][:50]: <50} | {pr['author']['login']: <20} | {pr['url']: <75}"
+        )
+
+
+def process_merged(obj):
+    data = json.loads(obj)
+    one_week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+
+    data.sort(
+        key=lambda pr: datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00")),
+        reverse=True,
+    )
+    data = [
+        pr
+        for pr in data
+        if datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00")) > one_week_ago
+    ]
+
+    for pr in data:
+        merge_date = datetime.fromisoformat(pr["mergedAt"].replace("Z", "+00:00"))
+        formatted_date = merge_date.strftime("%a %m/%d %I:%M%p")
+        print(
+            f"{formatted_date: <15} | {pr['title'][:50]: <50} | {pr['author']['login']: <20} | {pr['url']: <75}"
+        )
+
+
+async def main():
+    tasks = []
+    for section, details in sections.items():
+        cmd = details["cmd"]
+        on_done = details["on_done"]
+        tasks.append((section, cmd, on_done))
+
+    try:
+        results = await asyncio.gather(*[run_command(cmd) for _, cmd, _ in tasks])
+        for (section, _, on_done), result in zip(tasks, results):
+            print(f"{section}:")
+            on_done(result)
+            print()
+
+    except Exception as error:
+        print(error)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

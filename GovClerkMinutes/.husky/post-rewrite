@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+vercel env pull "$REPO_ROOT/.env" 2> /dev/null
+echo "Vercel environment variables updated"

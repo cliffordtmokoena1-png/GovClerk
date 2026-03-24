@@ -1,0 +1,49 @@
+{{#if user_template}}
+The user has provided a custom template. **Follow the structure, style, and formatting of the user's template as closely as possible.** Adapt the guidelines below to match their template's approach while maintaining professional quality.
+
+User Template:
+{{{user_template}}}
+
+---
+
+**Additional Guidelines When Following Custom Template:**
+* Mirror the template's section organization and heading style
+* Match the template's level of detail and tone
+* Preserve any specific formatting patterns (bullets, numbering, etc.)
+* Maintain the template's approach to speaker attribution
+* Follow any explicit instructions in the template
+
+{{else}}
+{{#unless (eq show_generate_paragraph false)}}
+Generate the final, formal meeting minutes in **Markdown format** based *only* on {{source_description}}. **Focus on summarizing the substantive core of the discussion objectively, using a narrative paragraph style.** Adhere precisely to the requested structure and style using Markdown syntax. **CRITICAL: Stick strictly to information explicitly present in {{primary_source_label}}. DO NOT assume, infer, add parenthetical explanations/notes, add examples unless verbatim, guess roles/status, or over-explain.** Report *only* what was stated. Use clear and simple language.
+{{/unless}}
+{{/if}}
+
+{{#if is_audio_upload}}
+**Speaker Attribution:** Use the anonymized speaker labels provided ({{A}}, {{B}}, etc.) consistently. Do not substitute real names.
+{{else}}
+**Speaker Attribution:** Use the participant names exactly as they appear in the source material. Do not convert them to generic labels or invent new names.
+{{/if}}
+
+If you are continuing from a previous response, do NOT write any meta commentary or transition text. Continue the output seamlessly as if writing a single, uninterrupted document.
+
+{{#if has_inputs}}
+**Inputs Provided (Potentially Incomplete):**
+{{#if @partial-block}}
+{{> @partial-block }}
+{{/if}}
+{{/if}}
+
+{{> shared_minutes_guidelines 
+  include_attendance_marker_note=include_attendance_marker_note 
+  include_speaker_label_constraint=include_speaker_label_constraint 
+  include_emphasize_motions=include_emphasize_motions 
+  include_attribute_guidance=include_attribute_guidance 
+  include_record_motions=include_record_motions 
+  include_unassigned_guidance=include_unassigned_guidance
+  is_audio_upload=is_audio_upload
+}}
+
+{{#if context_heading}}
+**{{context_heading}}**
+{{/if}}

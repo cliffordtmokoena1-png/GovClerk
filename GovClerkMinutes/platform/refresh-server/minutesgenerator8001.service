@@ -1,0 +1,19 @@
+# Place this in /etc/systemd/system/
+
+[Unit]
+Description=Minutes Generator Server on port 8001
+After=network.target
+
+[Service]
+ExecStart=/home/ec2-user/mg.prod --port 8001
+User=ec2-user
+Environment=PATH=/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/ec2-user/ffmpeg-6.0-i686-static/
+WorkingDirectory=/home/ec2-user
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=GovClerkMinutes8001
+
+[Install]
+WantedBy=multi-user.target

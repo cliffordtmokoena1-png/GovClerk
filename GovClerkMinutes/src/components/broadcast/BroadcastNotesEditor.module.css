@@ -1,0 +1,31 @@
+.notesEditor :global(.ProseMirror) {
+  min-height: 120px;
+  height: 100%;
+  padding: 1rem;
+}
+
+.notesEditor :global(.ProseMirror):focus {
+  outline: none;
+}
+
+.notesEditor :global(.ProseMirror) p {
+  margin: 0.5em 0;
+}
+
+.notesEditor :global(.ProseMirror) ul,
+.notesEditor :global(.ProseMirror) ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.notesEditor :global(.ProseMirror) li {
+  margin: 0.25em 0;
+}
+
+.notesEditor :global(.ProseMirror) p:global(.is-editor-empty):first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

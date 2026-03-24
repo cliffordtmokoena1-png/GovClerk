@@ -1,0 +1,19 @@
+name: Check Rust Formatting
+
+on:
+  push:
+    paths:
+      - "platform/**"
+
+jobs:
+  check_formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt -- --check

@@ -1,0 +1,5 @@
+# This is rsync'd and renamed by the deploy script.
+# It becomes .cargo/config.toml on our prod Linux server.
+
+[env]
+PYO3_PYTHON = "/opt/miniconda/envs/gcenv/bin/python"

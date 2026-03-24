@@ -1,0 +1,43 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-push hook..."
+
+if [ "$GITHUB_ACTIONS" = "true" ]; then
+  echo "Detected GitHub Actions CI"
+  cargo clippy --features=fail-on-warnings
+else
+  echo "Detected local environment"
+  cargo clippy
+fi
+
+# Run TypeScript compiler in the "noEmit" mode to check for errors
+npx tsc --version
+npx tsc --noEmit
+
+(cd platform/sophon && npm run build)
+
+if [ $? -eq 0 ]; then
+  echo "TypeScript checks passed."
+else
+  echo "TypeScript checks failed. Please fix the errors before pushing."
+  exit 1
+fi
+
+node generate-sitemap.js
+
+cargo fmt -- --check
+if [ $? -eq 0 ]; then
+  echo "Rustfmt formatting passed."
+else
+  echo "Rustfmt formatting failed. Please fix the formatting issues before pushing."
+  exit 1
+fi
+
+npx prettier --cache --check .
+if [ $? -eq 0 ]; then
+  echo "Prettier formatting passed."
+else
+  echo "Prettier formatting failed. Please fix the formatting issues before pushing."
+  exit 1
+fi

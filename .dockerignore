@@ -1,0 +1,30 @@
+# Exclude unnecessary files from Docker build context to speed up builds
+# but ensure GovClerkMinutes-server/rust/ and GovClerkMinutes/platform/server/python/ are included
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+*.swp
+*~
+
+# Python bytecode
+__pycache__
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+.next/
+
+# Rust build artifacts (we rebuild inside Docker)
+**/target/
+
+# Issues directory
+issues/
+
+# Explicitly included directories (NOT ignored):
+# - GovClerkMinutes-server/rust/         (Rust source for the build)
+# - GovClerkMinutes/platform/server/python/  (Python ML scripts)

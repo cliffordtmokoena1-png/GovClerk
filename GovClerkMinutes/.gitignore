@@ -1,0 +1,64 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+/gc_transcript_*
+
+# rust tests
+platform/server/.cached_test_assets/
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+src/common/build/
+src/service-worker/build/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# rust
+server/refresh-server/target
+server/blogify-pic/target
+platform/server/target
+target
+
+/platform/server/whisper_model_tiny.pth
+/platform/server/whisper_model_*.pth
+whisper_model_*.pth
+
+# python
+__pycache__/
+*.pyc
+
+public/service-worker.js
+public/service-worker.js.map
+
+crash_tombstone_*.log
+

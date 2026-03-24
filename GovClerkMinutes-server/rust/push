@@ -1,0 +1,17 @@
+set -e
+
+SERVER="213.173.98.25"
+USER="root"
+PORT="17009"
+IDENTITY_FILE="~/.ssh/id_rsa"
+
+CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=x86_64-unknown-linux-gnu-gcc cargo build --release --target="x86_64-unknown-linux-gnu"
+xz --keep --force -9 target/x86_64-unknown-linux-gnu/release/govclerk-minutes-service
+
+rsync -v -e "ssh -i $IDENTITY_FILE -p $PORT" target/x86_64-unknown-linux-gnu/release/govclerk-minutes-service.xz $USER@$SERVER:~/mg.staging.xz
+ssh -i $IDENTITY_FILE -p $PORT $USER@$SERVER xz --force -d mg.staging.xz
+
+rsync -v -e "ssh -i $IDENTITY_FILE -p $PORT" .env $USER@$SERVER:~/.env
+rsync -av -e "ssh -i $IDENTITY_FILE -p $PORT" speaker-diarization/ $USER@$SERVER:~/speaker-diarization
+rsync -av -e "ssh -i $IDENTITY_FILE -p $PORT" whisper-process/ $USER@$SERVER:~/whisper-process
+

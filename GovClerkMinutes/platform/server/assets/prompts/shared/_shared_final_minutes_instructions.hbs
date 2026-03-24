@@ -1,0 +1,32 @@
+{{#> minutes_prompt_base
+  user_template=user_template
+  show_generate_paragraph=true
+  source_description="the provided transcript and any explicit meeting details given (like meeting notes/outline)"
+  primary_source_label="the transcript"
+  has_inputs=true
+  include_attendance_marker_note=false
+  include_speaker_label_constraint=is_audio_upload
+  include_emphasize_motions=true
+  include_attribute_guidance=is_audio_upload
+  include_record_motions=true
+  include_unassigned_guidance=true
+  context_heading="The meeting transcript, meeting notes/outline, and any available contextual details are as follows:"
+  is_audio_upload=is_audio_upload
+  show_section_headings=true
+  meeting_notes_heading="Meeting Notes"
+  draft_minutes_heading="Draft Minutes"
+  oracle_feedback_heading="Oracle Feedback"
+}}
+*   Meeting Transcript (Primary source)
+*   Meeting Notes/Outline (For structure and key points reference)
+{{#if is_audio_upload}}
+*   Attendee Information (Context ONLY. DO NOT include real names.)
+*   Speaker Mapping Context (Context ONLY. Connecting \{{A\}}, \{{B\}} to roles like 'Chair', 'Staff', 'Guest', if available)
+{{else}}
+*   Attendee Information (Context ONLY. Use the provided participant names exactly as written; do not anonymize them.)
+*   Participant Name Context (Context ONLY. Cross-reference participant names with their roles or affiliations when relevant.)
+{{/if}}
+*   Meeting Details Context (Organization, Committee Name, Date, Time, Location, if available)
+*   Meeting Agenda (If available)
+*   (Optional) Previous Minutes details if approved.)
+{{/minutes_prompt_base}}

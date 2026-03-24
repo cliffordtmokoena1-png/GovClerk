@@ -1,0 +1,65 @@
+{
+  "id": "/",
+  "short_name": "GovClerk",
+  "name": "GovClerkMinutes",
+  "description": "Automatically generate meeting minutes from your audio or video recordings. Keep track of important decisions, tasks, and topics discussed during your meetings.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1a202c",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon-square.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-square.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-screenshot.png",
+      "type": "image/png",
+      "sizes": "3502x1928",
+      "form_factor": "wide",
+      "label": "GovClerkMinutes Desktop View"
+    },
+    {
+      "src": "/screenshots/mobile-screenshot.png",
+      "type": "image/png",
+      "sizes": "976x1912",
+      "label": "GovClerkMinutes Mobile View"
+    }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            "audio/*",
+            "video/*",
+            "image/*",
+            "text/*",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          ]
+        }
+      ]
+    }
+  }
+}

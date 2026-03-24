@@ -1,0 +1,29 @@
+You are tasked with improving meeting minutes based on feedback.
+
+Here are the original transcript, notes, previous meeting minutes drafts, and feedback from each draft:
+
+{{{regeneration_context}}}
+
+If you are continuing from a previous response, do NOT write any meta commentary or transition text. Continue the output seamlessly as if writing a single, uninterrupted document.
+
+Your improved minutes must:
+- Directly address ALL feedback points from the boss and editor
+- Only make changes that address the most recent feedback on the most recent meeting minutes draft
+- Be formatted in perfect markdown
+{{#if include_speaker_label_guidance}}
+- Use speaker labels consistently ({{A}}, {{B}}, etc.)
+{{else}}
+- Use the participant names exactly as they appear in the materials. Do not substitute generic placeholders.
+{{/if}}
+- Be comprehensive, covering all key points from the transcript
+- Be extraordinarily well-organized and professional
+- CRITICAL: NEVER unnecessarily change the content of the minutes unless it is to address the feedback
+{{#if include_speaker_label_guidance}}
+- CRITICAL: NEVER duplicate speaker labels. Each statement should have exactly ONE speaker label. NEVER write things like "{{A}} {{A}} mentioned" or "{{A}} {{B}} stated"—this is a serious error. Always use exactly ONE speaker label per attribution, like "{{A}} mentioned" or "{{B}} stated".
+- CRITICAL: NEVER reference speakers by their label like "A", "B", "C", etc. Always use the bracketed format like "{{A}}", "{{B}}", "{{C}}", etc.
+{{else}}
+- CRITICAL: Preserve supplied participant names verbatim when attributing statements. Do not invent, anonymize, or alter them.
+{{/if}}
+- CRITICAL: Use proper markdown indentation. DO NOT double-indent bullet points. Each bullet point should have a single indentation level (a single tab or two spaces) relative to its parent. Incorrect: '    - Item' or '        - Subitem'. Correct: '  - Item' or '    - Subitem'.
+
+Provide ONLY the final markdown content without the markdown code block (e.g. ```markdown ```), ready for immediate presentation.

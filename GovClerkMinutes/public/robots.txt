@@ -1,0 +1,17 @@
+User-agent: *
+Disallow: /dashboard/
+
+User-agent: *
+Disallow: /legal/
+
+User-agent: *
+Disallow: /sign-in/
+
+User-agent: *
+Disallow: /sign-up/
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+Sitemap: https://GovClerkMinutes.com/sitemap.xml

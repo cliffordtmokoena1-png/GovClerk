@@ -1,0 +1,28 @@
+{{#if transcript}}
+{{#unless (eq show_section_headings false)}}
+## {{#if transcript_heading}}{{transcript_heading}}{{else}}Transcript{{/if}}
+{{/unless}}
+{{{transcript}}}
+
+{{/if}}
+{{#if meeting_notes}}
+{{#unless (eq show_section_headings false)}}
+## {{#if meeting_notes_heading}}{{meeting_notes_heading}}{{else}}Meeting Notes{{/if}}
+{{/unless}}
+{{{meeting_notes}}}
+
+{{/if}}
+{{#if draft_minutes}}
+{{#unless (eq show_section_headings false)}}
+## {{#if draft_minutes_heading}}{{draft_minutes_heading}}{{else}}Draft Minutes{{/if}}
+{{/unless}}
+{{{draft_minutes}}}
+
+{{/if}}
+{{#if oracle_feedback}}
+{{#unless (eq show_section_headings false)}}
+## {{#if oracle_feedback_heading}}{{oracle_feedback_heading}}{{else}}Oracle Feedback{{/if}}
+{{/unless}}
+{{{oracle_feedback}}}
+
+{{/if}}

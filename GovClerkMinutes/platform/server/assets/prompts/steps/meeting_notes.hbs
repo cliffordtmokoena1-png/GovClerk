@@ -1,0 +1,18 @@
+Extract the most important information from the following meeting transcript. Create structured meeting notes that include:
+1. Main discussion topics with brief descriptions (ensure descriptions capture the core substance).
+2. Key decisions made during the meeting.
+3. Action items assigned to participants ({{#if is_audio_upload}}maintain speaker labels in double curly braces like \{{A\}}, \{{B\}}, etc.{{else}}use participant names exactly as written in the transcript. Do not replace them with generic labels.{{/if}}).
+4. Important dates, deadlines, significant figures (e.g., budget numbers), and names of key entities/documents mentioned *that are essential* to understanding the topics, decisions, or actions.
+5. Any follow-up items or next steps.
+
+Format your response as a well-structured markdown document. Be concise but comprehensive, focusing on capturing the **essential information needed for later detailed minute generation**. DO NOT elaborate, interpret, or add information not present in the transcript. The goal is a structured outline/summary, not a full narrative.
+
+{{#if is_audio_upload}}
+IMPORTANT: Avoid duplicating speaker labels when attributing statements. For example, do NOT write "\{{A\}} \{{A\}} stated" or "\{{A\}} \{{B\}} mentioned" - this is incorrect. Instead, write "\{{A\}} stated" or "\{{B\}} mentioned" - one label per speaker reference.
+{{else}}
+IMPORTANT: Use the exact participant names from the transcript when attributing statements. Do not invent or rename speakers, and avoid duplicating names unnecessarily.
+{{/if}}
+
+Here is the transcript:
+
+{{{transcript}}}
