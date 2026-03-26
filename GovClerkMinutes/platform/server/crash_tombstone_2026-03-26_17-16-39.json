@@ -1,0 +1,30 @@
+{
+  "id": "c4fabac1-a6e5-4018-8a24-fabecf88b8ee",
+  "message": "Panic occurred!",
+  "location": "Panic occurred in file 'platform/server/src/posthog.rs' at line 109",
+  "backtrace": [
+    "0: govclerk_minutes_service::crash_handler::install_crash_handler::{{closure}}",
+    "1: std::panicking::panic_with_hook",
+    "2: std::panicking::panic_handler::{{closure}}",
+    "3: std::sys::backtrace::__rust_end_short_backtrace",
+    "4: __rustc::rust_begin_unwind",
+    "5: core::panicking::panic_fmt",
+    "6: core::result::unwrap_failed",
+    "7: govclerk_minutes_service::posthog::check_feature_flag::{{closure}}",
+    "8: govclerk_minutes_service::main::{{closure}}::{{closure}}",
+    "9: tokio::runtime::task::harness::Harness<T,S>::poll",
+    "10: tokio::runtime::scheduler::multi_thread::worker::Context::run_task",
+    "11: tokio::runtime::context::scoped::Scoped<T>::set",
+    "12: tokio::runtime::context::runtime::enter_runtime",
+    "13: tokio::runtime::scheduler::multi_thread::worker::run",
+    "14: <tokio::runtime::blocking::task::BlockingTask<T> as core::future::future::Future>::poll",
+    "15: tokio::runtime::task::core::Core<T,S>::poll",
+    "16: tokio::runtime::task::harness::Harness<T,S>::poll",
+    "17: tokio::runtime::blocking::pool::Inner::run",
+    "18: std::sys::backtrace::__rust_begin_short_backtrace",
+    "19: core::ops::function::FnOnce::call_once{{vtable.shim}}",
+    "20: std::sys::thread::unix::Thread::new::thread_start",
+    "21: <unknown>",
+    "22: <unknown>"
+  ]
+}

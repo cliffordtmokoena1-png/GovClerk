@@ -325,10 +325,10 @@ async fn main() {
     return;
   }
 
-  start_cloudflared_if_needed().await.unwrap();
+    if let Err(e) = start_cloudflared_if_needed().await { tracing::error!("Cloudflare setup failed (non-fatal): {:?}", e); }
 
-  pandoc::reference::init().unwrap();
-  crate::prompt_templates::init().expect("Failed to initialize prompt templates");
+    if let Err(e) = pandoc::reference::init() { tracing::error!("Pandoc init failed (non-fatal): {:?}", e); }
+    if let Err(e) = crate::prompt_templates::init() { tracing::error!("Prompt templates init failed (non-fatal): {:?}", e); }
 
   let credentials = Credentials::new(
     env::var("AWS_ACCESS_KEY_ID").expect("AWS_ACCESS_KEY_ID not found in env"),
@@ -402,28 +402,28 @@ async fn main() {
   start_cron_job(
     "renewal_token_granter",
     Duration::from_secs(60 * 60), // 1 hour
-    async || GovClerkMinutes_webhook::send_request(gcWebhookEvent::CheckRenewToken).await,
+    async || GovClerkMinutes_webhook::send_request(GcWebhookEvent::CheckRenewToken).await,
   )
   .await;
 
   start_cron_job(
     "check_whatsapps",
     Duration::from_secs(60 * 10), // 10 minutes
-    async || GovClerkMinutes_webhook::send_request(gcWebhookEvent::CheckWhatsapps).await,
+    async || GovClerkMinutes_webhook::send_request(GcWebhookEvent::CheckWhatsapps).await,
   )
   .await;
 
   start_cron_job(
     "run_post_signup_tasks",
     Duration::from_secs(60 * 5), // 5 minutes
-    async || GovClerkMinutes_webhook::send_request(gcWebhookEvent::RunPostSignupTasks).await,
+    async || GovClerkMinutes_webhook::send_request(GcWebhookEvent::RunPostSignupTasks).await,
   )
   .await;
 
   start_cron_job(
     "handle_paywall_abandoners",
     Duration::from_secs(60 * 5), // 5 minutes
-    async || GovClerkMinutes_webhook::send_request(gcWebhookEvent::HandlePaywallAbandoners).await,
+    async || GovClerkMinutes_webhook::send_request(GcWebhookEvent::HandlePaywallAbandoners).await,
   )
   .await;
 
