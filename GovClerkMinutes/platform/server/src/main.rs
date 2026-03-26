@@ -341,7 +341,6 @@ async fn main() {
   let config = aws_config::from_env()
     .credentials_provider(credentials.clone())
     .region("us-east-1")
-    .endpoint_url("https://s3-accelerate.amazonaws.com")
     .load()
     .await;
   let s3_client = aws_sdk_s3::Client::new(&config);
@@ -349,7 +348,6 @@ async fn main() {
   let config_frankfurt = aws_config::from_env()
     .credentials_provider(credentials.clone())
     .region("eu-central-1")
-    .endpoint_url("https://s3-accelerate.amazonaws.com")
     .load()
     .await;
   let s3_client_frankfurt = aws_sdk_s3::Client::new(&config_frankfurt);

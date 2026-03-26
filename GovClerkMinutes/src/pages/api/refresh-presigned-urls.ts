@@ -52,7 +52,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ApiRefreshPresi
       accessKeyId: assertString(process.env.AWS_ACCESS_KEY_ID),
       secretAccessKey: assertString(process.env.AWS_SECRET_ACCESS_KEY),
     },
-    endpoint: "https://s3-accelerate.amazonaws.com",
     region,
   });
 
