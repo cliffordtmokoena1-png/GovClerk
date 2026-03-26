@@ -14,6 +14,9 @@ type TranscriptPanelProps = {
   onSpeakerClick?: (label: string) => void;
   filteredSpeaker?: Speaker;
   className?: string;
+  editable?: boolean;
+  editedTexts?: Record<number, string>;
+  onTextChange?: (segmentIndex: number, text: string) => void;
 };
 
 const TranscriptSegmentItem = memo(function TranscriptSegmentItem({
@@ -22,12 +25,18 @@ const TranscriptSegmentItem = memo(function TranscriptSegmentItem({
   labelsToSpeaker,
   onSegmentClick,
   onSpeakerClick,
+  isEditing,
+  editedText,
+  onTextChange,
 }: {
   segment: TranscriptApiData["segments"][number];
   isActive: boolean;
   labelsToSpeaker: Record<string, Speaker>;
   onSegmentClick?: (timestamp: number) => void;
   onSpeakerClick?: (label: string) => void;
+  isEditing?: boolean;
+  editedText?: string;
+  onTextChange?: (text: string) => void;
 }) {
   const speakerLabel = segment.speaker;
   const speakerInfo = labelsToSpeaker[speakerLabel];
@@ -36,16 +45,23 @@ const TranscriptSegmentItem = memo(function TranscriptSegmentItem({
   const speakerName = speakerInfo?.name || speakerLabel;
   const speakerInitial = speakerName.charAt(0).toUpperCase();
 
+  const handleTextareaRef = (el: HTMLTextAreaElement | null) => {
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  };
+
   if (segment.transcript === "" || segment.transcript === null) {
     return null;
   }
 
   return (
     <div
-      className={`relative flex items-start gap-4 mb-6 cursor-pointer transition-all duration-300 group ${
-        isActive ? "opacity-100" : "opacity-80 hover:opacity-100"
-      }`}
-      onClick={() => onSegmentClick?.(timestampToSeconds(segment.start))}
+      className={`relative flex items-start gap-4 mb-6 transition-all duration-300 group ${
+        isEditing ? "cursor-default" : "cursor-pointer"
+      } ${isActive ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+      onClick={() => !isEditing && onSegmentClick?.(timestampToSeconds(segment.start))}
     >
       <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
         <button
@@ -77,7 +93,25 @@ const TranscriptSegmentItem = memo(function TranscriptSegmentItem({
           </button>
           <span className="text-xs text-gray-400">{formatTimestamp(segment.start)}</span>
         </div>
-        <p className="text-sm leading-relaxed text-foreground text-justify">{segment.transcript}</p>
+        {isEditing ? (
+          <textarea
+            ref={handleTextareaRef}
+            value={editedText ?? segment.transcript}
+            onChange={(e) => {
+              onTextChange?.(e.target.value);
+              // Auto-resize
+              e.target.style.height = "auto";
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
+            onClick={(e) => e.stopPropagation()}
+            rows={1}
+            className="w-full text-sm leading-relaxed text-foreground bg-muted/50 border border-primary/40 rounded px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        ) : (
+          <p className="text-sm leading-relaxed text-foreground text-justify">
+            {editedText ?? segment.transcript}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -91,6 +125,9 @@ export function TranscriptPanel({
   onSpeakerClick,
   filteredSpeaker,
   className = "",
+  editable = false,
+  editedTexts = {},
+  onTextChange,
 }: TranscriptPanelProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -139,6 +176,11 @@ export function TranscriptPanel({
                 labelsToSpeaker={labelsToSpeaker}
                 onSegmentClick={onSegmentClick}
                 onSpeakerClick={onSpeakerClick}
+                isEditing={editable}
+                editedText={editedTexts[actualIndex]}
+                onTextChange={
+                  onTextChange ? (text) => onTextChange(actualIndex, text) : undefined
+                }
               />
             </div>
           );

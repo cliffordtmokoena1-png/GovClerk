@@ -128,14 +128,15 @@ export async function createMinutesTranscript(
   userId: string,
   orgId: string,
   title: string,
-  transcriptText: string
+  transcriptText: string,
+  language?: string
 ): Promise<number> {
   const transcriptResult = await conn.execute(
     `INSERT INTO transcripts
      (userId, org_id, dateCreated, title, file_size, aws_region, upload_kind, recording_state, extension,
-      transcribe_finished, preview_transcribe_finished, upload_complete)
-     VALUES (?, ?, UTC_TIMESTAMP(), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [userId, orgId, title, transcriptText.length, DEFAULT_REGION, "text", -1, null, 1, 1, 1]
+      transcribe_finished, preview_transcribe_finished, upload_complete, language)
+     VALUES (?, ?, UTC_TIMESTAMP(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [userId, orgId, title, transcriptText.length, DEFAULT_REGION, "text", -1, null, 1, 1, 1, language || null]
   );
 
   return Number(transcriptResult.insertId);
@@ -185,14 +186,15 @@ export async function createAudioMinutesTranscript(
   conn: Connection,
   userId: string,
   orgId: string,
-  title: string
+  title: string,
+  language?: string
 ): Promise<number> {
   const result = await conn.execute(
     `INSERT INTO transcripts
      (userId, org_id, dateCreated, title, file_size, aws_region, upload_kind, recording_state, extension,
-      transcribe_finished, preview_transcribe_finished, upload_complete, credits_required, transcribe_paused)
-     VALUES (?, ?, UTC_TIMESTAMP(), ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [userId, orgId, title, DEFAULT_REGION, "audio", -1, "mp4", 0, 0, 0, 0, 1]
+      transcribe_finished, preview_transcribe_finished, upload_complete, credits_required, transcribe_paused, language)
+     VALUES (?, ?, UTC_TIMESTAMP(), ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [userId, orgId, title, DEFAULT_REGION, "audio", -1, "mp4", 0, 0, 0, 0, 1, language || null]
   );
   return Number(result.insertId);
 }
@@ -222,9 +224,14 @@ export async function copyRecordingToUploadKey(
   );
 }
 
-export async function triggerAudioDiarization(transcriptId: number): Promise<void> {
+export async function triggerAudioDiarization(transcriptId: number, language?: string): Promise<void> {
   const s3AudioKey = getUploadKey(transcriptId, { env: isDev() ? "dev" : "prod" });
   const testQueryParam = isDev() ? "?test=1" : "";
+
+  const body: Record<string, unknown> = { s3_audio_key: s3AudioKey };
+  if (language && language !== "auto") {
+    body.language = language;
+  }
 
   const response = await fetch(serverUri(`/api/get-diarization${testQueryParam}`), {
     method: "POST",
@@ -232,7 +239,7 @@ export async function triggerAudioDiarization(transcriptId: number): Promise<voi
       "Content-Type": "application/json",
       Authorization: `Bearer ${assertString(process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET)}`,
     },
-    body: JSON.stringify({ s3_audio_key: s3AudioKey }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

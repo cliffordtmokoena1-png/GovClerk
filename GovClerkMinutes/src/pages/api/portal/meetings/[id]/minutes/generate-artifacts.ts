@@ -366,11 +366,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
   const existingTypes = await checkForExistingArtifacts(conn, orgId, meetingId, transcriptId, [
     "minutes",
     "transcripts",
+    "transcripts_pdf",
+    "transcripts_txt",
   ]);
 
   const isExplicitSave = requestedVersion !== undefined;
 
-  if (!isExplicitSave && existingTypes.has("minutes") && existingTypes.has("transcripts")) {
+  if (
+    !isExplicitSave &&
+    existingTypes.has("minutes") &&
+    existingTypes.has("transcripts") &&
+    existingTypes.has("transcripts_pdf") &&
+    existingTypes.has("transcripts_txt")
+  ) {
     res.status(200).json({ success: true, alreadyExists: true });
     return;
   }
@@ -494,7 +502,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
       }
     }
 
-    if (!existingTypes.has("transcripts")) {
+    const missingTranscriptFormats = ["transcripts", "transcripts_pdf", "transcripts_txt"].some(
+      (type) => !existingTypes.has(type)
+    );
+
+    if (missingTranscriptFormats) {
       const transcriptResult = await conn.execute(
         "SELECT aws_region FROM transcripts WHERE id = ?",
         [transcriptId]
@@ -510,45 +522,127 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
 
         const transcriptMarkdown = createTranscriptMarkdown(transcriptText, meetingTitle);
 
-        const transcriptDocxBytes = await convertDocument(
-          transcriptMarkdown,
-          "docx",
-          "transcript.md"
-        );
-        const transcriptDocxFileName = `${sanitizedTitle}_Transcript.docx`;
-        const transcriptDocxUploadDetails = await getArtifactUploadUrl(
-          orgId,
-          meetingId,
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "docx",
-          "transcript",
-          region
-        );
-        await uploadToS3(
-          transcriptDocxUploadDetails.uploadUrl,
-          transcriptDocxBytes,
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        );
-        const transcriptDocxArtifactId = await createArtifact(
-          conn,
-          orgId,
-          meetingId,
-          portalSettingsId,
-          "transcripts",
-          transcriptDocxFileName,
-          transcriptDocxBytes.length,
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          transcriptDocxUploadDetails.s3Key,
-          transcriptDocxUploadDetails.s3Url,
-          transcriptId,
-          1
-        );
-        artifacts.transcriptDocx = {
-          id: transcriptDocxArtifactId,
-          fileName: transcriptDocxFileName,
-          fileSize: transcriptDocxBytes.length,
-          artifactType: "transcripts",
-        };
+        if (!existingTypes.has("transcripts")) {
+          const transcriptDocxBytes = await convertDocument(
+            transcriptMarkdown,
+            "docx",
+            "transcript.md"
+          );
+          const transcriptDocxFileName = `${sanitizedTitle}_Transcript.docx`;
+          const transcriptDocxUploadDetails = await getArtifactUploadUrl(
+            orgId,
+            meetingId,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "docx",
+            "transcript",
+            region
+          );
+          await uploadToS3(
+            transcriptDocxUploadDetails.uploadUrl,
+            transcriptDocxBytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          );
+          const transcriptDocxArtifactId = await createArtifact(
+            conn,
+            orgId,
+            meetingId,
+            portalSettingsId,
+            "transcripts",
+            transcriptDocxFileName,
+            transcriptDocxBytes.length,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            transcriptDocxUploadDetails.s3Key,
+            transcriptDocxUploadDetails.s3Url,
+            transcriptId,
+            1
+          );
+          artifacts.transcriptDocx = {
+            id: transcriptDocxArtifactId,
+            fileName: transcriptDocxFileName,
+            fileSize: transcriptDocxBytes.length,
+            artifactType: "transcripts",
+          };
+        }
+
+        if (!existingTypes.has("transcripts_pdf")) {
+          const transcriptPdfBytes = await convertDocument(
+            transcriptMarkdown,
+            "pdf",
+            "transcript.md"
+          );
+          const transcriptPdfFileName = `${sanitizedTitle}_Transcript.pdf`;
+          const transcriptPdfUploadDetails = await getArtifactUploadUrl(
+            orgId,
+            meetingId,
+            "application/pdf",
+            "pdf",
+            "transcript_pdf",
+            region
+          );
+          await uploadToS3(
+            transcriptPdfUploadDetails.uploadUrl,
+            transcriptPdfBytes,
+            "application/pdf"
+          );
+          const transcriptPdfArtifactId = await createArtifact(
+            conn,
+            orgId,
+            meetingId,
+            portalSettingsId,
+            "transcripts_pdf",
+            transcriptPdfFileName,
+            transcriptPdfBytes.length,
+            "application/pdf",
+            transcriptPdfUploadDetails.s3Key,
+            transcriptPdfUploadDetails.s3Url,
+            transcriptId,
+            1
+          );
+          artifacts.transcriptPdf = {
+            id: transcriptPdfArtifactId,
+            fileName: transcriptPdfFileName,
+            fileSize: transcriptPdfBytes.length,
+            artifactType: "transcripts_pdf",
+          };
+        }
+
+        if (!existingTypes.has("transcripts_txt")) {
+          const transcriptTxtBytes = new TextEncoder().encode(transcriptText);
+          const transcriptTxtFileName = `${sanitizedTitle}_Transcript.txt`;
+          const transcriptTxtUploadDetails = await getArtifactUploadUrl(
+            orgId,
+            meetingId,
+            "text/plain",
+            "txt",
+            "transcript_txt",
+            region
+          );
+          await uploadToS3(
+            transcriptTxtUploadDetails.uploadUrl,
+            transcriptTxtBytes,
+            "text/plain"
+          );
+          const transcriptTxtArtifactId = await createArtifact(
+            conn,
+            orgId,
+            meetingId,
+            portalSettingsId,
+            "transcripts_txt",
+            transcriptTxtFileName,
+            transcriptTxtBytes.length,
+            "text/plain",
+            transcriptTxtUploadDetails.s3Key,
+            transcriptTxtUploadDetails.s3Url,
+            transcriptId,
+            1
+          );
+          artifacts.transcriptTxt = {
+            id: transcriptTxtArtifactId,
+            fileName: transcriptTxtFileName,
+            fileSize: transcriptTxtBytes.length,
+            artifactType: "transcripts_txt",
+          };
+        }
       }
     }
 
