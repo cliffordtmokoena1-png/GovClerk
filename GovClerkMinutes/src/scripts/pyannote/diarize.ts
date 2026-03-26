@@ -176,7 +176,7 @@ async function getS3DetailsFromDatabase(): Promise<S3Details> {
       }
 
       const row = result.rows[0] as any;
-      const awsRegion = row.aws_region || "us-east-2";
+      const awsRegion = row.aws_region || "us-east-1";
 
       let s3AudioKey = row.s3AudioKey;
       if (!s3AudioKey) {
@@ -184,12 +184,12 @@ async function getS3DetailsFromDatabase(): Promise<S3Details> {
       }
 
       let bucket: string;
-      if (awsRegion === "us-east-2") {
-        bucket = "govclerk-audio-uploads";
+      if (awsRegion === "us-east-1") {
+        bucket = "govclerk-bucket";
       } else if (awsRegion === "eu-central-1") {
         bucket = "GovClerkMinutesfrankfurt";
       } else {
-        bucket = "govclerk-audio-uploads";
+        bucket = "govclerk-bucket";
       }
 
       return {

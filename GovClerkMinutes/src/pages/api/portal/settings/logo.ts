@@ -14,8 +14,8 @@ import { resolveRequestContext } from "@/utils/resolveRequestContext";
 import { getPortalDbConnection } from "@/utils/portalDb";
 
 // Public bucket for portal logos (same bucket used by crawler)
-const PUBLIC_BUCKET = "govclerk-audio-uploads";
-const PUBLIC_BUCKET_REGION = "us-east-2";
+const PUBLIC_BUCKET = "govclerk-bucket";
+const PUBLIC_BUCKET_REGION = "us-east-1";
 
 type LogoUploadRequestBody = {
   fileName: string;

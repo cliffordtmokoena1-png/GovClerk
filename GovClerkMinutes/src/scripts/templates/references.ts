@@ -21,7 +21,7 @@ program
   .name("template:references")
   .description("Download stored template reference files for a given template")
   .argument("<template_id>", "Template ID (custom-*)")
-  .option("--region <region>", "AWS region override", "us-east-2")
+  .option("--region <region>", "AWS region override", "us-east-1")
   .option(
     "--output <directory>",
     "Directory to save files to",

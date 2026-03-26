@@ -37,7 +37,7 @@ type PresignResponseBody = {
   references: PresignResponseReference[];
 };
 
-const DEFAULT_REGION: Region = "us-east-2";
+const DEFAULT_REGION: Region = "us-east-1";
 
 function ensureTemplateId(candidate?: string): string {
   if (candidate?.startsWith("custom-")) {

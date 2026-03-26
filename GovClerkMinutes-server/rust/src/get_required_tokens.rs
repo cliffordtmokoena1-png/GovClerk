@@ -47,7 +47,7 @@ pub async fn get_required_tokens(
 
   let object = client
     .get_object()
-    .bucket("govclerk-audio-uploads")
+    .bucket("govclerk-bucket")
     .key(audio_key)
     .send()
     .await

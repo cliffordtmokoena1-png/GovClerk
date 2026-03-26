@@ -92,7 +92,7 @@ pub async fn transcribe_segments_fast(
   let original_audio_path = NamedTempFile::new()?;
   if let Err(e) = get_object(
     state.s3_client.clone(),
-    &"govclerk-audio-uploads".to_string(),
+    &"govclerk-bucket".to_string(),
     &s3_audio_key,
     original_audio_path.path().to_owned(),
   )
@@ -278,7 +278,7 @@ async fn send_replicate_whisper_request(
   let presigned_request = match state
     .s3_client
     .get_object()
-    .bucket("govclerk-audio-uploads")
+    .bucket("govclerk-bucket")
     .key(slice_audio_key)
     .presigned(PresigningConfig::expires_in(Duration::from_secs(1200))?)
     .await

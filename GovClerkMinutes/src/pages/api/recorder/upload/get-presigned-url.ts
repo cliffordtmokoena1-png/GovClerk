@@ -31,7 +31,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { s3_key, s3_upload_id, metadata } = result.rows[0] as any;
 
-  const resolvedRegion = metadata?.region || region || "us-east-2";
+  const resolvedRegion = metadata?.region || region || "us-east-1";
 
   const presignedUrl = await getPresignedPartUrl(resolvedRegion, s3_key, s3_upload_id, partNumber);
 

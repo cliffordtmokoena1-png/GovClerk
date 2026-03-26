@@ -33,7 +33,7 @@ export default function useRecordingSessionCreator({
     setError(null);
 
     try {
-      const region = "us-east-2";
+      const region = "us-east-1";
 
       const now = new Date();
       const dateStr = now.toLocaleDateString();

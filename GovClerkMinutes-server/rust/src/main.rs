@@ -346,7 +346,7 @@ async fn main() {
     "myprovider", // Provider name
   );
 
-  let region_provider = RegionProviderChain::default_provider().or_else("us-east-2");
+  let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
   let config = aws_config::from_env()
     .credentials_provider(credentials)
     .region(region_provider)

@@ -11,7 +11,7 @@ function getS3(): S3Client {
   }
 
   s3 = new S3Client({
-    region: "us-east-2",
+    region: "us-east-1",
     credentials: {
       accessKeyId: assertString(process.env.AWS_ACCESS_KEY_ID),
       secretAccessKey: assertString(process.env.AWS_SECRET_ACCESS_KEY),
@@ -29,7 +29,7 @@ export async function putObject(args: {
   const client = getS3();
   await client.send(
     new PutObjectCommand({
-      Bucket: "govclerk-audio-uploads",
+      Bucket: "govclerk-bucket",
       Key: args.key,
       Body: args.body,
       ContentType: args.contentType,
@@ -48,7 +48,7 @@ export function createStreamingUpload(args: { key: string; contentType: string }
   const upload = new Upload({
     client,
     params: {
-      Bucket: "govclerk-audio-uploads",
+      Bucket: "govclerk-bucket",
       Key: args.key,
       Body: passThrough,
       ContentType: args.contentType,

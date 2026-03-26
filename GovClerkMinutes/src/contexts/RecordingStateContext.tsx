@@ -273,7 +273,7 @@ export function RecordingStateProvider({ children }: { children: ReactNode }) {
       currentTranscriptIdRef.current = transcriptId;
 
       try {
-        const region = "us-east-2";
+        const region = "us-east-1";
 
         const response = await fetch("/api/recorder/upload/create-session", {
           method: "POST",
@@ -546,7 +546,7 @@ export function RecordingStateProvider({ children }: { children: ReactNode }) {
       const transcriptId = currentTranscriptIdRef.current;
 
       if (isDev() && transcriptId) {
-        const region = "us-east-2";
+        const region = "us-east-1";
         fetch("/api/dev-only-poll-for-upload-complete", {
           method: "POST",
           body: JSON.stringify({

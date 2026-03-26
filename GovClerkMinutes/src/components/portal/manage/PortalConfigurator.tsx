@@ -25,7 +25,7 @@ interface PortalConfiguratorProps {
 }
 
 const ACCEPTED_IMAGE_TYPES = ".png,.jpg,.jpeg,.gif,.webp,.svg";
-const S3_BUCKET = "govclerk-audio-uploads";
+const S3_BUCKET = "govclerk-bucket";
 
 /** Get logo display URL - uses presigned URL API for S3 logos */
 function getLogoDisplayUrl(logoUrl: string | undefined, settingsId?: number): string | null {

@@ -89,7 +89,7 @@ async function deployForRegion(region: string) {
 }
 
 async function main() {
-  await deployForRegion("us-east-2");
+  await deployForRegion("us-east-1");
   await deployForRegion("eu-central-1");
 }
 

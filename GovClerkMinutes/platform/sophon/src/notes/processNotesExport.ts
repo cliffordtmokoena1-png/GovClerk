@@ -49,7 +49,7 @@ export async function processNotesExport(broadcastId: number): Promise<ProcessNo
     // 7. Create artifact record
     const sanitizedTitle = meeting.title.replace(/[^a-zA-Z0-9]/g, "_");
     const fileName = `${sanitizedTitle}_Broadcast_Notes.docx`;
-    const s3Url = `https://govclerk-audio-uploads.s3.us-east-2.amazonaws.com/${s3Key}`;
+    const s3Url = `https://govclerk-bucket.s3.us-east-1.amazonaws.com/${s3Key}`;
 
     const conn = getDb();
     await conn.execute(

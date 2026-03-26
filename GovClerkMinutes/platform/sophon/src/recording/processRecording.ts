@@ -122,7 +122,7 @@ async function createRecordingArtifact(
 
   const fileName = `Recording ${new Date().toISOString()}.mp4`;
 
-  const s3Url = `https://govclerk-audio-uploads.s3.us-east-2.amazonaws.com/${recording.s3Key}`;
+  const s3Url = `https://govclerk-bucket.s3.us-east-1.amazonaws.com/${recording.s3Key}`;
 
   await conn.execute(
     `INSERT INTO gc_artifacts (
