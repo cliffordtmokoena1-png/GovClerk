@@ -7,6 +7,7 @@ interface SaveSegmentParams {
   text: string;
   startTime: number | null;
   endTime: number | null;
+  confidence?: number | null;
   words?: Array<{ text: string; start?: number; end?: number }>;
 }
 
@@ -38,7 +39,7 @@ export async function saveTranscriptSegment(params: SaveSegmentParams): Promise<
 }
 
 async function doSaveTranscriptSegment(params: SaveSegmentParams): Promise<void> {
-  const { streamKey, segmentId, speaker, text, startTime, endTime } = params;
+  const { streamKey, segmentId, speaker, text, startTime, endTime, confidence } = params;
 
   const conn = getDb();
 
@@ -60,12 +61,12 @@ async function doSaveTranscriptSegment(params: SaveSegmentParams): Promise<void>
 
   await conn.execute(
     `INSERT INTO gc_broadcast_transcript_segments 
-    (broadcast_id, segment_index, speaker_id, speaker_label, text, start_time, end_time, is_final, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-    [broadcastId, segmentIndex, null, speaker, text, startTime ?? 0, endTime, 1]
+    (broadcast_id, segment_index, speaker_id, speaker_label, text, start_time, end_time, is_final, confidence, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [broadcastId, segmentIndex, null, speaker, text, startTime ?? 0, endTime, 1, confidence ?? null]
   );
 
   console.info(
-    `[saveTranscriptSegment] Inserted segment ${segmentIndex} (${segmentId}) for broadcast ${broadcastId} startTime=${startTime}`
+    `[saveTranscriptSegment] Inserted segment ${segmentIndex} (${segmentId}) for broadcast ${broadcastId} startTime=${startTime} confidence=${confidence ?? "n/a"}`
   );
 }

@@ -9,6 +9,8 @@ export type PortalArtifactType =
   | "meeting_recording"
   | "recordings"
   | "transcripts"
+  | "transcripts_pdf"
+  | "transcripts_txt"
   | "other";
 
 export const DOCUMENT_KIND_CONFIG: Record<PortalArtifactType, { label: string; iconName: string }> =
@@ -23,6 +25,8 @@ export const DOCUMENT_KIND_CONFIG: Record<PortalArtifactType, { label: string; i
     meeting_recording: { label: "Recordings", iconName: "video" },
     recordings: { label: "Recordings", iconName: "video" },
     transcripts: { label: "Transcripts", iconName: "file-audio" },
+    transcripts_pdf: { label: "Transcripts PDF", iconName: "file-audio" },
+    transcripts_txt: { label: "Transcripts TXT", iconName: "file-audio" },
     other: { label: "Other", iconName: "folder" },
   };
 

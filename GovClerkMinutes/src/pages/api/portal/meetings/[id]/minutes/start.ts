@@ -48,6 +48,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
 
   const body = req.body || {};
   const { orgId, userId } = await resolveRequestContext(auth.userId, body.orgId, req.headers);
+  const language: string | undefined = body.language;
+  const expectedSpeakers: string[] | undefined = Array.isArray(body.expectedSpeakers)
+    ? body.expectedSpeakers
+    : undefined;
 
   if (!orgId) {
     res.status(400).json({ error: "Organization context required" });
@@ -121,11 +125,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
     }
 
     if (recording) {
-      const transcriptId = await createAudioMinutesTranscript(conn, userId, orgId, title);
+      const transcriptId = await createAudioMinutesTranscript(conn, userId, orgId, title, language);
       await copyRecordingToUploadKey(recording.s3Key, transcriptId);
       await linkMinutesToMeeting(conn, meetingId, orgId, transcriptId);
       try {
-        await triggerAudioDiarization(transcriptId);
+        await triggerAudioDiarization(transcriptId, language);
       } catch (pipelineError) {
         console.error("[start-minutes] Audio pipeline start failed:", pipelineError);
       }
@@ -156,6 +160,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
       return;
     }
 
+    // Feature 6: Log quality metrics for the broadcast segments
+    const segmentsWithSpeaker = segments.filter((s) => s.speakerLabel !== null).length;
+    const segmentsWithoutSpeaker = segments.length - segmentsWithSpeaker;
+    const avgTextLength =
+      segments.reduce((sum, s) => sum + s.text.length, 0) / segments.length;
+    const speakerLabelPct = Math.round((segmentsWithSpeaker / segments.length) * 100);
+    console.info(
+      `[start-minutes] Segment quality: total=${segments.length}, withSpeaker=${segmentsWithSpeaker}, withoutSpeaker=${segmentsWithoutSpeaker}, avgTextLength=${avgTextLength.toFixed(1)}, speakerLabelPct=${speakerLabelPct}%`
+    );
+
     if (progressOpId) {
       try {
         await updateProgress(progressOpId, 25);
@@ -166,7 +180,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
 
     const transcriptText = formatSegmentsAsTranscript(segments);
 
-    const transcriptId = await createMinutesTranscript(conn, userId, orgId, title, transcriptText);
+    const transcriptId = await createMinutesTranscript(conn, userId, orgId, title, transcriptText, language);
+
+    // Feature 4: Store expected speakers if provided
+    if (expectedSpeakers && expectedSpeakers.length > 0) {
+      try {
+        await conn.execute(
+          `INSERT INTO gc_meeting_expected_speakers (meeting_id, org_id, speakers, created_at, updated_at)
+           VALUES (?, ?, ?, NOW(), NOW())
+           ON DUPLICATE KEY UPDATE speakers = VALUES(speakers), updated_at = NOW()`,
+          [meetingId, orgId, JSON.stringify(expectedSpeakers)]
+        );
+      } catch {
+        // Table might not exist — continue gracefully
+        console.warn("[start-minutes] Could not store expected speakers (table may not exist)");
+      }
+    }
 
     if (progressOpId) {
       try {

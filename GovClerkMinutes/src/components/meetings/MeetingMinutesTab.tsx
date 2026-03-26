@@ -9,6 +9,12 @@ import {
   LuLoader2,
   LuPin,
   LuDownload,
+  LuUpload,
+  LuPencil,
+  LuCheck,
+  LuX,
+  LuChevronDown,
+  LuChevronUp,
 } from "react-icons/lu";
 import { toast } from "sonner";
 import { useOrgContext } from "@/contexts/OrgContext";
@@ -29,10 +35,30 @@ import { VersionTabs } from "@/components/editor/VersionTabs";
 import { RecordingPlayer, RecordingPlayerHandle } from "./RecordingPlayer";
 import { TranscriptPanel } from "./TranscriptPanel";
 import { SpeakerLabelerPopover, SpeakerLabelerDrawer } from "./SpeakerLabeler";
+import { SpeakerTagInput } from "./SpeakerTagInput";
+import { TranscriptExportMenu } from "./TranscriptExportMenu";
 import { useMinutesRegenerate } from "@/hooks/useMinutesRegenerate";
 import type { PortalMeetingWithArtifacts } from "@/types/portal";
 import type { ApiLabelSpeakerResponseResult1 } from "@/pages/api/label-speaker";
 import type { SpeakerLabelerOptions } from "@/lib/speakerLabeler";
+
+const LANGUAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: "auto", label: "Auto-detect (recommended)" },
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "pt", label: "Portuguese" },
+  { value: "de", label: "German" },
+  { value: "ja", label: "Japanese" },
+  { value: "zh", label: "Chinese" },
+  { value: "ko", label: "Korean" },
+  { value: "ar", label: "Arabic" },
+  { value: "hi", label: "Hindi" },
+  { value: "ru", label: "Russian" },
+  { value: "it", label: "Italian" },
+  { value: "nl", label: "Dutch" },
+  { value: "tr", label: "Turkish" },
+];
 
 type ApiGetMinutesResponseResult = {
   status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE";
@@ -44,6 +70,9 @@ type ApiGetMinutesResponseResult = {
 type BroadcastSegmentsCheckResult = {
   hasSegments: boolean;
   segmentCount: number;
+  speakerLabeledCount?: number;
+  estimatedDurationMs?: number | null;
+  quality?: "good" | "fair" | "basic" | null;
 };
 
 type RecordingUrlResult = {
@@ -80,6 +109,23 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
   const [isSavingToDocuments, setIsSavingToDocuments] = useState(false);
   const hasTriggeredArtifactGeneration = useRef(false);
   const prevMinutesCountRef = useRef<number | null>(null);
+
+  // Feature 1: Audio upload state
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Feature 3: Language selection
+  const [selectedLanguage, setSelectedLanguage] = useState("auto");
+
+  // Feature 4: Expected speakers
+  const [expectedSpeakers, setExpectedSpeakers] = useState<string[]>([]);
+  const [showSpeakerInput, setShowSpeakerInput] = useState(false);
+
+  // Feature 2: Transcript editing
+  const [isEditingTranscript, setIsEditingTranscript] = useState(false);
+  const [editedTexts, setEditedTexts] = useState<Record<number, string>>({});
+  const [isSavingTranscript, setIsSavingTranscript] = useState(false);
 
   const [currentAudioTime, setCurrentAudioTime] = useState(0);
   const playerRef = useRef<RecordingPlayerHandle>(null);
@@ -301,7 +347,11 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
       const res = await fetch(`/api/portal/meetings/${meeting.id}/minutes/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgId }),
+        body: JSON.stringify({
+          orgId,
+          language: selectedLanguage !== "auto" ? selectedLanguage : undefined,
+          expectedSpeakers: expectedSpeakers.length > 0 ? expectedSpeakers : undefined,
+        }),
       });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -373,6 +423,153 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
     [meeting.minutesTranscriptId, selectedVersion]
   );
 
+  // Feature 1: Audio upload handler
+  const handleAudioFileSelect = async (file: File) => {
+    if (!file) return;
+
+    const allowedTypes = [
+      "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav",
+      "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/webm",
+      "audio/ogg", "audio/flac", "audio/x-flac",
+      "video/mp4", "video/webm", "video/ogg", "video/quicktime",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Unsupported file type. Please upload mp3, wav, m4a, mp4, webm, ogg, or flac.");
+      return;
+    }
+    const maxSize = 500 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File is too large. Maximum size is 500 MB.");
+      return;
+    }
+
+    setIsUploadingAudio(true);
+    setUploadProgress(0);
+    setStartError(null);
+
+    try {
+      // Phase 1: create transcript record and get presigned URL
+      const initRes = await fetch(`/api/portal/meetings/${meeting.id}/minutes/upload-audio`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orgId,
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+          language: selectedLanguage !== "auto" ? selectedLanguage : undefined,
+        }),
+      });
+
+      if (!initRes.ok) {
+        const err = await initRes.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to initialize upload");
+      }
+
+      const { transcriptId, uploadUrl, alreadyExists } = await initRes.json();
+      if (alreadyExists) {
+        onUpdate?.();
+        return;
+      }
+
+      // Phase 2: upload file to S3 with progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        });
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`S3 upload failed: ${xhr.status}`));
+          }
+        });
+        xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.send(file);
+      });
+
+      setUploadProgress(100);
+
+      // Phase 3: link to meeting and trigger diarization
+      const triggerRes = await fetch(`/api/portal/meetings/${meeting.id}/minutes/upload-audio`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId, transcriptId }),
+      });
+
+      if (!triggerRes.ok) {
+        const err = await triggerRes.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to start processing");
+      }
+
+      toast.success("Audio uploaded! Transcription and minutes generation has started.");
+      onUpdate?.();
+    } catch (error) {
+      console.error("Audio upload failed:", error);
+      setStartError(error instanceof Error ? error.message : "Failed to upload audio");
+      toast.error(error instanceof Error ? error.message : "Failed to upload audio");
+    } finally {
+      setIsUploadingAudio(false);
+      setUploadProgress(0);
+      if (audioFileInputRef.current) {
+        audioFileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Feature 2: Transcript editing handlers
+  const handleSaveTranscriptEdits = async () => {
+    const changedIndices = Object.keys(editedTexts).map(Number);
+    if (changedIndices.length === 0) {
+      setIsEditingTranscript(false);
+      return;
+    }
+
+    setIsSavingTranscript(true);
+    try {
+      const segments = changedIndices.map((index) => ({
+        index,
+        text: editedTexts[index],
+      }));
+
+      const res = await fetch(`/api/portal/meetings/${meeting.id}/minutes/edit-transcript`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId, segments }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save transcript");
+      }
+
+      toast.success("Transcript updated successfully.");
+      setEditedTexts({});
+      setIsEditingTranscript(false);
+      // Invalidate speaker data cache to refetch transcript
+      mutate(`/api/label-speaker?tid=${meeting.minutesTranscriptId}`);
+    } catch (error) {
+      console.error("Failed to save transcript edits:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save transcript");
+    } finally {
+      setIsSavingTranscript(false);
+    }
+  };
+
+  const handleCancelTranscriptEdit = () => {
+    setEditedTexts({});
+    setIsEditingTranscript(false);
+  };
+
+  const handleTextChange = useCallback((segmentIndex: number, text: string) => {
+    setEditedTexts((prev) => ({ ...prev, [segmentIndex]: text }));
+  }, []);
+
   const handleSaveToDocuments = async () => {
     if (!meeting.minutesTranscriptId) {
       return;
@@ -442,9 +639,34 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
 
     const canStart = segmentsCheck?.hasSegments === true;
     const noSegments = segmentsCheck?.hasSegments === false && !isCheckingSegments;
+    const quality = segmentsCheck?.quality;
+    const speakerLabeledCount = segmentsCheck?.speakerLabeledCount ?? 0;
+    const segmentCount = segmentsCheck?.segmentCount ?? 0;
+    const estimatedDurationMs = segmentsCheck?.estimatedDurationMs;
+
+    const qualityBadge =
+      quality === "good"
+        ? { label: "Good quality", className: "bg-green-100 text-green-700" }
+        : quality === "fair"
+        ? { label: "Fair quality", className: "bg-yellow-100 text-yellow-700" }
+        : quality === "basic"
+        ? { label: "Basic quality", className: "bg-orange-100 text-orange-700" }
+        : null;
 
     return (
       <div className="p-4 md:p-6">
+        {/* Hidden file input for audio upload */}
+        <input
+          ref={audioFileInputRef}
+          type="file"
+          accept="audio/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleAudioFileSelect(file);
+          }}
+        />
+
         <div className="max-w-5xl mx-auto w-full flex flex-col items-center justify-center py-12 bg-muted/30 rounded-lg border border-dashed border-border">
           <div className="max-w-md mx-auto text-center space-y-4">
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-muted">
@@ -455,8 +677,8 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
               <h3 className="text-lg font-semibold text-foreground">No Minutes Yet</h3>
               <p className="text-sm text-muted-foreground">
                 {noSegments
-                  ? "No broadcast transcript segments found. Minutes can only be generated after a broadcast with transcript data."
-                  : "Minutes can be generated from live broadcast transcripts."}
+                  ? "No broadcast transcript found. Upload an audio/video file to generate minutes."
+                  : "Minutes can be generated from live broadcast transcripts or by uploading an audio/video file."}
               </p>
             </div>
 
@@ -467,30 +689,149 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
               </div>
             )}
 
+            {/* Feature 3: Language selector */}
+            <div className="text-left space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Transcription Language</label>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                disabled={isStarting || isUploadingAudio}
+                className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              >
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Feature 4: Expected speakers */}
+            <div className="text-left space-y-1">
+              <button
+                type="button"
+                className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowSpeakerInput((v) => !v)}
+              >
+                {showSpeakerInput ? (
+                  <LuChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <LuChevronDown className="w-3.5 h-3.5" />
+                )}
+                Add Expected Speakers (optional)
+                {expectedSpeakers.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                    {expectedSpeakers.length}
+                  </span>
+                )}
+              </button>
+              {showSpeakerInput && (
+                <SpeakerTagInput
+                  speakers={expectedSpeakers}
+                  onChange={setExpectedSpeakers}
+                  disabled={isStarting || isUploadingAudio}
+                />
+              )}
+            </div>
+
+            {/* Feature 6: Segment quality indicator */}
+            {canStart && segmentCount > 0 && (
+              <div className="p-3 bg-muted/50 rounded-lg text-left space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {speakerLabeledCount} of {segmentCount} segments with speaker labels
+                  </span>
+                  {qualityBadge && (
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${qualityBadge.className}`}
+                    >
+                      {qualityBadge.label}
+                    </span>
+                  )}
+                </div>
+                {estimatedDurationMs !== null && estimatedDurationMs !== undefined && (
+                  <p className="text-xs text-muted-foreground">
+                    Estimated duration:{" "}
+                    {estimatedDurationMs >= 3600000
+                      ? `${Math.floor(estimatedDurationMs / 3600000)}h ${Math.floor((estimatedDurationMs % 3600000) / 60000)}m`
+                      : `${Math.floor(estimatedDurationMs / 60000)}m ${Math.floor((estimatedDurationMs % 60000) / 1000)}s`}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Upload progress */}
+            {isUploadingAudio && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Spinner className="w-4 h-4" />
+                  <span>
+                    {uploadProgress < 100
+                      ? `Uploading... ${uploadProgress}%`
+                      : "Processing upload..."}
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className="bg-primary rounded-full h-1.5 transition-all duration-200"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {isCheckingSegments ? (
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Spinner className="w-4 h-4" />
                 <span>Checking broadcast data...</span>
               </div>
-            ) : noSegments ? (
-              <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
-                <LuAlertCircle className="w-4 h-4" />
-                <span>No transcript segments available</span>
-              </div>
             ) : (
-              <Button onClick={handleStartMinutes} disabled={isStarting || !canStart}>
-                {isStarting ? (
-                  <>
-                    <Spinner className="w-4 h-4" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <LuPlay className="w-4 h-4" />
-                    Start Minutes Generation
-                  </>
+              <div className="space-y-3">
+                {!noSegments && (
+                  <Button
+                    onClick={handleStartMinutes}
+                    disabled={isStarting || isUploadingAudio || !canStart}
+                    className="w-full"
+                  >
+                    {isStarting ? (
+                      <>
+                        <Spinner className="w-4 h-4" />
+                        Starting...
+                      </>
+                    ) : (
+                      <>
+                        <LuPlay className="w-4 h-4" />
+                        Start Minutes Generation
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+
+                <div className="flex items-center gap-2">
+                  {!noSegments && (
+                    <div className="flex-1 border-t border-border" />
+                  )}
+                  {!noSegments && (
+                    <span className="text-xs text-muted-foreground px-1">or</span>
+                  )}
+                  {!noSegments && (
+                    <div className="flex-1 border-t border-border" />
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => audioFileInputRef.current?.click()}
+                  disabled={isStarting || isUploadingAudio}
+                  className="w-full"
+                >
+                  <LuUpload className="w-4 h-4" />
+                  Upload Audio/Video File
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Supports mp3, wav, m4a, mp4, webm, ogg, flac — up to 500 MB
+                </p>
+              </div>
             )}
 
             {canStart && (
@@ -553,8 +894,52 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
             )}
 
             <div className="flex-1 min-h-0 bg-card rounded-lg border border-border flex flex-col">
-              <div className="px-4 py-3 bg-muted/50 border-b border-border shrink-0">
+              <div className="px-4 py-3 bg-muted/50 border-b border-border shrink-0 flex items-center justify-between">
                 <h3 className="font-medium text-sm text-foreground">Transcript</h3>
+                <div className="flex items-center gap-1">
+                  {isEditingTranscript ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 gap-1 text-destructive hover:text-destructive"
+                        onClick={handleCancelTranscriptEdit}
+                        disabled={isSavingTranscript}
+                      >
+                        <LuX className="w-3.5 h-3.5" />
+                        <span className="text-xs">Cancel</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 gap-1"
+                        onClick={handleSaveTranscriptEdits}
+                        disabled={isSavingTranscript}
+                      >
+                        {isSavingTranscript ? (
+                          <LuLoader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <LuCheck className="w-3.5 h-3.5" />
+                        )}
+                        <span className="text-xs">Save Changes</span>
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 gap-1"
+                        onClick={() => setIsEditingTranscript(true)}
+                        title="Edit transcript"
+                      >
+                        <LuPencil className="w-3.5 h-3.5" />
+                        <span className="text-xs">Edit</span>
+                      </Button>
+                      <TranscriptExportMenu meeting={meeting} orgId={orgId} />
+                    </>
+                  )}
+                </div>
               </div>
               <div className="flex-1 min-h-0 flex flex-col">
                 {speakerApiData?.transcript ? (
@@ -570,11 +955,15 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
                       currentAudioTime={currentAudioTime}
                       onSegmentClick={(timestamp) => playerRef.current?.seek(timestamp)}
                       onSpeakerClick={(label) => {
+                        if (isEditingTranscript) return;
                         setSelectedSpeakerLabel(label);
                         setUserInputName(speakerApiData?.labelsToSpeaker?.[label]?.name || "");
                         setSpeakerLabelerAnchor(lastClickTargetRef.current);
                         setIsLabelerOpen(true);
                       }}
+                      editable={isEditingTranscript}
+                      editedTexts={editedTexts}
+                      onTextChange={handleTextChange}
                     />
                   </div>
                 ) : (
