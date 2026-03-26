@@ -17,7 +17,7 @@ function getLogoUrl(settings: PublicPortalResponse["settings"]): string | null {
   }
 
   // If logo is from our S3 bucket, use the API endpoint
-  if (settings.logoUrl.includes("govclerk-audio-uploads") && settings.id) {
+  if (settings.logoUrl.includes("govclerk-bucket") && settings.id) {
     return `/api/portal/settings/logo/${settings.id}`;
   }
 

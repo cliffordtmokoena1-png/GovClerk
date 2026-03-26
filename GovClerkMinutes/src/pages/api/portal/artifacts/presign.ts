@@ -33,7 +33,7 @@ type PresignResponseBody = {
   uploadUrl: string;
 };
 
-const DEFAULT_REGION: Region = "us-east-2";
+const DEFAULT_REGION: Region = "us-east-1";
 
 const VALID_ARTIFACT_TYPES: PortalArtifactType[] = [
   "agenda_pdf",

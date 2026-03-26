@@ -1,13 +1,13 @@
 import { isDev } from "./dev";
 import { Env } from "./price";
 
-export const DEFAULT_REGION: Region = (process.env.AWS_REGION as Region) || "us-east-2";
+export const DEFAULT_REGION: Region = (process.env.AWS_REGION as Region) || "us-east-1";
 
 export function extractRegionFromS3Url(s3Url: string): Region | null {
   const match = s3Url.match(/\.s3[.-]([a-z0-9-]+)\.amazonaws\.com/);
   if (match) {
     const region = match[1];
-    if (region === "us-east-2" || region === "eu-central-1") {
+    if (region === "us-east-1" || region === "eu-central-1") {
       return region;
     }
   }
@@ -20,22 +20,22 @@ export function getUploadKey(transcriptId: number, options?: { env?: Env }): str
   return `${testPrefix}uploads/upload_${transcriptId}`;
 }
 
-export type Region = "us-east-2" | "eu-central-1";
+export type Region = "us-east-1" | "eu-central-1";
 export type BucketName =
-  | "govclerk-audio-uploads"
+  | "govclerk-bucket"
   | "GovClerkMinutesfrankfurt"
   | "GovClerkMinuteswhatsapp";
 
 export function getTranscriptBucketNameByRegion(region: Region | null | undefined): BucketName {
-  if (region == null || region === "us-east-2") {
-    return "govclerk-audio-uploads";
+  if (region == null || region === "us-east-1") {
+    return "govclerk-bucket";
   } else {
     return "GovClerkMinutesfrankfurt";
   }
 }
 
 export function assertRegion(region: string | null | undefined): Region {
-  if (region !== "us-east-2" && region !== "eu-central-1") {
+  if (region !== "us-east-1" && region !== "eu-central-1") {
     throw new Error(`Invalid region: ${region}`);
   }
   return region;

@@ -12,8 +12,8 @@ export const config = {
 };
 
 // Same bucket used for logo uploads
-const PUBLIC_BUCKET = "govclerk-audio-uploads";
-const PUBLIC_BUCKET_REGION = "us-east-2";
+const PUBLIC_BUCKET = "govclerk-bucket";
+const PUBLIC_BUCKET_REGION = "us-east-1";
 const DOWNLOAD_URL_TTL = 3600; // 1 hour
 
 function extractS3KeyFromUrl(logoUrl: string): string | null {

@@ -11,7 +11,7 @@ export const config = {
   runtime: "nodejs",
 };
 
-const DEFAULT_REGION: Region = "us-east-2";
+const DEFAULT_REGION: Region = "us-east-1";
 
 function getS3Client() {
   return new S3Client({

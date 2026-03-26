@@ -619,7 +619,7 @@ pub async fn get_transcript_str(
       let object = state
           .s3_client
           .get_object()
-          .bucket("govclerk-audio-uploads")
+          .bucket("govclerk-bucket")
           .key(format!(
               "{}uploads/upload_{}",
               if test_mode { "test_" } else { "" },
@@ -643,7 +643,7 @@ pub async fn get_transcript_str(
       let object = state
           .s3_client
           .get_object()
-          .bucket("govclerk-audio-uploads")
+          .bucket("govclerk-bucket")
           .key(format!(
               "{}uploads/upload_{}",
               if test_mode { "test_" } else { "" },

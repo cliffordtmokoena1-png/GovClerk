@@ -155,7 +155,7 @@ export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesCha
           get_presigned_url({
             key,
             bucket: "GovClerkMinuteswhatsapp",
-            region: "us-east-2",
+            region: "us-east-1",
             method: "PUT",
             expiresInSecs: 600,
             accessKeyId: assertString(process.env.AWS_WHATSAPP_ACCESS_KEY),

@@ -6,7 +6,7 @@ pub fn get_bucket_name(region: String) -> String {
   if region == "eu-central-1" {
     return "GovClerkMinutesfrankfurt".to_string();
   } else {
-    return "govclerk-audio-uploads".to_string();
+    return "govclerk-bucket".to_string();
   }
 }
 

@@ -27,7 +27,7 @@ async function handler(req: NextRequest) {
 
     // WhatsApp media lives in a dedicated bucket/region.
     const bucket: BucketName = "GovClerkMinuteswhatsapp";
-    const region: Region = "us-east-2";
+    const region: Region = "us-east-1";
 
     const accessKeyId = assertString(process.env.AWS_WHATSAPP_ACCESS_KEY);
     const secretAccessKey = assertString(process.env.AWS_WHATSAPP_ACCESS_KEY_SECRET);

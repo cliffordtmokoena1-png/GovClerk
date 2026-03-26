@@ -16,7 +16,7 @@ use tracing::{error, info, warn};
 
 const MAX_FILES: usize = 10;
 const MAX_FILE_SIZE: usize = 20 * 1024 * 1024; // 20 MB per file
-const DEFAULT_REGION: &str = "us-east-2";
+const DEFAULT_REGION: &str = "us-east-1";
 
 #[derive(serde::Serialize)]
 pub struct ProcessTemplateResponse {

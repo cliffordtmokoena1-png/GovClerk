@@ -47,7 +47,7 @@ export default function useRetryUploadHandler({
           throw new Error("File or transcript not found in IndexedDB");
         }
 
-        const region = "us-east-2";
+        const region = "us-east-1";
         const useBiggerPartSize = posthog.isFeatureEnabled("bigger-multipart");
 
         const s3Result: ApiS3ResponseResult = await fetch("/api/s3", {

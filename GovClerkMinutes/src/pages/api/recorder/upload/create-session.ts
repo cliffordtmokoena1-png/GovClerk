@@ -206,7 +206,7 @@ const handler = async (
     return res.status(401).json({ error: "Unauthorized" } as any);
   }
 
-  const { transcriptId, region = "us-east-2" } = req.body;
+  const { transcriptId, region = "us-east-1" } = req.body;
 
   const result = await createRecordingSession(transcriptId, userId, region);
   return res.status(200).json(result);

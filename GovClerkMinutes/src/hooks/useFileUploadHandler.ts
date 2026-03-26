@@ -67,7 +67,7 @@ export default function useFileUploadHandler({
 
         setIsTransitioning(true);
 
-        const region = "us-east-2";
+        const region = "us-east-1";
 
         // Create a new transcript ID on the server
         const createIdUrl = impersonatedUserId ? "/api/admin/create-id" : "/api/create-id";
