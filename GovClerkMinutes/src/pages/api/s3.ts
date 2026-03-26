@@ -45,7 +45,6 @@ export async function createS3Upload(params: CreateS3UploadParams): Promise<ApiS
       accessKeyId: assertString(process.env.AWS_ACCESS_KEY_ID),
       secretAccessKey: assertString(process.env.AWS_SECRET_ACCESS_KEY),
     },
-    endpoint: "https://s3-accelerate.amazonaws.com",
     region,
   });
 
@@ -117,7 +116,6 @@ export async function getPresignedPartUrl(
       accessKeyId: assertString(process.env.AWS_ACCESS_KEY_ID),
       secretAccessKey: assertString(process.env.AWS_SECRET_ACCESS_KEY),
     },
-    endpoint: "https://s3-accelerate.amazonaws.com",
     region,
   });
 
