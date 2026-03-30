@@ -318,11 +318,9 @@ async fn main() {
     .await
     .expect("failed to call ffmpeg, is it on the path?");
 
-  if let Ok(env_path) = dotenv() {
-    info!("Loaded .env file from: {:?}", env_path);
-  } else {
-    error!("No .env file found. You may need to copy over the .env file pulled from Vercel.");
-    return;
+  match dotenv() {
+    Ok(env_path) => info!("Loaded .env file from: {:?}", env_path),
+    Err(_) => warn!("No .env file found — relying on environment variables injected by the container runtime (RunPod/Docker)."),
   }
 
     if let Err(e) = start_cloudflared_if_needed().await { tracing::error!("Cloudflare setup failed (non-fatal): {:?}", e); }
