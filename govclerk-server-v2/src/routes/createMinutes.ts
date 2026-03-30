@@ -28,6 +28,9 @@ createMinutesRoute.post('/create-minutes', authMiddleware, zValidator('json', bo
     return c.json({ error: 'Transcript not found' }, 404);
   }
 
+  const transcript = transcripts[0];
+  const orgId = transcript.org_id ?? null;
+
   // Get the formatted transcript text
   const transcriptRows = await query<{ transcript_text: string | null }>(
     'SELECT transcript_text FROM transcripts WHERE id = ?',
@@ -41,21 +44,21 @@ createMinutesRoute.post('/create-minutes', authMiddleware, zValidator('json', bo
 
   // Ensure minutes record exists
   await execute(
-    'INSERT IGNORE INTO minutes (transcript_id, user_id, ts_start) VALUES (?, ?, UTC_TIMESTAMP())',
-    [transcript_id, userId]
+    'INSERT IGNORE INTO minutes (transcript_id, user_id, org_id, ts_start) VALUES (?, ?, ?, UTC_TIMESTAMP())',
+    [transcript_id, userId, orgId]
   );
 
   // Generate asynchronously
   generateMinutes(transcriptText)
     .then(minutes => execute(
-      'UPDATE minutes SET minutes = ?, ts_first_gpt = UTC_TIMESTAMP() WHERE transcript_id = ? AND user_id = ?',
-      [minutes, transcript_id, userId]
+      'UPDATE minutes SET minutes = ?, ts_first_gpt = UTC_TIMESTAMP() WHERE transcript_id = ? AND user_id = ? AND org_id <=> ?',
+      [minutes, transcript_id, userId, orgId]
     ))
     .catch(err => {
       console.error(`[create-minutes] Failed for ${transcript_id}:`, err);
       execute(
-        'UPDATE minutes SET minutes_failed = 1 WHERE transcript_id = ? AND user_id = ?',
-        [transcript_id, userId]
+        'UPDATE minutes SET minutes_failed = 1 WHERE transcript_id = ? AND user_id = ? AND org_id <=> ?',
+        [transcript_id, userId, orgId]
       ).catch(console.error);
     });
 

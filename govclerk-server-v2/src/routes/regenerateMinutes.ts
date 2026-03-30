@@ -24,12 +24,13 @@ regenerateMinutesRoute.post('/regenerate-minutes/:transcript_id', authMiddleware
     return c.json({ error: 'No minutes found for this transcript' }, 404);
   }
 
-  const transcriptRows = await query<{ transcript_text: string | null }>(
-    'SELECT transcript_text FROM transcripts WHERE id = ?',
+  const transcriptRows = await query<{ transcript_text: string | null; org_id: string | null }>(
+    'SELECT transcript_text, org_id FROM transcripts WHERE id = ?',
     [transcriptId]
   );
 
   const transcriptText = transcriptRows[0]?.transcript_text ?? '';
+  const orgId = transcriptRows[0]?.org_id ?? null;
   const previousMinutes = minutesRows[0].minutes;
   const nextVersion = minutesRows[0].version + 1;
 
@@ -42,8 +43,8 @@ regenerateMinutesRoute.post('/regenerate-minutes/:transcript_id', authMiddleware
   // Regenerate asynchronously
   regenerateMinutes(transcriptText, previousMinutes, feedback)
     .then(newMinutes => execute(
-      'INSERT INTO minutes (transcript_id, user_id, minutes, version, ts_start, feedback) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), ?)',
-      [transcriptId, userId, newMinutes, nextVersion, feedback]
+      'INSERT INTO minutes (transcript_id, user_id, org_id, minutes, version, ts_start, feedback) VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP(), ?)',
+      [transcriptId, userId, orgId, newMinutes, nextVersion, feedback]
     ))
     .catch(err => {
       console.error(`[regenerate-minutes] Failed for ${transcriptId}:`, err);
