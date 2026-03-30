@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Flex, VStack } from "@chakra-ui/react";
+import { Flex, VStack, Button, ButtonGroup } from "@chakra-ui/react";
 import SpeakerLabeler from "./SpeakerLabeler";
 import { Speaker } from "@/lib/speakerLabeler";
 import Transcript from "./Transcript";
@@ -18,6 +18,7 @@ import MobileExportDrawer from "./mobile/MobileExportDrawer";
 import MobileTranscriptActionsDrawer from "./mobile/MobileTranscriptActionsDrawer";
 import { useExportHandlers } from "@/hooks/useExportHandlers";
 import { revalidateTranscriptStatus } from "@/revalidations/revalidateTranscriptStatus";
+import saveAs from "file-saver";
 
 import { ApiLabelSpeakerResponseResult1 } from "@/pages/api/label-speaker";
 
@@ -179,6 +180,8 @@ const TranscriptController = ({
       selectedVersion: selectedMinutesVersion,
     });
 
+  const [viewMode, setViewMode] = useState<"both" | "minutes" | "transcript">("both");
+
   const handleRename = useCallback(() => {
     setIsRenameModalOpen(true);
   }, []);
@@ -311,8 +314,25 @@ const TranscriptController = ({
           onCopyTranscript={handleCopyTranscript}
           onExportMinutesDocx={() => handleExportMinutes("docx")}
           onExportMinutesPdf={() => handleExportMinutes("pdf")}
+          onExportMinutesTxt={() => {
+            const content = getMinutesContent();
+            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+            const title = transcriptionStatus?.title ?? "minutes";
+            saveAs(blob, `${title}_GC_Minutes.txt`);
+          }}
           onExportTranscriptDocx={() => handleExportTranscript("docx")}
           onExportTranscriptPdf={() => handleExportTranscript("pdf")}
+          onExportTranscriptTxt={() => {
+            const segments = transcriptData?.transcript?.segments ?? [];
+            const labelsToSpeaker = transcriptData?.labelsToSpeaker ?? {};
+            const lines = segments.map(
+              (seg) =>
+                `${labelsToSpeaker[seg.speaker]?.name ?? "Speaker"}: ${seg.transcript}`
+            );
+            const blob = new Blob([lines.join("\n\n")], { type: "text/plain;charset=utf-8" });
+            const title = transcriptionStatus?.title ?? "transcript";
+            saveAs(blob, `${title}_GC_Transcript.txt`);
+          }}
           minutesData={getMinutesData}
           selectedVersion={selectedMinutesVersion}
           onVersionChange={setSelectedMinutesVersion}
@@ -345,71 +365,110 @@ const TranscriptController = ({
         selectedTabIndex={getMinutesData?.selectedTabIndex}
         getMinutesData={getMinutesData}
       />
-      <Flex gap={2} flex="1" minH="0" w="full">
-        <VStack h="full" w={{ base: "full", lg: "50%" }} gap={0.5}>
-          <Flex
-            w="full"
-            h="full"
-            flexDir="column"
-            border="1px solid"
-            borderColor="gray.200"
-            borderTopRadius="lg"
+      <Flex px={4} py={2} borderBottom="1px solid" borderColor="gray.200" bg="white" justify="center">
+        <ButtonGroup size="sm" isAttached variant="outline">
+          <Button
+            onClick={() => setViewMode("transcript")}
+            bg={viewMode === "transcript" ? "blue.500" : "white"}
+            color={viewMode === "transcript" ? "white" : "gray.600"}
+            borderColor="gray.300"
+            _hover={{ bg: viewMode === "transcript" ? "blue.600" : "gray.50" }}
+            fontWeight={viewMode === "transcript" ? "semibold" : "normal"}
           >
-            {showSpeakerLabeler && (
-              <Flex borderBottom="1px solid" borderColor="gray.100">
-                <SpeakerLabeler
-                  selectedLabel={selectedLabel}
-                  setSelectedLabel={setSelectedLabel}
-                  onFilterSpeaker={setFilteredSpeaker}
-                  layoutKind={layoutKind}
-                  labelsToSpeaker={transcriptData.labelsToSpeaker || {}}
-                  knownSpeakers={transcriptData.knownSpeakers || []}
-                  triggerSpeakerLabel={triggerSpeakerLabel}
+            Show Transcript
+          </Button>
+          <Button
+            onClick={() => setViewMode("both")}
+            bg={viewMode === "both" ? "blue.500" : "white"}
+            color={viewMode === "both" ? "white" : "gray.600"}
+            borderColor="gray.300"
+            _hover={{ bg: viewMode === "both" ? "blue.600" : "gray.50" }}
+            fontWeight={viewMode === "both" ? "semibold" : "normal"}
+          >
+            Show Both
+          </Button>
+          <Button
+            onClick={() => setViewMode("minutes")}
+            bg={viewMode === "minutes" ? "blue.500" : "white"}
+            color={viewMode === "minutes" ? "white" : "gray.600"}
+            borderColor="gray.300"
+            _hover={{ bg: viewMode === "minutes" ? "blue.600" : "gray.50" }}
+            fontWeight={viewMode === "minutes" ? "semibold" : "normal"}
+          >
+            Show Minutes
+          </Button>
+        </ButtonGroup>
+      </Flex>
+      <Flex gap={2} flex="1" minH="0" w="full">
+        {(viewMode === "both" || viewMode === "transcript") && (
+          <VStack h="full" w={{ base: "full", lg: viewMode === "both" ? "50%" : "full" }} gap={0.5}>
+            <Flex
+              w="full"
+              h="full"
+              flexDir="column"
+              border="1px solid"
+              borderColor="gray.200"
+              borderTopRadius="lg"
+              bg="white"
+            >
+              {showSpeakerLabeler && (
+                <Flex borderBottom="1px solid" borderColor="gray.100">
+                  <SpeakerLabeler
+                    selectedLabel={selectedLabel}
+                    setSelectedLabel={setSelectedLabel}
+                    onFilterSpeaker={setFilteredSpeaker}
+                    layoutKind={layoutKind}
+                    labelsToSpeaker={transcriptData.labelsToSpeaker || {}}
+                    knownSpeakers={transcriptData.knownSpeakers || []}
+                    triggerSpeakerLabel={triggerSpeakerLabel}
+                  />
+                </Flex>
+              )}
+              <Flex w="full" h="auto" flexDir="column" bg="white">
+                <AudioPlayer
+                  audioSrc={audioSrc}
+                  onDuration={(duration) => {
+                    if (duration != null) {
+                      setDuration(duration);
+                    }
+                  }}
+                  onAudioLoadError={(error) => {
+                    console.error(error);
+                  }}
+                  audioPlayerRef={audioPlayerRef}
                 />
               </Flex>
-            )}
-            <Flex w="full" h="auto" flexDir="column" bg="white">
-              <AudioPlayer
-                audioSrc={audioSrc}
-                onDuration={(duration) => {
-                  if (duration != null) {
-                    setDuration(duration);
-                  }
-                }}
-                onAudioLoadError={(error) => {
-                  console.error(error);
-                }}
+              <Transcript
+                transcript={transcriptData.transcript}
+                labelsToSpeaker={transcriptData.labelsToSpeaker || {}}
+                knownSpeakers={transcriptData.knownSpeakers || []}
+                transcriptId={transcriptId}
                 audioPlayerRef={audioPlayerRef}
+                filteredSpeaker={filteredSpeaker}
+                triggerSpeakerLabel={triggerSpeakerLabel}
+                onOpenRelabelModal={handleOpenRelabelModal}
               />
             </Flex>
-            <Transcript
-              transcript={transcriptData.transcript}
-              labelsToSpeaker={transcriptData.labelsToSpeaker || {}}
-              knownSpeakers={transcriptData.knownSpeakers || []}
+          </VStack>
+        )}
+        {(viewMode === "both" || viewMode === "minutes") && (
+          <Flex w={{ base: "full", lg: viewMode === "both" ? "50%" : "full" }} h="full" border="1px solid" borderColor="gray.200" borderTopRadius="lg" bg="white">
+            <Minutes
               transcriptId={transcriptId}
-              audioPlayerRef={audioPlayerRef}
-              filteredSpeaker={filteredSpeaker}
+              minutesData={getMinutesData}
+              showSpeakerLabeler={diarizationReady && getMinutesData?.minutes == null}
+              showInstructions
+              speakerData={transcriptData}
+              uploadKind="audio"
+              paywallIsShowing={paywallIsShowing}
+              layoutKind={layoutKind}
+              isPreviewTranscriptDone={isPreviewTranscriptDone}
+              transcriptionPaused={transcriptionStatus?.transcribePaused}
+              insufficientToken={transcriptionStatus?.insufficientToken}
               triggerSpeakerLabel={triggerSpeakerLabel}
-              onOpenRelabelModal={handleOpenRelabelModal}
             />
           </Flex>
-        </VStack>
-        <Flex w={{ base: "full", lg: "50%" }} h="full">
-          <Minutes
-            transcriptId={transcriptId}
-            minutesData={getMinutesData}
-            showSpeakerLabeler={diarizationReady && getMinutesData?.minutes == null}
-            showInstructions
-            speakerData={transcriptData}
-            uploadKind="audio"
-            paywallIsShowing={paywallIsShowing}
-            layoutKind={layoutKind}
-            isPreviewTranscriptDone={isPreviewTranscriptDone}
-            transcriptionPaused={transcriptionStatus?.transcribePaused}
-            insufficientToken={transcriptionStatus?.insufficientToken}
-            triggerSpeakerLabel={triggerSpeakerLabel}
-          />
-        </Flex>
+        )}
       </Flex>
 
       {relabelModalState && (

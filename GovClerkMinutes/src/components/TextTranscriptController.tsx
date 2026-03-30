@@ -255,8 +255,23 @@ export default function TextTranscriptController({
           onCopyTranscript={handleCopyTranscript}
           onExportMinutesDocx={() => handleExportMinutes("docx")}
           onExportMinutesPdf={() => handleExportMinutes("pdf")}
+          onExportMinutesTxt={() => {
+            const content = getMinutesContent();
+            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+            const title = transcriptionStatus?.title ?? "minutes";
+            void import("file-saver").then(({ default: saveAs }) =>
+              saveAs(blob, `${title}_GC_Minutes.txt`)
+            );
+          }}
           onExportTranscriptDocx={() => handleExportTranscript("docx")}
           onExportTranscriptPdf={() => handleExportTranscript("pdf")}
+          onExportTranscriptTxt={() => {
+            const blob = new Blob([""], { type: "text/plain;charset=utf-8" });
+            const title = transcriptionStatus?.title ?? "transcript";
+            void import("file-saver").then(({ default: saveAs }) =>
+              saveAs(blob, `${title}_GC_Transcript.txt`)
+            );
+          }}
           hideTranscript
           minutesData={getMinutesData}
           selectedVersion={selectedMinutesVersion}

@@ -691,8 +691,10 @@ export default function AgendaPage({ agendaId }: Props) {
               onCopyTranscript={() => {}}
               onExportMinutesDocx={() => handleExportDocx()}
               onExportMinutesPdf={() => handleExportPdf()}
+              onExportMinutesTxt={() => {}}
               onExportTranscriptDocx={() => {}}
               onExportTranscriptPdf={() => {}}
+              onExportTranscriptTxt={() => {}}
               hideTranscript
               minutesData={{
                 status: hasAgendaContent ? "COMPLETE" : "IN_PROGRESS",

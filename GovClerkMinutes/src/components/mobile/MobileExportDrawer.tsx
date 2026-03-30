@@ -17,7 +17,7 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import { FiCopy, FiChevronDown } from "react-icons/fi";
+import { FiCopy, FiChevronDown, FiFileText } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { ApiGetMinutesResponseResult } from "@/components/Minutes";
 
@@ -40,8 +40,10 @@ type Props = {
   onCopyTranscript: () => void;
   onExportMinutesDocx: () => void;
   onExportMinutesPdf: () => void;
+  onExportMinutesTxt: () => void;
   onExportTranscriptDocx: () => void;
   onExportTranscriptPdf: () => void;
+  onExportTranscriptTxt: () => void;
   hideTranscript?: boolean;
   minutesData?: ApiGetMinutesResponseResult;
   selectedVersion?: number;
@@ -90,8 +92,10 @@ export default function MobileExportDrawer({
   onCopyTranscript,
   onExportMinutesDocx,
   onExportMinutesPdf,
+  onExportMinutesTxt,
   onExportTranscriptDocx,
   onExportTranscriptPdf,
+  onExportTranscriptTxt,
   hideTranscript = false,
   minutesData,
   selectedVersion,
@@ -118,8 +122,14 @@ export default function MobileExportDrawer({
     {
       title: contentType,
       options: [
-        { label: "Export as Word", handler: onExportMinutesDocx, icon: "/word.svg" },
-        { label: "Export as PDF", handler: onExportMinutesPdf, icon: "/pdf.svg" },
+        { label: `${contentType} in PDF`, handler: onExportMinutesPdf, icon: "/pdf.svg" },
+        { label: `${contentType} in Word`, handler: onExportMinutesDocx, icon: "/word.svg" },
+        {
+          label: `${contentType} in Text`,
+          handler: onExportMinutesTxt,
+          icon: FiFileText,
+          isIconComponent: true,
+        },
         {
           label: `Copy ${contentType.toLowerCase()}`,
           handler: onCopyMinutes,
@@ -134,8 +144,14 @@ export default function MobileExportDrawer({
     sections.push({
       title: "Transcript",
       options: [
-        { label: "Export as Word", handler: onExportTranscriptDocx, icon: "/word.svg" },
-        { label: "Export as PDF", handler: onExportTranscriptPdf, icon: "/pdf.svg" },
+        { label: "Transcript in PDF", handler: onExportTranscriptPdf, icon: "/pdf.svg" },
+        { label: "Transcript in Word", handler: onExportTranscriptDocx, icon: "/word.svg" },
+        {
+          label: "Transcript in Text",
+          handler: onExportTranscriptTxt,
+          icon: FiFileText,
+          isIconComponent: true,
+        },
         {
           label: "Copy transcript",
           handler: onCopyTranscript,
@@ -152,7 +168,7 @@ export default function MobileExportDrawer({
       <DrawerContent borderTopRadius="2xl" pb={4} pt={2} maxH="80dvh">
         <DrawerCloseButton top={6} right={6} size="sm" />
         <DrawerHeader textAlign="center" fontSize="md" fontWeight="semibold" pb={2}>
-          Export
+          Retrieve File
         </DrawerHeader>
         <DrawerBody px={4} pt={2} overflowY="auto">
           <VStack spacing={4} align="stretch">

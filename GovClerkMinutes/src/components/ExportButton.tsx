@@ -12,7 +12,7 @@ import {
   MenuDivider,
   Text,
 } from "@chakra-ui/react";
-import { FiChevronDown, FiCopy } from "react-icons/fi";
+import { FiChevronDown, FiCopy, FiFileText } from "react-icons/fi";
 import Image from "next/image";
 import saveAs from "file-saver";
 import { safeCapture } from "@/utils/safePosthog";
@@ -197,6 +197,39 @@ export default function ExportButton({
     }
   };
 
+  const handleExportText = (type: "transcript" | "minutes", versionIndex?: number) => {
+    if (!transcriptId) {
+      return;
+    }
+
+    safeCapture("document_exported", {
+      transcript_id: transcriptId,
+      kind: `${type}_txt_exported`,
+      version: versionIndex,
+    });
+
+    const filename = uploadUriMap[transcriptId]?.filename ?? "document";
+
+    if (type === "minutes") {
+      const content = getMinutesContent(versionIndex);
+      const versionSuffix =
+        versionIndex !== undefined && minutesData?.minutes && minutesData.minutes.length > 1
+          ? `_v${versionIndex + 1}`
+          : "";
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      saveAs(blob, `${filename}_GC_Minutes${versionSuffix}.txt`);
+    } else {
+      let content = "";
+      if (data && data.transcript != null && data.labelsToSpeaker != null) {
+        content = createVtt(data.transcript, data.labelsToSpeaker);
+      } else if (transcript != null && transcript.kind !== "image") {
+        content = transcript.data ?? "";
+      }
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      saveAs(blob, `${filename}_GC_Transcript.txt`);
+    }
+  };
+
   return (
     <Menu>
       <MenuButton
@@ -208,7 +241,7 @@ export default function ExportButton({
         isLoading={isExporting}
         px={{ base: 2, md: 4 }}
       >
-        Export
+        Retrieve File
       </MenuButton>
       <MenuList>
         <MenuGroup title="Minutes">
@@ -259,28 +292,26 @@ export default function ExportButton({
                 </Box>
               );
             })()}
-          <MenuItem onClick={() => handleExport("minutes", "docx", selectedExportVersion)}>
-            <Flex alignItems="center" gap={2}>
-              <Box boxSize={4}>
-                <Image src="/word.svg" alt="Microsoft Word Logo" width={16} height={16} />
-              </Box>
-              Export minutes as Word
-            </Flex>
-          </MenuItem>
           <MenuItem onClick={() => handleExport("minutes", "pdf", selectedExportVersion)}>
             <Flex alignItems="center" gap={2}>
               <Box boxSize={4}>
                 <Image src="/pdf.svg" alt="PDF Logo" width={16} height={16} />
               </Box>
-              Export minutes as PDF
+              Minutes in PDF
             </Flex>
           </MenuItem>
-          <MenuItem onClick={() => handleExport("minutes", "odt", selectedExportVersion)}>
+          <MenuItem onClick={() => handleExport("minutes", "docx", selectedExportVersion)}>
             <Flex alignItems="center" gap={2}>
               <Box boxSize={4}>
-                <Image src="/odt.svg" alt="ODT Logo" width={16} height={16} />
+                <Image src="/word.svg" alt="Microsoft Word Logo" width={16} height={16} />
               </Box>
-              Export minutes as ODT
+              Minutes in Word
+            </Flex>
+          </MenuItem>
+          <MenuItem onClick={() => handleExportText("minutes", selectedExportVersion)}>
+            <Flex alignItems="center" gap={2}>
+              <FiFileText size={16} />
+              Minutes in Text
             </Flex>
           </MenuItem>
           <MenuItem onClick={() => handleCopy("minutes")}>
@@ -294,28 +325,26 @@ export default function ExportButton({
         <MenuDivider />
 
         <MenuGroup title="Transcript">
-          <MenuItem onClick={() => handleExport("transcript", "docx")}>
-            <Flex alignItems="center" gap={2}>
-              <Box boxSize={4}>
-                <Image src="/word.svg" alt="Microsoft Word Logo" width={16} height={16} />
-              </Box>
-              Export transcript as Word
-            </Flex>
-          </MenuItem>
           <MenuItem onClick={() => handleExport("transcript", "pdf")}>
             <Flex alignItems="center" gap={2}>
               <Box boxSize={4}>
                 <Image src="/pdf.svg" alt="PDF Logo" width={16} height={16} />
               </Box>
-              Export transcript as PDF
+              Transcript in PDF
             </Flex>
           </MenuItem>
-          <MenuItem onClick={() => handleExport("transcript", "odt")}>
+          <MenuItem onClick={() => handleExport("transcript", "docx")}>
             <Flex alignItems="center" gap={2}>
               <Box boxSize={4}>
-                <Image src="/odt.svg" alt="ODT Logo" width={16} height={16} />
+                <Image src="/word.svg" alt="Microsoft Word Logo" width={16} height={16} />
               </Box>
-              Export transcript as ODT
+              Transcript in Word
+            </Flex>
+          </MenuItem>
+          <MenuItem onClick={() => handleExportText("transcript")}>
+            <Flex alignItems="center" gap={2}>
+              <FiFileText size={16} />
+              Transcript in Text
             </Flex>
           </MenuItem>
           <MenuItem onClick={() => handleCopy("transcript")}>

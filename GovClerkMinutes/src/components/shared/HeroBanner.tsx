@@ -13,7 +13,7 @@ export default function HeroBanner({ badge, heading, subtitle }: Props) {
       w="full"
       bg="linear-gradient(135deg, #152a4e 0%, #1a3260 60%, #1e40af 100%)"
       px={{ base: 4, md: 8 }}
-      py={{ base: 8, md: 10 }}
+      py={{ base: 4, md: 6 }}
       flexShrink={0}
     >
       <Flex direction="column" align="center" maxW="2xl" mx="auto" gap={2}>
@@ -31,7 +31,7 @@ export default function HeroBanner({ badge, heading, subtitle }: Props) {
           {badge}
         </Badge>
         <Heading
-          size={{ base: "lg", md: "xl" }}
+          size={{ base: "md", md: "lg" }}
           fontWeight="bold"
           color="white"
           textAlign="center"
