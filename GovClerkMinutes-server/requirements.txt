@@ -1,11 +1,7 @@
-urllib3==1.26.6
 fastapi
-uvicorn
-uvloop
+uvicorn[standard]
 gunicorn
-httptools
-openai
-pydub
+assemblyai
 python-dotenv
 boto3
 requests

@@ -1,12 +1,11 @@
-from typing import Any, Dict, Optional
+from typing import Optional
+from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
-import contextlib
+import asyncio
 import tempfile
 import json
-import openai
-import pydub
-from datetime import datetime
+import assemblyai as aai
 from dotenv import load_dotenv
 import boto3
 import os
@@ -17,8 +16,11 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_KEY")
+aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 HUMDINGER_KEY = os.getenv("HUMDINGER_KEY")
+
+# South African official language ISO codes supported by AssemblyAI
+SUPPORTED_LANGUAGE_CODES = ["en", "af", "zu", "xh", "nso", "st", "tn", "ts"]
 
 app = FastAPI()
 
@@ -29,6 +31,7 @@ class TranscribeSegmentsBody(BaseModel):
     transcript_key: str
     prompt: str
     webhook_uri: str
+    language_code: Optional[str] = None
 
 
 def write_s3_file(bucket, key, filename):
@@ -40,40 +43,23 @@ def write_s3_file(bucket, key, filename):
         logger.exception(e)
 
 
-@contextlib.contextmanager
-def get_diarization(transcript_key: str) -> Dict[str, Any]:
-    s3 = boto3.resource("s3")
-    bucket, key = transcript_key.split("/", 1)
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        filename = f.name
-    s3.meta.client.download_file(bucket, key, filename)
-    try:
-        with open(filename, "r") as f:
-            data = json.load(f)
-            yield data
-    finally:
-        os.remove(filename)
+def ms_to_timestamp(ms: int) -> str:
+    hours = ms // 3_600_000
+    ms %= 3_600_000
+    minutes = ms // 60_000
+    ms %= 60_000
+    seconds = ms // 1_000
+    millis = ms % 1_000
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
 
 
-@contextlib.contextmanager
-def get_audio(audio_key: str) -> Any:
-    s3 = boto3.resource("s3")
-    bucket, key = audio_key.split("/", 1)
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        filename = f.name
-    s3.meta.client.download_file(bucket, key, filename)
-    try:
-        yield pydub.AudioSegment.from_file(filename)
-    finally:
-        os.remove(filename)
+def _do_transcribe(audio_path: str, config: aai.TranscriptionConfig):
+    return aai.Transcriber().transcribe(audio_path, config)
 
 
-def time_to_ms(time_str):
-    time_format = "%H:%M:%S.%f"
-    t = datetime.strptime(time_str, time_format)
-    return (
-        (t.hour * 60 + t.minute) * 60 * 1000 + t.second * 1000 + t.microsecond // 1000
-    )
+@app.get("/api/health")
+async def health():
+    return {"status": "ok"}
 
 
 @app.post("/api/transcribe-segments")
@@ -84,74 +70,113 @@ async def transcribe_segments(
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     logger.info("got authenticated request")
-    print("LFKJFLKJFLKFJLFKJFLKJFLKFJ")
 
-    transcript_data = []
+    if body.language_code is not None and body.language_code not in SUPPORTED_LANGUAGE_CODES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported language_code '{body.language_code}'. "
+                   f"Supported codes: {SUPPORTED_LANGUAGE_CODES}",
+        )
 
-    with get_diarization(body.transcript_key) as diarization, get_audio(
-        body.audio_key
-    ) as audio:
-        i = 1
-        for segment in diarization["segments"]:
-            start = time_to_ms(segment["start"])
-            stop = time_to_ms(segment["stop"])
+    # Download audio from S3 to a temporary file
+    s3 = boto3.resource("s3")
+    audio_bucket, audio_s3_key = body.audio_key.split("/", 1)
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_audio:
+        tmp_audio_path = tmp_audio.name
+    try:
+        s3.meta.client.download_file(audio_bucket, audio_s3_key, tmp_audio_path)
+        logger.info("Downloaded audio from S3.")
+    except Exception as e:
+        logger.exception(e)
+        os.remove(tmp_audio_path)
+        raise HTTPException(status_code=500, detail="Failed to download audio from S3")
 
-            # Cut the audio segment from the main audio file
-            audio_segment = audio[start:stop]
+    # Build AssemblyAI transcription config
+    try:
+        config_kwargs = dict(
+            speaker_labels=True,
+            summarization=True,
+            summary_model=aai.SummarizationModel.informative,
+            summary_type=aai.SummarizationType.bullets,
+            auto_chapters=True,
+        )
+        if body.language_code is not None:
+            config_kwargs["language_code"] = body.language_code
+        else:
+            config_kwargs["language_detection"] = True
+        config = aai.TranscriptionConfig(**config_kwargs)
 
-            # Export the segment to a temporary file
-            audio_segment.export("temp.mp3", format="mp3")
+        logger.info("Submitting transcription job to AssemblyAI.")
+        transcript = await asyncio.to_thread(_do_transcribe, tmp_audio_path, config)
+    finally:
+        os.remove(tmp_audio_path)
 
-            # Read the audio
-            audio_file = open("temp.mp3", "rb")
+    if transcript.status == aai.TranscriptStatus.error:
+        logger.error(f"AssemblyAI transcription error: {transcript.error}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {transcript.error}")
 
-            # TODO: make this call async
-            # TODO: customize language
-            transcript = openai.Audio.transcribe(
-                "whisper-1", file=audio_file, prompt=body.prompt, language="en"
-            )
+    logger.info("Transcription completed successfully.")
 
-            logger.info(f"Transcribed {i}/{len(diarization['segments'])}")
-            i += 1
+    # Build segments from utterances
+    segments = []
+    if transcript.utterances:
+        for utt in transcript.utterances:
+            segments.append({
+                "speaker": utt.speaker,
+                "start": ms_to_timestamp(utt.start),
+                "stop": ms_to_timestamp(utt.end),
+                "transcript": utt.text,
+            })
 
-            # Append to transcript data
-            transcript_data.append(
-                {"speaker": segment["speaker"], "transcript": transcript["text"]}
-            )
+    # Build chapters list
+    chapters = []
+    if transcript.chapters:
+        for ch in transcript.chapters:
+            chapters.append({
+                "headline": ch.headline,
+                "summary": ch.summary,
+                "start": ch.start,
+                "end": ch.end,
+            })
 
-            # TODO: delete this
-            with open("output.json", "w") as f:
-                json.dump(transcript_data, f)
+    result = {
+        "segments": segments,
+        "summary": transcript.summary or "",
+        "chapters": chapters,
+        "transcript_id": body.transcript_id,
+    }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as f:
-            segments = []
-            for segment, transcript in zip(diarization["segments"], transcript_data):
-                assert segment["speaker"] == transcript["speaker"]
-                segment["transcript"] = transcript["transcript"]
-                segments.append(segment)
-            diarization["segments"] = segments
-            json.dump(diarization, f)
-            f.flush()
+    # Write result JSON back to S3
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        tmp_result_path = f.name
+        json.dump(result, f)
 
-            bucket, key = body.transcript_key.split("/", 1)
-            write_s3_file(bucket, key, f.name)
+    try:
+        transcript_bucket, transcript_s3_key = body.transcript_key.split("/", 1)
+        write_s3_file(transcript_bucket, transcript_s3_key, tmp_result_path)
+    finally:
+        os.remove(tmp_result_path)
 
-        logger.info(f"Sending to webhook URI: {body.webhook_uri}")
-        try:
-            response = requests.post(
-                body.webhook_uri,
-                json={
-                    "status": "SUCCESS",
-                    "transcript_id": body.transcript_id,
-                    "transcript_key": body.transcript_key,
-                },
-            )
-            response.raise_for_status()
-            logger.info(f"Response from webhook: {str(response)}")
-        except Exception as e:
-            logger.exception(e)
-            raise HTTPException(
-                status_code=500, detail="Failed to send request to the webhook URI"
-            )
+    # Fire webhook callback
+    logger.info(f"Sending to webhook URI: {body.webhook_uri}")
+    parsed = urlparse(body.webhook_uri)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=422, detail="Invalid webhook_uri")
+    try:
+        response = requests.post(
+            body.webhook_uri,
+            json={
+                "status": "SUCCESS",
+                "transcript_id": body.transcript_id,
+                "transcript_key": body.transcript_key,
+            },
+        )
+        response.raise_for_status()
+        logger.info(f"Response from webhook: {str(response)}")
+    except Exception as e:
+        logger.exception(e)
+        raise HTTPException(
+            status_code=500, detail="Failed to send request to the webhook URI"
+        )
 
-        return {"status": "SUCCESS"}
+    return {"status": "SUCCESS"}
