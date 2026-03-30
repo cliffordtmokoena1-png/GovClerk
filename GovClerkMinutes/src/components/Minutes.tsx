@@ -438,11 +438,11 @@ const Minutes = ({
                         position="sticky"
                         top={0}
                         zIndex={200}
-                        bgColor="white"
-                        borderBottomColor="gray.200"
+                        bgColor="blue.50"
+                        borderBottomColor="blue.200"
                         borderBottom="1px solid"
                       >
-                        <TabList borderBottomColor="gray.200">
+                        <TabList borderBottomColor="blue.200">
                           {(minutesManager.minutes.length > 0 ||
                             minutesManager.status === "STREAMING_INITIAL_MINUTE") && (
                             <Tab isDisabled={minutesManager.isAnimating}>Version 1</Tab>

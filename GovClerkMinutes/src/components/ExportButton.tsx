@@ -140,6 +140,8 @@ export default function ExportButton({
       format,
     });
 
+    const transcriptFilename = uploadUriMap[transcriptId]?.filename ?? "Transcript";
+
     if (data && data.transcript != null && data.labelsToSpeaker != null) {
       const vtt = createVtt(data.transcript, data.labelsToSpeaker);
       const blob = await convert({
@@ -148,7 +150,7 @@ export default function ExportButton({
         inputType: "gfm",
       });
       if (blob) {
-        saveAs(blob, `${uploadUriMap[transcriptId].filename}_GC_Transcript.${format}`);
+        saveAs(blob, `${transcriptFilename}_GC_Transcript.${format}`);
       }
     } else if (transcript != null) {
       if (transcript.kind === "image") {
@@ -157,7 +159,7 @@ export default function ExportButton({
           outputType: format,
         });
         if (blob) {
-          saveAs(blob, `${uploadUriMap[transcriptId].filename}_GC_Transcript.${format}`);
+          saveAs(blob, `${transcriptFilename}_GC_Transcript.${format}`);
         }
       } else {
         const blob = await convert({
@@ -166,7 +168,7 @@ export default function ExportButton({
           inputType: "html",
         });
         if (blob) {
-          saveAs(blob, `${uploadUriMap[transcriptId].filename}_GC_Transcript.${format}`);
+          saveAs(blob, `${transcriptFilename}_GC_Transcript.${format}`);
         }
       }
     }
@@ -193,7 +195,8 @@ export default function ExportButton({
         versionIndex !== undefined && minutesData?.minutes && minutesData.minutes.length > 1
           ? `_v${versionIndex + 1}`
           : "";
-      saveAs(blob, `${uploadUriMap[transcriptId].filename}_GC_Minutes${versionSuffix}.${format}`);
+      const minutesFilename = uploadUriMap[transcriptId]?.filename ?? "Minutes";
+      saveAs(blob, `${minutesFilename}_GC_Minutes${versionSuffix}.${format}`);
     }
   };
 

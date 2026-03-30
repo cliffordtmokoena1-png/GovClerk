@@ -1,13 +1,11 @@
 import React from "react";
 import {
   Text,
-  Heading,
   Spinner,
   VStack,
   Box,
   Grid,
   GridItem,
-  useBreakpointValue,
   Alert,
   AlertIcon,
   AlertDescription,
@@ -49,7 +47,6 @@ export default function MediaUploadInterface({
     isDragActive: isTokenInsufficient ? false : isDragActive,
     recordingState: "idle",
   });
-  const isMobile = useBreakpointValue({ base: true, md: false }) ?? false;
 
   if (isTransitioning) {
     return (
@@ -90,17 +87,6 @@ export default function MediaUploadInterface({
       role="region"
       aria-label="Media upload interface"
     >
-      {!isMobile && (
-        <VStack spacing={2} mb={{ base: 4, md: 6, lg: 8 }} textAlign="center">
-          <Heading size={{ base: "md", md: "lg", lg: "xl" }} color="gray.700" fontWeight="bold">
-            Get your minutes
-          </Heading>
-          <Text color="gray.600" fontSize={{ base: "sm", md: "md", lg: "lg" }}>
-            Upload audio, video, or document files, or record directly to get started
-          </Text>
-        </VStack>
-      )}
-
       {isTokenInsufficient && (
         <Alert
           status="warning"

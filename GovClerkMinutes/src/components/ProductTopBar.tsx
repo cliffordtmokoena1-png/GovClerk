@@ -183,7 +183,7 @@ export default function ProductTopBar({
   }, [selectedTabIndex]);
 
   return (
-    <Box top={0} zIndex={100} bg="white" w="full">
+    <Box top={0} zIndex={100} bg="white" w="full" borderBottom="1px solid" borderColor="blue.700">
       <Flex
         px={{ base: 2, md: 4 }}
         h={`${TOP_BAR_HEIGHT_PX}px`}
