@@ -12,7 +12,11 @@ import { webhookRoute } from './routes/webhook.js';
 
 const app = new Hono();
 
-app.use('*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'], allowMethods: ['GET', 'POST', 'OPTIONS'] }));
+app.use('*', cors({
+  origin: '*',
+  allowHeaders: ['Authorization', 'Content-Type'],
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+}));
 app.use('*', logger());
 
 app.route('/api', monitorRoute);

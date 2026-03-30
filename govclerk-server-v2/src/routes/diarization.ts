@@ -95,13 +95,10 @@ async function processTranscription(
     );
 
     // 5. Save the diarized utterances as the transcript content
-    // Store in the s3AudioKey field format the frontend expects
-    // We save the formatted transcript to a dedicated column
     await execute(
       `UPDATE transcripts SET transcript_text = ? WHERE id = ?`,
       [formattedTranscript, transcriptId]
     ).catch((err: unknown) => {
-      // Only warn on missing column errors (ER_BAD_FIELD_ERROR code 1054)
       const mysqlErr = err as { code?: string };
       if (mysqlErr?.code === 'ER_BAD_FIELD_ERROR') {
         console.warn(`[diarization] Could not save transcript_text for ${transcriptId} — column may not exist`);
