@@ -1,7 +1,7 @@
 {
   "name": "govclerk-server-v2",
   "version": "2.0.0",
- "description": "GovClerk backend v2 — Node.js/Hono, AssemblyAI, OpenAI",
+  "description": "GovClerk backend v2 — Node.js/Hono, AssemblyAI, OpenAI",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
