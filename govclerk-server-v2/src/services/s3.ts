@@ -1,7 +1,7 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const DEFAULT_BUCKET = process.env.AWS_S3_BUCKET ?? 'govclerk-uploads';
+const DEFAULT_BUCKET = process.env.AWS_S3_BUCKET ?? 'govclerk-bucket';
 
 function getS3Client(region: string): S3Client {
   return new S3Client({

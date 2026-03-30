@@ -133,7 +133,7 @@ async function processTranscription(
 }
 
 async function triggerMinutesGeneration(transcriptId: number, userId: string, formattedTranscript: string) {
-  const { generateMinutes } = await import('../services/openai.js');
+  const { generateMinutes } = await import('../services/minutesProvider.js');
 
   // Insert minutes record
   await execute(
