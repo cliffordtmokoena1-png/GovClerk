@@ -49,7 +49,7 @@ diarizationRoute.post('/get-diarization', authMiddleware, zValidator('json', bod
   });
 
   // Process asynchronously — return 202 immediately so the frontend isn't blocked
-  processTranscription(transcriptId, transcript.userId, s3_audio_key, transcript.aws_region, language ?? transcript.language ?? undefined)
+  processTranscription(transcriptId, transcript.userId, transcript.org_id, s3_audio_key, transcript.aws_region, language ?? transcript.language ?? undefined)
     .catch(err => {
       console.error(`[diarization] Failed for transcript ${transcriptId}:`, err);
       activeJobs.delete(transcriptId);
@@ -65,6 +65,7 @@ diarizationRoute.post('/get-diarization', authMiddleware, zValidator('json', bod
 async function processTranscription(
   transcriptId: number,
   userId: string,
+  orgId: string | null,
   s3Key: string,
   region: string,
   language?: string,
@@ -115,7 +116,7 @@ async function processTranscription(
     });
 
     // 7. Auto-trigger minutes generation
-    await triggerMinutesGeneration(transcriptId, userId, formattedTranscript);
+    await triggerMinutesGeneration(transcriptId, userId, orgId, formattedTranscript);
 
     // 8. Clean up job tracker
     activeJobs.set(transcriptId, {
@@ -132,21 +133,21 @@ async function processTranscription(
   }
 }
 
-async function triggerMinutesGeneration(transcriptId: number, userId: string, formattedTranscript: string) {
+async function triggerMinutesGeneration(transcriptId: number, userId: string, orgId: string | null, formattedTranscript: string) {
   const { generateMinutes } = await import('../services/minutesProvider.js');
 
   // Insert minutes record
   await execute(
-    'INSERT IGNORE INTO minutes (transcript_id, user_id, ts_start) VALUES (?, ?, UTC_TIMESTAMP())',
-    [transcriptId, userId]
+    'INSERT IGNORE INTO minutes (transcript_id, user_id, org_id, ts_start) VALUES (?, ?, ?, UTC_TIMESTAMP())',
+    [transcriptId, userId, orgId]
   );
 
   const minutes = await generateMinutes(formattedTranscript);
 
   // Save minutes
   await execute(
-    'UPDATE minutes SET minutes = ?, ts_first_gpt = UTC_TIMESTAMP() WHERE transcript_id = ? AND user_id = ?',
-    [minutes, transcriptId, userId]
+    'UPDATE minutes SET minutes = ?, ts_first_gpt = UTC_TIMESTAMP() WHERE transcript_id = ? AND user_id = ? AND org_id <=> ?',
+    [minutes, transcriptId, userId, orgId]
   );
 
   console.log(`[minutes] Generated minutes for transcript ${transcriptId}`);
