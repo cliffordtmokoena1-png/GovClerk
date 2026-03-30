@@ -1,7 +1,7 @@
 import { isProd } from "./dev";
 
-const PROD_SERVER_URI = "https://server.GovClerkMinutes.com";
-const PROD_SERVER_WEBSOCKET_URI = "wss://server.GovClerkMinutes.com";
+const PROD_SERVER_URI = process.env.NEXT_PUBLIC_SERVER_URL || "https://server.GovClerkMinutes.com";
+const PROD_SERVER_WEBSOCKET_URI = process.env.NEXT_PUBLIC_SERVER_WS_URL || "wss://server.GovClerkMinutes.com";
 
 const DEV_SERVER_URI = process.env.SERVER_URI || "http://127.0.0.1:8000";
 const DEV_SERVER_WS_URI = process.env.SERVER_WS_URI || "ws://127.0.0.1:8000";
