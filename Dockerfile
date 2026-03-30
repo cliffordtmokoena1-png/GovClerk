@@ -169,5 +169,6 @@ CMD bash -c '\
     echo "$PUBLIC_KEY" > ~/.ssh/authorized_keys && \
     chmod 600 ~/.ssh/authorized_keys && \
     service ssh start && \
-    env > /app/server/.env && \
-    exec /app/server/target/release/govclerk-minutes-service'
+    cd /app/server && \
+    env > .env && \
+    exec ./target/release/govclerk-minutes-service'
