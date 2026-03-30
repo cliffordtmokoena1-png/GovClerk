@@ -23,6 +23,7 @@ import { getPortalDbConnection } from "@/utils/portalDb";
 // Rust server URL for document conversion
 const RUST_SERVER_URL =
   process.env.RUST_SERVER_URL ||
+  process.env.NEXT_PUBLIC_SERVER_URL ||
   (process.env.NODE_ENV === "production"
     ? "https://server.GovClerkMinutes.com"
     : "http://127.0.0.1:8000");
