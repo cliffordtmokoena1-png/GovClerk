@@ -38,7 +38,7 @@ export async function transcribeAndDiarize(
     audio_url: audioUrl,
     speaker_labels: true,           // enables speaker diarization
     speakers_expected: undefined,   // let AssemblyAI auto-detect speaker count
-    speech_model: 'best',           // use best available model (currently universal-3-pro)
+    speech_models: ['universal-3-pro', 'universal-2'] as any,  // required: list of models in priority order
   };
 
   // Apply language code if provided (and not "auto")
