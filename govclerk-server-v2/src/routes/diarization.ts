@@ -9,6 +9,15 @@ import type { TranscriptRow } from '../types.js';
 
 export const diarizationRoute = new Hono();
 
+/** Converts milliseconds to a time string in the format "HH:MM:SS.mmm" used by gc_segments. */
+function formatMsToTime(ms: number): string {
+  const totalSeconds = ms / 1000;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${seconds.toFixed(3).padStart(6, '0')}`;
+}
+
 const bodySchema = z.object({
   s3_audio_key: z.string(),
   language: z.string().optional(),
@@ -107,6 +116,21 @@ async function processTranscription(
         console.error(`[diarization] Failed to save transcript_text for ${transcriptId}:`, err);
       }
     });
+
+    // 5.5. Insert individual utterances into gc_segments so the frontend Transcript component
+    // can render each speaker turn with proper start/stop times and speaker labels.
+    if (result.utterances.length > 0) {
+      const placeholders = result.utterances.map(() => '(?, ?, ?, ?, ?, ?, 0, 1)').join(', ');
+      const values: (string | number)[] = [];
+      result.utterances.forEach((u, i) => {
+        values.push(transcriptId, formatMsToTime(u.start), formatMsToTime(u.end), u.speaker, u.text, i);
+      });
+      await execute(
+        `INSERT INTO gc_segments (transcript_id, start, stop, speaker, transcript, segment_index, fast_mode, is_user_visible) VALUES ${placeholders}`,
+        values
+      );
+      console.log(`[diarization] Inserted ${result.utterances.length} segments into gc_segments for transcript ${transcriptId}`);
+    }
 
     // 6. Update job status
     activeJobs.set(transcriptId, {
