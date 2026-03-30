@@ -28,4 +28,5 @@ export interface JobStatus {
   started_at: Date;
 }
 
+// In-memory job tracker
 export const activeJobs = new Map<number, JobStatus>();

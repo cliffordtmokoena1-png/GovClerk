@@ -28,4 +28,5 @@ app.route('/api', webhookRoute);
 
 const port = Number(process.env.PORT) || 8000;
 console.log(`GovClerk Server v2 running on port ${port}`);
+
 serve({ fetch: app.fetch, port });

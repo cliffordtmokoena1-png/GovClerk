@@ -1,6 +1,7 @@
 {
   "name": "govclerk-server-v2",
   "version": "2.0.0",
+ "description": "GovClerk backend v2 — Node.js/Hono, AssemblyAI, OpenAI",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -8,16 +9,17 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "assemblyai": "^4.0.0",
-    "hono": "^4.0.0",
-    "@hono/node-server": "^1.13.0",
-    "@hono/zod-validator": "^0.4.0",
-    "mysql2": "^3.0.0",
-    "openai": "^4.0.0",
     "@aws-sdk/client-s3": "^3.0.0",
     "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "@hono/node-server": "^1.13.0",
+    "@hono/zod-validator": "^0.4.0",
+    "assemblyai": "^4.0.0",
     "dotenv": "^16.0.0",
+    "hono": "^4.0.0",
+    "mysql2": "^3.0.0",
+    "openai": "^4.0.0",
     "zod": "^3.0.0"
+  },
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -8,7 +8,7 @@ RUN npm ci
 COPY src ./src
 RUN npx tsc
 
-# ---- Production image ----
+# --- Production image ---
 FROM node:20-alpine
 
 WORKDIR /app
@@ -18,8 +18,9 @@ RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 8000
 ENV NODE_ENV=production
 ENV PORT=8000
+
+EXPOSE 8000
 
 CMD ["node", "dist/index.js"]

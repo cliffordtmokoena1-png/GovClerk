@@ -13,8 +13,15 @@ function getS3Client(region: string): S3Client {
   });
 }
 
+/**
+ * Generates a 1-hour presigned URL for an S3 object.
+ * Used to give AssemblyAI temporary access to the audio file.
+ */
 export async function getSignedAudioUrl(s3Key: string, region: string): Promise<string> {
   const client = getS3Client(region);
-  const command = new GetObjectCommand({ Bucket: DEFAULT_BUCKET, Key: s3Key });
+  const command = new GetObjectCommand({
+    Bucket: DEFAULT_BUCKET,
+    Key: s3Key,
+  });
   return getSignedUrl(client, command, { expiresIn: 3600 });
 }
