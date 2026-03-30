@@ -266,7 +266,8 @@ export default function TextTranscriptController({
           onExportTranscriptDocx={() => handleExportTranscript("docx")}
           onExportTranscriptPdf={() => handleExportTranscript("pdf")}
           onExportTranscriptTxt={() => {
-            const blob = new Blob([""], { type: "text/plain;charset=utf-8" });
+            const content = data && data.kind !== "image" ? (data.data as string) : "";
+            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
             const title = transcriptionStatus?.title ?? "transcript";
             void import("file-saver").then(({ default: saveAs }) =>
               saveAs(blob, `${title}_GC_Transcript.txt`)
