@@ -121,10 +121,27 @@ async function processTranscription(
     }
 
     // Deduct tokens from user balance
-    await execute(
-      `INSERT INTO payments (user_id, org_id, transcript_id, credit) VALUES (?, ?, ?, ?)`,
-      [userId, orgId, transcriptId, -creditsRequired]
-    );
+    try {
+      await execute(
+        `INSERT INTO payments (user_id, org_id, transcript_id, credit, action) VALUES (?, ?, ?, ?, 'sub')`,
+        [userId, orgId, transcriptId, -creditsRequired]
+      );
+    } catch (err: unknown) {
+      const mysqlErr = err as { code?: string; errno?: number; message?: string };
+      const isActionColumnMissing =
+        mysqlErr?.code === 'ER_BAD_FIELD_ERROR' ||
+        mysqlErr?.errno === 1054 ||
+        (typeof mysqlErr?.message === 'string' && (mysqlErr.message.includes('1054') || mysqlErr.message.includes('Unknown column')));
+      if (isActionColumnMissing) {
+        console.warn(`[diarization] 'action' column not found in payments table, retrying without it`);
+        await execute(
+          `INSERT INTO payments (user_id, org_id, transcript_id, credit) VALUES (?, ?, ?, ?)`,
+          [userId, orgId, transcriptId, -creditsRequired]
+        );
+      } else {
+        throw err;
+      }
+    }
     console.log(`[diarization] Deducted ${creditsRequired} tokens from user ${userId} for transcript ${transcriptId}`);
 
     // 4. Save transcript text and update status in DB

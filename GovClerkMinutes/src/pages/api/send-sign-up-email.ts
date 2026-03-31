@@ -14,7 +14,7 @@ import {
 } from "@/meta/utils";
 import { sendConversionEvent } from "@/meta/sendConversionEvent";
 import { upsertLeadToDb } from "@/crm/leads";
-import { getSiteFromRequest } from "@/utils/site";
+import { getSiteFromHeaders } from "@/utils/site";
 
 type SendSignUpEmailBody = {
   email: string;
@@ -33,7 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ApiSendSignUpEm
   const firstNameForUser = null;
   const adId = body.adId;
   const utmParams = body.utmParams;
-  const site = getSiteFromRequest(req.headers);
+  const site = getSiteFromHeaders(req.headers);
   const existingUserId = await getUserIdFromEmail({ email, site });
   const userId = existingUserId ?? (await createUser({ email, firstName: firstNameForUser, site }));
   const discountCode = getDiscountCodeId(req.cookies[DISCOUNT_COOKIE_NAME]);
