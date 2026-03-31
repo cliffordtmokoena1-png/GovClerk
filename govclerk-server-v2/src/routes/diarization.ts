@@ -92,6 +92,41 @@ async function processTranscription(
     // 3. Calculate credits required (based on audio duration — 1 credit per minute)
     const creditsRequired = Math.ceil(result.audio_duration / 60);
 
+    // 3.5. Check user's current token balance and deduct tokens
+    const balanceRows = await query<{ balance: string | null }>(
+      orgId
+        ? `SELECT (
+            COALESCE((SELECT SUM(credit) FROM payments WHERE user_id = ? AND org_id IS NULL), 0) +
+            COALESCE((SELECT SUM(credit) FROM payments WHERE org_id = ?), 0)
+          ) AS balance`
+        : 'SELECT COALESCE(SUM(credit), 0) AS balance FROM payments WHERE user_id = ? AND org_id IS NULL',
+      orgId ? [userId, orgId] : [userId]
+    );
+    const currentBalance = parseInt(String(balanceRows[0]?.balance ?? '0'), 10) || 0;
+
+    if (currentBalance < creditsRequired) {
+      console.warn(`[diarization] Insufficient tokens for transcript ${transcriptId}: balance=${currentBalance}, required=${creditsRequired}`);
+      await execute(
+        `UPDATE transcripts SET
+          credits_required = ?,
+          transcribe_paused = 1,
+          insufficient_tokens = 1,
+          was_paywalled = 1,
+          upload_complete = 1
+         WHERE id = ?`,
+        [creditsRequired, transcriptId]
+      );
+      activeJobs.delete(transcriptId);
+      return;
+    }
+
+    // Deduct tokens from user balance
+    await execute(
+      `INSERT INTO payments (user_id, org_id, transcript_id, credit, action) VALUES (?, ?, ?, ?, 'sub')`,
+      [userId, orgId, transcriptId, -creditsRequired]
+    );
+    console.log(`[diarization] Deducted ${creditsRequired} tokens from user ${userId} for transcript ${transcriptId}`);
+
     // 4. Save transcript text and update status in DB
     await execute(
       `UPDATE transcripts SET 

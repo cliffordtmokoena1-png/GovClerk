@@ -21,6 +21,7 @@ type Props = {
   currentBalance: number;
   onBalanceSufficient: () => void;
   onAddCredits: () => void;
+  transcriptId?: number | null;
 };
 
 const POLL_INTERVAL_MS = 5000;
@@ -36,7 +37,12 @@ export default function InsufficientCreditsOverlay({
   currentBalance,
   onBalanceSufficient,
   onAddCredits,
+  transcriptId,
 }: Props) {
+  const deficit = tokensRequired - currentBalance;
+  // Show WhatsApp top-up wall when the user has some tokens but only needs a small top-up
+  const isSmallDeficit = currentBalance > 0 && deficit <= 10;
+  const whatsappTopUpMessage = `Hi, I need ${deficit} more token${deficit === 1 ? "" : "s"} to transcribe my recording${transcriptId != null ? ` (transcript #${transcriptId})` : ""}. Can you help me add them?`;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -79,11 +85,13 @@ export default function InsufficientCreditsOverlay({
         <ModalBody py={8} px={6}>
           <VStack spacing={5} align="stretch">
             <VStack spacing={2} align="center">
-              <Heading size="md" textAlign="center" color="orange.600">
-                Insufficient Credits
+              <Heading size="md" textAlign="center" color={isSmallDeficit ? "green.600" : "orange.600"}>
+                {isSmallDeficit ? "Almost There!" : "Insufficient Credits"}
               </Heading>
               <Text fontSize="sm" color="gray.600" textAlign="center">
-                Your recording cannot be transcribed with your current balance.
+                {isSmallDeficit
+                  ? `You need just ${deficit} more token${deficit === 1 ? "" : "s"} to complete this upload.`
+                  : "Your recording cannot be transcribed with your current balance."}
               </Text>
             </VStack>
 
@@ -103,22 +111,42 @@ export default function InsufficientCreditsOverlay({
             </Alert>
 
             <VStack spacing={3} align="stretch">
-              <Button colorScheme="orange" size="lg" width="full" onClick={onAddCredits}>
-                Add More Credits
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                width="full"
-                onClick={() =>
-                  openWhatsAppChat(
-                    "Hi, I need help adding credits to transcribe my recording. Can you assist?",
-                    "insufficient_credits"
-                  )
-                }
-              >
-                Contact Support
-              </Button>
+              {isSmallDeficit ? (
+                <>
+                  <Button
+                    colorScheme="green"
+                    size="lg"
+                    width="full"
+                    onClick={() =>
+                      openWhatsAppChat(whatsappTopUpMessage, "whatsapp_topup")
+                    }
+                  >
+                    Request Tokens via WhatsApp
+                  </Button>
+                  <Button variant="outline" size="lg" width="full" onClick={onAddCredits}>
+                    Add More Credits
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button colorScheme="orange" size="lg" width="full" onClick={onAddCredits}>
+                    Add More Credits
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    width="full"
+                    onClick={() =>
+                      openWhatsAppChat(
+                        "Hi, I need help adding credits to transcribe my recording. Can you assist?",
+                        "insufficient_credits"
+                      )
+                    }
+                  >
+                    Contact Support
+                  </Button>
+                </>
+              )}
             </VStack>
 
             <Box textAlign="center">
