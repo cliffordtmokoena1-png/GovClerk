@@ -9,6 +9,16 @@ import type { TranscriptRow } from '../types.js';
 
 export const diarizationRoute = new Hono();
 
+/** Returns true when a MySQL error is errno 1054 "Unknown column" (ER_BAD_FIELD_ERROR). */
+function isUnknownColumnError(err: unknown): boolean {
+  const e = err as { code?: string; errno?: number; message?: string };
+  return (
+    e?.code === 'ER_BAD_FIELD_ERROR' ||
+    e?.errno === 1054 ||
+    (typeof e?.message === 'string' && (e.message.includes('1054') || e.message.includes('Unknown column')))
+  );
+}
+
 /** Converts milliseconds to a time string in the format "HH:MM:SS.mmm" used by gc_segments. */
 function formatMsToTime(ms: number): string {
   const totalSeconds = ms / 1000;
@@ -121,25 +131,28 @@ async function processTranscription(
     }
 
     // Deduct tokens from user balance
+    // The payments table schema varies across environments — gracefully degrade
+    // by removing columns that don't exist yet.
     try {
       await execute(
         `INSERT INTO payments (user_id, org_id, transcript_id, credit, action) VALUES (?, ?, ?, ?, 'sub')`,
         [userId, orgId, transcriptId, -creditsRequired]
       );
     } catch (err: unknown) {
-      const mysqlErr = err as { code?: string; errno?: number; message?: string };
-      const isActionColumnMissing =
-        mysqlErr?.code === 'ER_BAD_FIELD_ERROR' ||
-        mysqlErr?.errno === 1054 ||
-        (typeof mysqlErr?.message === 'string' && (mysqlErr.message.includes('1054') || mysqlErr.message.includes('Unknown column')));
-      if (isActionColumnMissing) {
-        console.warn(`[diarization] 'action' column not found in payments table, retrying without it`);
+      if (!isUnknownColumnError(err)) throw err;
+      console.warn('[diarization] Some columns missing in payments table, retrying without action');
+      try {
         await execute(
           `INSERT INTO payments (user_id, org_id, transcript_id, credit) VALUES (?, ?, ?, ?)`,
           [userId, orgId, transcriptId, -creditsRequired]
         );
-      } else {
-        throw err;
+      } catch (err2: unknown) {
+        if (!isUnknownColumnError(err2)) throw err2;
+        console.warn('[diarization] transcript_id also missing, retrying with base columns only');
+        await execute(
+          `INSERT INTO payments (user_id, org_id, credit) VALUES (?, ?, ?)`,
+          [userId, orgId, -creditsRequired]
+        );
       }
     }
     console.log(`[diarization] Deducted ${creditsRequired} tokens from user ${userId} for transcript ${transcriptId}`);
