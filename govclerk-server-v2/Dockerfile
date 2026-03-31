@@ -11,6 +11,15 @@ RUN npx tsc
 # --- Production image ---
 FROM node:20-alpine
 
+# Install Chromium and required libs for Puppeteer PDF generation
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -20,6 +29,8 @@ COPY --from=builder /app/dist ./dist
 
 ENV NODE_ENV=production
 ENV PORT=8000
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 EXPOSE 8000
 
