@@ -138,11 +138,13 @@ async fn insert_record_into_minutes_db(
   conn: &mut Conn,
   transcript_id: u64,
   user_id: &str,
+  org_id: Option<String>,
 ) -> Result<(), StatusCode> {
-  return r"INSERT INTO minutes (transcript_id, user_id, ts_start) VALUES (:transcript_id, :user_id, UTC_TIMESTAMP())"
+  return r"INSERT INTO minutes (transcript_id, user_id, org_id, ts_start) VALUES (:transcript_id, :user_id, :org_id, UTC_TIMESTAMP())"
     .with(params! {
       "transcript_id" => transcript_id,
       "user_id" => user_id,
+      "org_id" => org_id,
     })
     .ignore(&mut *conn)
     .await
@@ -515,7 +517,15 @@ pub async fn create_minutes_handler(
   }
 
   // TODO: insert upload_kind into minutes DB
-  insert_record_into_minutes_db(&mut conn, transcript_id, &user_id).await?;
+  let org_id_rows = r"SELECT org_id FROM transcripts WHERE id = :transcript_id"
+    .with(params! {
+      "transcript_id" => transcript_id,
+    })
+    .map(&mut conn, |org_id: Option<String>| org_id)
+    .await
+    .map_and_log_err("failed to get org_id", StatusCode::INTERNAL_SERVER_ERROR)?;
+  let org_id: Option<String> = org_id_rows.into_iter().next().flatten();
+  insert_record_into_minutes_db(&mut conn, transcript_id, &user_id, org_id).await?;
 
   let counter_clone = Arc::clone(&state.pending_tasks_counter);
   tokio::spawn(async move {
