@@ -5,7 +5,7 @@ import GovClerkPageLayout from "@/components/landing/GovClerk/sections/GovClerkP
 import GovClerkHead from "@/components/landing/GovClerk/GovClerkHead";
 import { safeCapture } from "@/utils/safePosthog";
 
-const BUSINESS_WHATSAPP_NUMBER = "27848590684";
+const BUSINESS_WHATSAPP_NUMBER = "27664259236";
 const BOOK_A_DEMO_CALENDAR_URL = "https://calendly.com/cliff-govclerkminutes/30min";
 
 type Department = "Support" | "Sales";

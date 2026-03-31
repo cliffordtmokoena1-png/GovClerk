@@ -44,7 +44,7 @@ GovClerkMinutes is an AI-powered meeting minutes generation platform designed fo
 ### Support
 - **Email**: support@govclerkminutes.com
 - **Sales**: sales@govclerkminutes.com
-- **WhatsApp**: Available for direct chat support (+27642529039)
+- **WhatsApp**: Available for direct chat support (+27664259236)
 - **Website**: https://govclerkminutes.com
 
 ### Demo Availability
