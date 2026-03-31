@@ -122,8 +122,8 @@ async function processTranscription(
 
     // Deduct tokens from user balance
     await execute(
-      `INSERT INTO payments (user_id, org_id, credit, action) VALUES (?, ?, ?, 'sub')`,
-      [userId, orgId, -creditsRequired]
+      `INSERT INTO payments (user_id, org_id, transcript_id, credit) VALUES (?, ?, ?, ?)`,
+      [userId, orgId, transcriptId, -creditsRequired]
     );
     console.log(`[diarization] Deducted ${creditsRequired} tokens from user ${userId} for transcript ${transcriptId}`);
 
@@ -133,6 +133,7 @@ async function processTranscription(
         transcribe_finished = 1,
         preview_transcribe_finished = 1,
         upload_complete = 1,
+        diarization_ready = 1,
         credits_required = ?,
         snippet = ?
        WHERE id = ?`,
