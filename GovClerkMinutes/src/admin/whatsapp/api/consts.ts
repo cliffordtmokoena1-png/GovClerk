@@ -17,7 +17,7 @@ export function getPhoneNumberIdFor(businessWhatsappId: string): string {
 }
 
 export const WHATSAPP_API_VERSION = "v23.0";
-export const WHATSAPP_BUSINESS_ACCOUNT_ID = "3209327919215519";
+export const WHATSAPP_BUSINESS_ACCOUNT_ID = "1469341134843861";
 
 // Old WATI-linked number
 export const WATI_BUSINESS_PHONE_NUMBER = "16465874077";
