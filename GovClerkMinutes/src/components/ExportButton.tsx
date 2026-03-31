@@ -123,6 +123,7 @@ export default function ExportButton({
       console.error("Export failed", err);
       toast({
         title: "Export failed",
+        description: err instanceof Error ? err.message : String(err),
         status: "error",
         duration: 4000,
         isClosable: true,
