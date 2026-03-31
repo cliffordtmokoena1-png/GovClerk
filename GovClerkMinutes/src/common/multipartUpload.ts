@@ -84,13 +84,34 @@ export async function uploadPartOfMultipartUpload(
     throw new Error(`Failed to upload file: ${res.status} ${res.statusText} ${await res.text()}`);
   }
 
-  const eTag = headers["etag"];
+  // On Android Chrome, CORS blocks the ETag header from presigned S3 PUT
+  // responses. When eTag is missing we store a placeholder so the part is
+  // still recorded as uploaded, then skip the client-side completion check and
+  // fall through to the server-side fallback (no-parts complete-upload) that
+  // is driven by the caller (uploadWithAdaptiveConcurrency .then() block in
+  // useFileUploadHandler.ts).
+  const eTag = headers["etag"] || null;
+  const eTagToStore = eTag ?? "CORS-BLOCKED";
 
-  await updatePresignedUrlETag(transcriptId, partNumber, eTag);
+  await updatePresignedUrlETag(transcriptId, partNumber, eTagToStore);
+
+  // When the ETag was blocked by CORS we cannot reliably assemble the parts
+  // list client-side. Skip the client-side completion path entirely and let
+  // the caller's fallback (server-side ListParts) handle it.
+  if (!eTag) {
+    return;
+  }
 
   const parts = await allUploadPartsComplete(transcriptId, transcriptRecord.numParts);
 
   if (parts == null) {
+    return;
+  }
+
+  // Only include parts with real ETags (not the CORS-BLOCKED placeholder).
+  const realParts = parts.filter((p) => p.eTag && p.eTag !== "CORS-BLOCKED");
+  if (realParts.length !== transcriptRecord.numParts) {
+    // Some parts have placeholder ETags — let the server-side fallback finish.
     return;
   }
 
@@ -99,10 +120,11 @@ export async function uploadPartOfMultipartUpload(
     : "/api/complete-upload";
   const r = await fetch(completeUploadUrl, {
     method: "POST",
+    keepalive: true,
     body: JSON.stringify({
       transcriptId,
       uploadId: transcriptRecord.uploadId,
-      parts: parts.map((url) => ({
+      parts: realParts.map((url) => ({
         ETag: url.eTag,
         PartNumber: url.partNumber,
       })),

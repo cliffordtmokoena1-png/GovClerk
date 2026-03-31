@@ -34,6 +34,10 @@ const SpeakerMention = ({ node, updateAttributes, onSpeakerUpdate }: SpeakerMent
   const name = node.attrs.name as string;
   const displayName = name;
   const isInitialMountRef = React.useRef(true);
+  // Tracks when THIS component triggered a speaker update so the useEffect
+  // doesn't re-apply the same change and collide with the ongoing ProseMirror
+  // transaction.
+  const isUpdatingRef = React.useRef(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [userInputName, setUserInputName] = useState("");
@@ -63,9 +67,12 @@ const SpeakerMention = ({ node, updateAttributes, onSpeakerUpdate }: SpeakerMent
       return;
     }
 
-    if (globalSpeakerData?.labelsToSpeaker?.[label]) {
-      globalSpeakerData.labelsToSpeaker[label].name = name;
-    }
+    // Do NOT mutate globalSpeakerData here. The update will flow through
+    // onSpeakerUpdate -> updateAllMentionComponents which updates the global
+    // state and re-renders all mention nodes safely via ProseMirror transactions.
+    // Direct mutation races with the ongoing transaction and causes a
+    // "RangeError: Applying a mismatched transaction" crash.
+    isUpdatingRef.current = true;
 
     const speaker = labelsToSpeaker[label];
     if (speaker) {
@@ -119,10 +126,21 @@ const SpeakerMention = ({ node, updateAttributes, onSpeakerUpdate }: SpeakerMent
       return;
     }
 
+    // Skip if this component itself just triggered the update — the
+    // ProseMirror transaction from onSpeakerUpdate is still being applied and
+    // calling updateAttributes again would cause a transaction collision crash.
+    if (isUpdatingRef.current) {
+      isUpdatingRef.current = false;
+      return;
+    }
+
     if (displayName && globalSpeakerData?.labelsToSpeaker?.[label]) {
       const updatedName = globalSpeakerData.labelsToSpeaker[label].name;
       if (updatedName && updatedName !== displayName) {
-        updateAttributes({ name: updatedName });
+        // Defer until after the current ProseMirror transaction completes.
+        setTimeout(() => {
+          updateAttributes({ name: updatedName });
+        }, 0);
       }
     }
   }, [label, displayName, updateAttributes]);
