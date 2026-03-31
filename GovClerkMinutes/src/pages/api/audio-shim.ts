@@ -6,7 +6,7 @@ import { strictParseInt } from "@/utils/number";
 import withErrorReporting from "@/error/withErrorReporting";
 import { connect } from "@planetscale/database";
 import { canAccessResourceWithOrgId } from "@/utils/resourceAccess";
-import { getSiteFromRequest } from "@/utils/site";
+import { getSiteFromHeaders } from "@/utils/site";
 
 interface TranscriptRow {
   aws_region: string | null;
@@ -21,7 +21,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const transcriptId = strictParseInt(req.query.tid);
 
-  const site = getSiteFromRequest(req.headers);
+  const site = getSiteFromHeaders(req.headers);
   const accessResult = await canAccessResourceWithOrgId("transcripts", transcriptId, userId, site);
 
   if (!accessResult.hasAccess) {

@@ -5,7 +5,7 @@ import { connect } from "@planetscale/database";
 import { getPaystackSecretKey } from "@/utils/paystack";
 import { getCustomerCodeFromUserId } from "@/utils/subscription";
 import getPrimaryEmail from "@/utils/email";
-import { getSiteFromRequest } from "@/utils/site";
+import { getSiteFromHeaders } from "@/utils/site";
 
 /**
  * Resumes a previously cancelled PayStack subscription.
@@ -27,7 +27,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const customerCode = await getCustomerCodeFromUserId(userId);
   if (!customerCode) {
     // No customer record — redirect to a new checkout session
-    const site = getSiteFromRequest(req.headers);
+    const site = getSiteFromHeaders(req.headers);
     const email = await getPrimaryEmail(userId, site);
     if (!email) {
       return res.status(404).json({ error: "No subscription or customer found" });
