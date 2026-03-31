@@ -1,6 +1,6 @@
 import { assertString } from "@/utils/assert";
 
-const VERIFY_TOKEN = "potatopotatopotato";
+const VERIFY_TOKEN = "GovClerkIsMyBaby";
 
 /**
  * Handle GET verification request from Meta. Returns Response if it is a
