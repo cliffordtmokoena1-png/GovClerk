@@ -33,7 +33,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     .execute("SELECT aws_region FROM transcripts WHERE id = ?;", [transcriptId])
     .then((res) => res.rows);
 
+  if (!rows[0]) {
+    return res.status(404).json({ error: "Transcript not found" });
+  }
+
   const region = rows[0]?.aws_region;
+
+  if (!region) {
+    return res.status(404).json({ error: "Audio not available" });
+  }
 
   const forwardLink = await getPresignedGetterLink(region, getUploadKey(transcriptId));
 

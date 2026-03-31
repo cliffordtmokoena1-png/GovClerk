@@ -49,18 +49,26 @@ async function convertDocument(url: string, { arg }: { arg: ConvertArgs }): Prom
     form.append("input_type", arg.inputType);
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${arg.token}`,
-    },
-    body: form,
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${arg.token}`,
+      },
+      body: form,
+    });
+  } catch (networkError) {
+    safeCapture("export_to_word_failed", { error: String(networkError), url });
+    throw new Error(`Network error contacting ${url}: ${networkError}`);
+  }
 
   if (!res.ok) {
     const error = await res.text();
-    safeCapture("export_to_word_failed", { error, status: res.status });
-    throw new Error(error || `Failed to convert document (${res.status})`);
+    safeCapture("export_to_word_failed", { error, status: res.status, url });
+    throw new Error(
+      error || `Failed to convert document — ${res.status} ${res.statusText} (${url})`
+    );
   }
 
   return res.blob();
