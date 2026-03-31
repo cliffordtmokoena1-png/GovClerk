@@ -8,6 +8,11 @@ import { connect } from "@planetscale/database";
 import { canAccessResourceWithOrgId } from "@/utils/resourceAccess";
 import { getSiteFromRequest } from "@/utils/site";
 
+interface TranscriptRow {
+  aws_region: string | null;
+  s3AudioKey: string | null;
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = getAuth(req);
   if (userId == null) {
@@ -30,8 +35,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   const rows = await conn
-    .execute("SELECT aws_region FROM transcripts WHERE id = ?;", [transcriptId])
-    .then((res) => res.rows);
+    .execute("SELECT aws_region, s3AudioKey FROM transcripts WHERE id = ?;", [transcriptId])
+    .then((res) => res.rows as TranscriptRow[]);
 
   if (!rows[0]) {
     return res.status(404).json({ error: "Transcript not found" });
@@ -43,7 +48,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(404).json({ error: "Audio not available" });
   }
 
-  const forwardLink = await getPresignedGetterLink(region, getUploadKey(transcriptId));
+  // Use the actual S3 key stored in the database, falling back to the computed key
+  // for older transcripts that may not have s3AudioKey populated
+  const s3Key = rows[0].s3AudioKey || getUploadKey(transcriptId);
+
+  const forwardLink = await getPresignedGetterLink(region, s3Key);
 
   res.status(302).redirect(forwardLink);
 }
