@@ -235,6 +235,7 @@ export default function useFileUploadHandler({
                   : "/api/complete-upload";
                 const r = await fetch(completeUrl, {
                   method: "POST",
+                  keepalive: true,
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     transcriptId: createIdResponse.transcriptId,

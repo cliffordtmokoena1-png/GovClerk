@@ -22,6 +22,14 @@ import { ApiCreateSessionResponse } from "@/pages/api/recorder/upload/create-ses
 const RECORDING_FAILURE_MESSAGE =
   "Your recording was interrupted due to a technical issue. Please try recording again.";
 
+// How long to wait (ms) after requestData() so that the async ondataavailable
+// event can fire on Android Chrome before tearDownRecorder() stops the tracks.
+const REQUEST_DATA_SETTLE_DELAY_MS = 500;
+
+// Retry settings for the final-chunk S3 upload in stopRecording.
+const MAX_UPLOAD_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 500;
+
 export type RecordingState =
   | "idle"
   | "requesting-permission"
@@ -520,9 +528,12 @@ export function RecordingStateProvider({ children }: { children: ReactNode }) {
         setDuration(finalDuration);
       }
 
-      // Request any remaining data before stopping to ensure we have all captured chunks
+      // Request any remaining data before stopping to ensure we have all captured chunks.
+      // On Android Chrome, requestData() triggers an async ondataavailable event; we
+      // wait 500 ms so that event can fire before tearDownRecorder() stops the tracks.
       if (mediaRecorderRef.current.state === "recording") {
         mediaRecorderRef.current.requestData();
+        await new Promise<void>((resolve) => setTimeout(resolve, REQUEST_DATA_SETTLE_DELAY_MS));
       }
 
       if (currentSessionId) {
@@ -573,7 +584,18 @@ export function RecordingStateProvider({ children }: { children: ReactNode }) {
             );
             if (blob && blob.size > 0) {
               const partNumber = partsUploadedRef.current + 1;
-              const uploadSuccess = await uploadChunkToS3(currentSessionId, blob, partNumber);
+
+              // Retry the final chunk upload up to MAX_UPLOAD_RETRIES times with
+              // exponential backoff to survive transient network interruptions on mobile.
+              let uploadSuccess = false;
+              for (let attempt = 0; attempt < MAX_UPLOAD_RETRIES && !uploadSuccess; attempt++) {
+                if (attempt > 0) {
+                  await new Promise<void>((resolve) =>
+                    setTimeout(resolve, Math.pow(2, attempt) * BASE_RETRY_DELAY_MS)
+                  );
+                }
+                uploadSuccess = await uploadChunkToS3(currentSessionId, blob, partNumber);
+              }
 
               if (!uploadSuccess) {
                 throw new Error("Failed to upload final chunk");
@@ -581,9 +603,11 @@ export function RecordingStateProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          // Mark upload as complete
+          // Mark upload as complete. Use keepalive so the request survives
+          // tab suspension on mobile.
           const completeResponse = await fetch("/api/recorder/complete-upload", {
             method: "POST",
+            keepalive: true,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               sessionId: currentSessionId,
