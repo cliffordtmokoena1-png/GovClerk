@@ -98,10 +98,24 @@ pub async fn regenerate_minutes_handler(
   // Create an initial row in the minutes table to mark the task as started
   let new_version = rows.last().unwrap().3 + 1;
 
-  r"INSERT INTO minutes (transcript_id, user_id, version, ts_start, feedback) VALUES (:transcript_id, :user_id, :version, UTC_TIMESTAMP(), :feedback)"
+  // Look up org_id from the transcripts table so it is stored alongside the new minutes row
+  let org_id_rows = r"SELECT org_id FROM transcripts WHERE id = :transcript_id"
+    .with(params! {
+      "transcript_id" => transcript_id,
+    })
+    .map(&mut conn, |org_id: Option<String>| org_id)
+    .await
+    .map_err(|err| {
+      error!("Error fetching org_id for transcript: {:?}", err);
+      StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+  let org_id: Option<String> = org_id_rows.into_iter().next().flatten();
+
+  r"INSERT INTO minutes (transcript_id, user_id, org_id, version, ts_start, feedback) VALUES (:transcript_id, :user_id, :org_id, :version, UTC_TIMESTAMP(), :feedback)"
     .with(params! {
       "transcript_id" => transcript_id,
       "user_id" => user_id.clone(),
+      "org_id" => org_id,
       "version" => new_version,
       "feedback" => feedback.clone(),
     })
