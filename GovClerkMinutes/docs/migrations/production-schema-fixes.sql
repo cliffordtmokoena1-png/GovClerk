@@ -68,7 +68,27 @@ CREATE TABLE IF NOT EXISTS gc_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
--- 5. gc_templating: Create table if it does not exist
+-- 5. gc_push_subscriptions: Create table if it does not exist
+--    Resolves: "Table 'govclerkminutes.gc_push_subscriptions' doesn't exist"
+--              on web push subscribe/unsubscribe and sendPushToAdmins calls
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS gc_push_subscriptions (
+  id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id         VARCHAR(255)    NOT NULL,
+  device_id       VARCHAR(255)    NOT NULL,
+  endpoint        TEXT            NOT NULL,
+  p256dh          VARCHAR(255)    DEFAULT NULL,
+  auth            VARCHAR(255)    DEFAULT NULL,
+  expiration_time BIGINT          DEFAULT NULL,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_gc_push_subscriptions_user_device (user_id, device_id),
+  INDEX idx_gc_push_subscriptions_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
+-- 6. gc_templating: Create table if it does not exist
 --    Resolves: "Table 'govclerkminutes.gc_templating' doesn't exist"
 --              on /api/templates
 -- ---------------------------------------------------------------------------

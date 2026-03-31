@@ -78,15 +78,17 @@ export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesCha
           tag: "mg-whatsapp",
         });
 
-        // Trigger AI agent auto-reply (fire-and-forget; errors are logged internally)
-        handleAiAutoReply({
-          contactWaId,
-          businessWaId: businessWaId,
-          inboundText: msg.text.body,
-          userId,
-        }).catch((err) =>
-          console.error("[ai-agent] Unhandled auto-reply error:", err)
-        );
+        // Trigger AI agent auto-reply (awaited so Edge Runtime doesn't kill it)
+        try {
+          await handleAiAutoReply({
+            contactWaId,
+            businessWaId: businessWaId,
+            inboundText: msg.text.body,
+            userId,
+          });
+        } catch (err) {
+          console.error("[ai-agent] Unhandled auto-reply error:", err);
+        }
 
         break;
       }
