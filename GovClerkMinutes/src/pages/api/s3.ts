@@ -1,11 +1,7 @@
 import { getAuth } from "@clerk/nextjs/server";
 import { NextApiRequest, NextApiResponse } from "next";
-import { S3Client, CreateMultipartUploadCommand, UploadPartCommand } from "@aws-sdk/client-s3";
-import { HttpRequest } from "@aws-sdk/protocol-http";
-import { S3RequestPresigner, getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { parseUrl } from "@aws-sdk/url-parser";
-import { Hash } from "@aws-sdk/hash-node";
-import { formatUrl } from "@aws-sdk/util-format-url";
+import { S3Client, CreateMultipartUploadCommand, UploadPartCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { assertString } from "@/utils/assert";
 import { getTranscriptBucketNameByRegion, getUploadKey, Region } from "@/utils/s3";
 import { PresignedUrl } from "@/common/types";
@@ -133,24 +129,22 @@ export async function getPresignedPartUrl(
 }
 
 export async function getPresignedGetterLink(region: Region, key: string): Promise<string> {
-  const s3url = `https://${getTranscriptBucketNameByRegion(region)}.s3.${region}.amazonaws.com/${key}`;
-  const s3ObjectUrl = parseUrl(s3url.toString());
-  const presigner = new S3RequestPresigner({
+  const s3 = new S3Client({
     credentials: {
       accessKeyId: assertString(process.env.AWS_ACCESS_KEY_ID),
       secretAccessKey: assertString(process.env.AWS_SECRET_ACCESS_KEY),
     },
     region,
-    sha256: Hash.bind(null, "sha256"),
   });
 
-  // Create a GET request from S3 url.
-  const result = formatUrl(
-    await presigner.presign(new HttpRequest(s3ObjectUrl), {
-      expiresIn: 7200,
-    })
-  );
-  return result;
+  const command = new GetObjectCommand({
+    Bucket: getTranscriptBucketNameByRegion(region),
+    Key: key,
+  });
+
+  return await getSignedUrl(s3, command, {
+    expiresIn: 7200,
+  });
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ApiS3ResponseResult>) {
