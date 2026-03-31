@@ -37,6 +37,7 @@
     "instantly": "tsx src/scripts/instantly.ts",
     "stripe:addAnnualPrices": "tsx --require ./src/scripts/loadenv.ts src/scripts/stripe/addAnnualPrices.ts",
     "hubspot": "tsx --require ./src/scripts/loadenv.ts src/scripts/hubspot.ts",
+    "sync-contacts-to-hubspot": "tsx --require ./src/scripts/loadenv.ts src/scripts/sync-contacts-to-hubspot.ts",
     "recording": "tsx --require ./src/scripts/loadenv.ts src/scripts/recording.ts",
     "wati": "tsx --require ./src/scripts/loadenv.ts src/scripts/wati.ts",
     "whatsapp": "tsx --require ./src/scripts/loadenv.ts src/scripts/whatsapp.ts",
