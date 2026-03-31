@@ -1,6 +1,6 @@
 import { safeCapture } from "@/utils/safePosthog";
 
-export const SUPPORT_WHATSAPP_NUMBER = "27642529039";
+export const SUPPORT_WHATSAPP_NUMBER = "27664259236";
 
 /**
  * Opens WhatsApp chat with the GovClerk support number.

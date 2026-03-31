@@ -376,7 +376,7 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
             ? "Chat with us to learn the best plan for you!"
             : "We can help you get started on WhatsApp!"}
         </Text>
-        <WhatsappCta phone="27848590684" message={whatsappMessage} />
+        <WhatsappCta phone="27664259236" message={whatsappMessage} />
         <Text fontSize="sm">(We also emailed you!)</Text>
       </Flex>
     );
@@ -402,7 +402,7 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
             Check your email - we sent you a login link.
           </Text>
           <Flex mt={8}></Flex>
-          <WhatsappCta phone="27848590684" message={whatsappMessage} />
+          <WhatsappCta phone="27664259236" message={whatsappMessage} />
         </Stack>
       </Flex>
     );

@@ -18,7 +18,7 @@ describe("AI Agent Knowledge Base", () => {
     });
 
     it("includes the new WhatsApp number", () => {
-      expect(PRODUCT_KNOWLEDGE_BASE).toContain("27642529039");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("27664259236");
     });
 
     it("includes how-it-works steps", () => {
