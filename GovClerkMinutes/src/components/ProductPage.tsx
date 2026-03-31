@@ -438,6 +438,7 @@ const ProductPage = ({
             tokensRequired={transcriptStatus.tokensRequired}
             currentBalance={transcriptStatus.currentBalance}
             onAddCredits={onPaywallOpen}
+            transcriptId={transcriptId}
             onBalanceSufficient={() => {
               // Refresh transcript status and trigger resume of paused transcripts.
               revalidateTranscriptStatus(transcriptId ?? undefined);

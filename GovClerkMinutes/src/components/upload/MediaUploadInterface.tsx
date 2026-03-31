@@ -6,10 +6,6 @@ import {
   Box,
   Grid,
   GridItem,
-  Alert,
-  AlertIcon,
-  AlertDescription,
-  Button,
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { useDropzoneLayout } from "@/hooks/useDropzoneLayout";
@@ -18,6 +14,7 @@ import UploadCard from "./UploadCard";
 import RecordingCard from "./RecordingCard";
 import { LayoutKind } from "@/pages/dashboard/[[...slug]]";
 import PwaInstallPrompt from "../PwaInstallPrompt";
+import UpgradeRequiredWall from "@/components/paywall/UpgradeRequiredWall";
 
 type Props = {
   isTransitioning: boolean;
@@ -87,28 +84,8 @@ export default function MediaUploadInterface({
       role="region"
       aria-label="Media upload interface"
     >
-      {isTokenInsufficient && (
-        <Alert
-          status="warning"
-          borderRadius="lg"
-          mb={4}
-          flexDirection="column"
-          alignItems="flex-start"
-          gap={2}
-          py={4}
-          px={4}
-        >
-          <AlertIcon />
-          <AlertDescription fontSize="sm">
-            <Text fontWeight="semibold" mb={1}>
-              You don&apos;t have enough tokens to upload or record.
-            </Text>
-            <Text>Please upgrade your plan to continue.</Text>
-          </AlertDescription>
-          <Button size="sm" colorScheme="orange" mt={1} onClick={onUpgradeClick}>
-            Upgrade Plan
-          </Button>
-        </Alert>
+      {isTokenInsufficient && onUpgradeClick != null && (
+        <UpgradeRequiredWall onUpgradeClick={onUpgradeClick} />
       )}
 
       {/* Mobile Layout */}
