@@ -1,0 +1,27 @@
+@media print {
+  /* Hide navigation, search bars, buttons, sign-in elements */
+  nav,
+  .portal-header-actions,
+  .portal-search-bar,
+  button {
+    display: none !important;
+  }
+
+  /* Ensure content is readable in black and white */
+  body {
+    color: #000;
+    background: #fff;
+  }
+
+  /* Show full URLs after links */
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #555;
+  }
+
+  /* Avoid page breaks inside meeting cards */
+  .meeting-card {
+    page-break-inside: avoid;
+  }
+}

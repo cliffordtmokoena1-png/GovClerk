@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "@/styles/portal-print.css";
 import type { AppContext, AppProps } from "next/app";
 import App from "next/app";
 import { ChakraProvider } from "@chakra-ui/react";
