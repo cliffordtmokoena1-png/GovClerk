@@ -2,12 +2,12 @@
  * Public Portal Registration Page
  *
  * Allows staff/council members to create an account using their work email.
- * Email domain must match one of the org's allowed domains.
+ * Any organisational email (i.e. not a free/personal provider) is accepted.
  *
  * After successful registration, auto-login redirects to the portal.
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -24,11 +24,9 @@ import {
   HStack,
   Alert,
   AlertIcon,
-  Badge,
-  Wrap,
-  WrapItem,
 } from "@chakra-ui/react";
 import type { PublicPortalResponse } from "@/types/portal";
+import { isFreeEmailProvider } from "@/utils/freeEmailProviders";
 
 interface RegisterPageProps {
   settings: PublicPortalResponse["settings"];
@@ -45,26 +43,22 @@ export default function PortalRegisterPage({ settings, slug }: RegisterPageProps
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
 
   const accentColor = settings.accentColor || "#1e3a5f";
   const headerBg = settings.headerBgColor || "#1e3a5f";
   const headerText = settings.headerTextColor || "#ffffff";
 
-  useEffect(() => {
-    fetch(`/api/public/portal/${slug}/auth-info`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.allowedDomains) {
-          setAllowedDomains(data.allowedDomains);
-        }
-      })
-      .catch(() => {});
-  }, [slug]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Client-side: catch obvious free/personal email addresses early
+    if (isFreeEmailProvider(email)) {
+      setError(
+        "This portal requires an organisational email address. Personal email addresses (Gmail, Yahoo, Outlook, etc.) are not accepted. If you belong to an organisation, please use your work email."
+      );
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -138,24 +132,10 @@ export default function PortalRegisterPage({ settings, slug }: RegisterPageProps
               <Text fontSize="sm" color="gray.500" textAlign="center">
                 For {settings.pageTitle ?? "portal"} staff and council members
               </Text>
+              <Text fontSize="xs" color="gray.400" textAlign="center">
+                An organisational (work) email address is required
+              </Text>
             </VStack>
-
-            {allowedDomains.length > 0 && (
-              <Box mb={5} p={3} bg="blue.50" rounded="md">
-                <Text fontSize="xs" color="blue.700" fontWeight="medium" mb={2}>
-                  Accepted email domains:
-                </Text>
-                <Wrap gap={1}>
-                  {allowedDomains.map((domain) => (
-                    <WrapItem key={domain}>
-                      <Badge colorScheme="blue" fontSize="xs">
-                        @{domain}
-                      </Badge>
-                    </WrapItem>
-                  ))}
-                </Wrap>
-              </Box>
-            )}
 
             {error && (
               <Alert status="error" rounded="md" mb={4}>
@@ -196,11 +176,9 @@ export default function PortalRegisterPage({ settings, slug }: RegisterPageProps
                     placeholder="you@organisation.gov"
                     autoComplete="email"
                   />
-                  {allowedDomains.length > 0 && (
-                    <FormHelperText fontSize="xs">
-                      Must use an approved domain (e.g. @{allowedDomains[0]})
-                    </FormHelperText>
-                  )}
+                  <FormHelperText fontSize="xs">
+                    Use your organisational (work) email — personal addresses are not accepted
+                  </FormHelperText>
                 </FormControl>
 
                 <FormControl isRequired>

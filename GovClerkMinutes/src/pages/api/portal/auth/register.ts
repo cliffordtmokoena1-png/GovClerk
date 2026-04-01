@@ -5,7 +5,7 @@
  * Body: { slug: string; email: string; password: string; firstName?: string; lastName?: string }
  *
  * 1. Look up org by slug
- * 2. Validate email domain is in gc_portal_org_domains for this org
+ * 2. Validate email is organisational (not a free/personal provider) using freeEmailProviders blocklist
  * 3. Hash password
  * 4. Insert into gc_portal_users with role='member'
  * 5. Return { success: true }
@@ -16,7 +16,8 @@
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
-import { hashPassword, isEmailDomainAllowed, createPortalSession } from "@/portal-auth/portalAuth";
+import { hashPassword, createPortalSession } from "@/portal-auth/portalAuth";
+import { isOrganizationalEmail } from "@/utils/freeEmailProviders";
 
 export const config = {
   runtime: "edge",
@@ -63,10 +64,12 @@ export default async function handler(req: NextRequest): Promise<Response> {
   }
   const orgId = (settingsResult.rows[0] as any).org_id as string;
 
-  // 2. Validate email domain
-  const domainAllowed = await isEmailDomainAllowed(orgId, normalizedEmail);
-  if (!domainAllowed) {
-    return errorResponse("Your email domain is not authorised for this portal", 403);
+  // 2. Validate email domain (blocklist approach — reject free/personal providers)
+  if (!isOrganizationalEmail(normalizedEmail)) {
+    return errorResponse(
+      "This portal requires an organisational email address. Personal email addresses (Gmail, Yahoo, Outlook, etc.) are not accepted. If you belong to an organisation, please use your work email.",
+      403
+    );
   }
 
   // Check if user already exists
