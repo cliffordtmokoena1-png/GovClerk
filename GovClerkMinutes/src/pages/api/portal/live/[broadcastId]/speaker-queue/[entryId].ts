@@ -40,6 +40,7 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       return errorResponse("Invalid status value", 400);
     }
 
+    // timestampClause uses only hardcoded strings; status is validated against the enum above
     const timestampClause =
       status === "speaking"
         ? ", started_speaking_at = CURRENT_TIMESTAMP"

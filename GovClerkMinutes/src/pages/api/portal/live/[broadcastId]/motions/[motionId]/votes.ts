@@ -100,7 +100,8 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       tally.abstain > 0 ? `${tally.abstain} Abstain` : null,
       tally.absent > 0 ? `${tally.absent} Absent` : null,
     ].filter(Boolean);
-    const resultLabel = tally.result === "passed" ? "PASSED" : tally.result === "failed" ? "FAILED" : tally.result === "tied" ? "TIED" : "PENDING";
+    const resultLabelMap: Record<string, string> = { passed: "PASSED", failed: "FAILED", tied: "TIED", pending: "PENDING" };
+    const resultLabel = resultLabelMap[tally.result] ?? "PENDING";
     const voteResultSummary = `${summaryParts.join(", ")} — ${resultLabel}`;
 
     const newStatus = tally.result === "passed" ? "passed" : tally.result === "failed" ? "failed" : undefined;

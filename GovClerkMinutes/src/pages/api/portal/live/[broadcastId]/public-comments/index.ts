@@ -66,6 +66,7 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       return errorResponse("Invalid status value", 400);
     }
 
+    // All field names in `fields` are hardcoded string literals — no user input reaches column names
     const fields = ["status = ?"];
     const values: (string | number | null)[] = [status];
 

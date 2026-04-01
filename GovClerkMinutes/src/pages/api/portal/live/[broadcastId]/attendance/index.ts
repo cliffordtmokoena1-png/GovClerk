@@ -67,11 +67,17 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
     }
     const meetingId = Number((broadcastResult.rows[0] as any).meeting_id);
 
+    const isArrival = status === "present" || status === "late";
+    const nowOrNull = isArrival ? new Date().toISOString().slice(0, 19).replace("T", " ") : null;
+
     await conn.execute(
       `INSERT INTO gc_portal_attendance (org_id, meeting_id, broadcast_id, member_name, status, arrived_at)
-       VALUES (?, ?, ?, ?, ?, CASE WHEN ? = 'present' OR ? = 'late' THEN CURRENT_TIMESTAMP ELSE NULL END)
-       ON DUPLICATE KEY UPDATE status = VALUES(status), arrived_at = CASE WHEN VALUES(status) = 'present' OR VALUES(status) = 'late' THEN COALESCE(arrived_at, CURRENT_TIMESTAMP) ELSE arrived_at END, updated_at = CURRENT_TIMESTAMP`,
-      [orgId, meetingId, broadcastId, memberName, status, status, status]
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         status = VALUES(status),
+         arrived_at = CASE WHEN VALUES(status) IN ('present','late') THEN COALESCE(arrived_at, VALUES(arrived_at)) ELSE arrived_at END,
+         updated_at = CURRENT_TIMESTAMP`,
+      [orgId, meetingId, broadcastId, memberName, status, nowOrNull]
     );
 
     const result = await conn.execute(
