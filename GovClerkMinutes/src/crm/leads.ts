@@ -6,6 +6,7 @@ export type MgLead = {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  occupation?: string;
   organizationName?: string;
   websiteUrl?: string;
   comments?: string;
@@ -20,6 +21,7 @@ export async function updateLeadInDb({
   firstName,
   lastName,
   phone,
+  occupation,
   organizationName,
   websiteUrl,
   comments,
@@ -51,6 +53,10 @@ export async function updateLeadInDb({
   if (phone != null) {
     setList.push("phone = ?");
     values.push(phone);
+  }
+  if (occupation != null) {
+    setList.push("occupation = ?");
+    values.push(occupation);
   }
   if (organizationName != null) {
     setList.push("organization_name = ?");
@@ -92,6 +98,7 @@ export async function upsertLeadToDb({
   firstName,
   lastName,
   phone,
+  occupation,
   organizationName,
   websiteUrl,
   comments,
@@ -108,13 +115,14 @@ export async function upsertLeadToDb({
   await conn.execute(
     `
     INSERT INTO gc_leads
-      (user_id, email, first_name, last_name, phone, organization_name, website_url, comments, minutes_freq, minutes_due, instantly_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (user_id, email, first_name, last_name, phone, occupation, organization_name, website_url, comments, minutes_freq, minutes_due, instantly_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       email = COALESCE(VALUES(email), email),
       first_name = COALESCE(VALUES(first_name), first_name),
       last_name = COALESCE(VALUES(last_name), last_name),
       phone = COALESCE(VALUES(phone), phone),
+      occupation = COALESCE(VALUES(occupation), occupation),
       organization_name = COALESCE(VALUES(organization_name), organization_name),
       website_url = COALESCE(VALUES(website_url), website_url),
       comments = COALESCE(VALUES(comments), comments),
@@ -128,6 +136,7 @@ export async function upsertLeadToDb({
       firstName ?? null,
       lastName ?? null,
       phone ?? null,
+      occupation ?? null,
       organizationName ?? null,
       websiteUrl ?? null,
       comments ?? null,
@@ -158,6 +167,7 @@ export async function getLeadsFromDb(userIds: string[]): Promise<MgLead[]> {
         first_name,
         last_name,
         phone,
+        occupation,
         organization_name,
         website_url,
         comments,
@@ -177,6 +187,7 @@ export async function getLeadsFromDb(userIds: string[]): Promise<MgLead[]> {
     firstName: row.first_name,
     lastName: row.last_name,
     phone: row.phone,
+    occupation: row.occupation,
     organizationName: row.organization_name,
     websiteUrl: row.website_url,
     comments: row.comments,
@@ -206,6 +217,7 @@ export async function getLeadByPhoneFromDb(phone: string): Promise<MgLead | null
         first_name,
         last_name,
         phone,
+        occupation,
         organization_name,
         website_url,
         comments,
@@ -230,6 +242,7 @@ export async function getLeadByPhoneFromDb(phone: string): Promise<MgLead | null
     firstName: row.first_name,
     lastName: row.last_name,
     phone: row.phone,
+    occupation: row.occupation,
     organizationName: row.organization_name,
     websiteUrl: row.website_url,
     comments: row.comments,

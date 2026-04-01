@@ -29,11 +29,15 @@ export async function handleAiAutoReply({
   businessWaId,
   inboundText,
   userId,
+  isNewContact = false,
+  contactDisplayName = null,
 }: {
   contactWaId: string;
   businessWaId: string;
   inboundText: string;
   userId: string | null;
+  isNewContact?: boolean;
+  contactDisplayName?: string | null;
 }): Promise<void> {
   // Check if AI auto-reply is enabled via environment variable
   if (process.env.AI_AGENT_ENABLED !== "true") {
@@ -69,6 +73,15 @@ export async function handleAiAutoReply({
 
     // Detect the active persona from history so the correct system prompt is used
     const activePersona = detectPersonaFromHistory(history);
+
+    // For brand-new WhatsApp contacts (no email on file), prepend a context hint so
+    // the AI knows to greet them and ask for their email to complete their profile.
+    if (isNewContact && history.length === 0) {
+      const greeting = contactDisplayName
+        ? `Hi ${contactDisplayName}! Welcome to GovClerkMinutes. I'm Samantha, your virtual assistant. To complete your account setup and get the most out of our service, could you please share your email address?`
+        : `Hi! Welcome to GovClerkMinutes. I'm Samantha, your virtual assistant. To complete your account setup and get the most out of our service, could you please share your email address?`;
+      history.push({ role: "assistant", content: greeting });
+    }
 
     // Process the message through the AI agent
     const response = await processMessage(inboundText, history, activePersona);

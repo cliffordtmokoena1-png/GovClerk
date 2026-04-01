@@ -3,13 +3,18 @@ import { serializeCallPermissionReplyText } from "@/admin/whatsapp/messages";
 import { capture, WHATSAPP_WEBHOOK_ANONYMOUS_ID } from "@/utils/posthog";
 import { connect } from "@planetscale/database";
 import { makeConversationId } from "@/admin/whatsapp/utils";
-import { getLeadByPhoneFromDb } from "@/crm/leads";
+import { getLeadByPhoneFromDb, upsertLeadToDb } from "@/crm/leads";
 import whatsapp from "@/admin/whatsapp/api";
 import get_presigned_url from "@/s3/get_presigned_url";
 import { assertString } from "@/utils/assert";
 import requestSendPush from "@/push/requestSendPush";
 import mimeDb from "mime-db";
 import { handleAiAutoReply } from "@/ai-agent/whatsappAutoReply";
+import hubspot from "@/crm/hubspot";
+import { v4 as uuidv4 } from "uuid";
+
+/** Prefix for user IDs auto-generated from inbound WhatsApp contacts. */
+const WHATSAPP_USER_ID_PREFIX = "wa_";
 
 export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesChange) {
   const value = change.value;
@@ -35,7 +40,31 @@ export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesCha
         ?.name ?? null;
 
     const lead = await getLeadByPhoneFromDb(`+${contactWaId}`);
-    const userId = lead?.userId ?? null;
+    let userId = lead?.userId ?? null;
+    let isNewContact = false;
+
+    // Option C: auto-create HubSpot contact and gc_leads entry for unknown inbound users
+    if (!lead) {
+      const newUserId = `${WHATSAPP_USER_ID_PREFIX}${uuidv4()}`;
+      const firstName = displayName ?? undefined;
+      const phone = `+${contactWaId}`;
+
+      try {
+        await Promise.all([
+          upsertLeadToDb({ userId: newUserId, phone, firstName }),
+          hubspot.createContact({
+            userId: newUserId,
+            phone,
+            firstName,
+            lead_source: "gc_whatsapp",
+          }),
+        ]);
+        userId = newUserId;
+        isNewContact = true;
+      } catch (err) {
+        console.error("[whatsapp] Failed to auto-create contact for unknown user:", err);
+      }
+    }
 
     await conn.execute(
       `
@@ -85,6 +114,8 @@ export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesCha
             businessWaId: businessWaId,
             inboundText: msg.text.body,
             userId,
+            isNewContact,
+            contactDisplayName: displayName,
           });
         } catch (err) {
           console.error("[ai-agent] Unhandled auto-reply error:", err);
