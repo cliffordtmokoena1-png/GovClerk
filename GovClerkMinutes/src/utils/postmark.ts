@@ -1,6 +1,7 @@
 import { assertString } from "./assert";
 
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+const POSTMARK_TEMPLATE_API_URL = "https://api.postmarkapp.com/email/withTemplate";
 
 const GET_STARTED_GUIDE_URL =
   "https://help.GovClerkMinutes.com/en/articles/11072152-getting-started-with-GovClerkMinutes";
@@ -28,6 +29,44 @@ export type SendEmailParams = {
     Disposition?: string;
   }>;
 };
+
+export type SendEmailWithTemplateParams = {
+  From: string;
+  To: string;
+  TemplateAlias: string;
+  TemplateModel: Record<string, string | number | boolean>;
+  MessageStream: string;
+};
+
+export async function sendEmailWithTemplate({
+  From,
+  To,
+  TemplateAlias,
+  TemplateModel,
+  MessageStream,
+}: SendEmailWithTemplateParams) {
+  const res = await fetch(POSTMARK_TEMPLATE_API_URL, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Postmark-Server-Token": assertString(process.env.POSTMARK_SERVER_TOKEN),
+    },
+    body: JSON.stringify({
+      From,
+      To,
+      TemplateAlias,
+      TemplateModel,
+      MessageStream,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    console.error("Postmark Template API Error:", error);
+    throw new Error(`Failed to send template email via Postmark: ${res.status}`);
+  }
+}
 
 export async function sendEmail({
   From,
@@ -70,19 +109,24 @@ export async function sendEmail({
 const MAX_EMAIL_RETRY_ATTEMPTS = 2;
 
 export async function sendWelcomeEmail(email: string, firstName?: string) {
-  const greeting = firstName ? `Hi ${firstName},` : "Hi there,";
   const params = {
     From: FROM_ADMIN,
     To: email,
-    Subject: "Welcome to GovClerk Minutes!",
-    HtmlBody: `<p>${greeting}</p><p>Welcome to <a href='https://govclerkminutes.com?utm_medium=email'>GovClerk Minutes</a>! We're thrilled to have you on board.</p><p>To get started, head to your dashboard and upload an audio or video recording of a meeting — we'll automatically generate your meeting minutes.</p><p><a href='https://govclerkminutes.com/dashboard?utm_medium=email' style='display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;'>Go to Dashboard</a></p><p>If you have any questions or need help getting started, don't hesitate to reach out.</p><p>Best regards,<br />Cliff<br />GovClerk Minutes</p>`,
-    TextBody: `${greeting}\n\nWelcome to GovClerk Minutes! We're thrilled to have you on board.\n\nTo get started, head to your dashboard and upload an audio or video recording of a meeting — we'll automatically generate your meeting minutes.\n\nGo to your dashboard: https://govclerkminutes.com/dashboard\n\nIf you have any questions or need help getting started, don't hesitate to reach out.\n\nBest regards,\nCliff\nGovClerk Minutes`,
+    TemplateAlias: "govclerk-welcome",
+    TemplateModel: {
+      first_name: firstName ?? "there",
+      dashboard_url: "https://govclerkminutes.com/dashboard?utm_medium=email",
+      get_started_url: GET_STARTED_GUIDE_URL,
+      support_email: "support@govclerkminutes.com",
+      company_name: "GovClerk Minutes",
+      current_year: new Date().getFullYear().toString(),
+    },
     MessageStream: "signup_and_purchase",
   };
 
   for (let attempt = 1; attempt <= MAX_EMAIL_RETRY_ATTEMPTS; attempt++) {
     try {
-      await sendEmail(params);
+      await sendEmailWithTemplate(params);
       console.info(`[sendWelcomeEmail] Welcome email sent to ${email} (attempt ${attempt})`);
       return;
     } catch (err) {
@@ -121,13 +165,18 @@ export async function sendPaymentConfirmationEmail(
   planName: string,
   firstName?: string | null
 ) {
-  const greeting = firstName ? `Hi ${firstName},` : "Hi there,";
-  await sendEmail({
+  await sendEmailWithTemplate({
     From: FROM_SALES,
     To: email,
-    Subject: `Your ${planName} subscription is now active!`,
-    HtmlBody: `<p>${greeting}</p><p>Thank you for subscribing to <strong>GovClerk Minutes ${planName}</strong>! Your plan is now active and your credits have been added to your account.</p><p><a href='https://govclerkminutes.com/dashboard?utm_medium=email' style='display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;'>Go to Dashboard</a></p><p>If you have any questions or need help, simply reply to this email and our support team will be happy to assist.</p><p>Best regards,<br />GovClerk Minutes</p>`,
-    TextBody: `${greeting}\n\nThank you for subscribing to GovClerk Minutes ${planName}! Your plan is now active and your credits have been added to your account.\n\nGo to your dashboard: https://govclerkminutes.com/dashboard\n\nIf you have any questions or need help, simply reply to this email and our support team will be happy to assist.\n\nBest regards,\nGovClerk Minutes`,
+    TemplateAlias: "govclerk-payment-confirmation",
+    TemplateModel: {
+      first_name: firstName ?? "there",
+      plan_name: planName,
+      dashboard_url: "https://govclerkminutes.com/dashboard?utm_medium=email",
+      support_email: "support@govclerkminutes.com",
+      company_name: "GovClerk Minutes",
+      current_year: new Date().getFullYear().toString(),
+    },
     MessageStream: "signup_and_purchase",
   });
 }
