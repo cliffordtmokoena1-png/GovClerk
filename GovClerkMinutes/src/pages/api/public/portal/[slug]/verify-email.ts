@@ -153,7 +153,22 @@ export default async function handler(req: NextRequest): Promise<Response> {
       );
     }
 
-    return jsonResponse({ verified: true });
+    // Check if the email domain matches an existing organisation in gc_portal_settings
+    const emailDomain = email.split("@")[1]?.toLowerCase() ?? "";
+    const orgMatchResult = await conn.execute(
+      `SELECT org_id, slug FROM gc_portal_settings
+       WHERE (slug = ? OR email_domain = ?) AND is_enabled = 1
+       LIMIT 1`,
+      [emailDomain, emailDomain]
+    );
+    const orgFound = orgMatchResult.rows.length > 0;
+
+    return jsonResponse({
+      verified: true,
+      orgFound,
+      // If no org found, guide the user to create their organisation
+      redirectTo: orgFound ? null : "/org/signup",
+    });
   }
 
   return errorResponse("Method not allowed", 405);

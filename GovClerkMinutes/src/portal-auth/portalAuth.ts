@@ -10,6 +10,7 @@
  */
 
 import { getPortalDbConnection } from "@/utils/portalDb";
+import { isOrganizationalEmail } from "@/utils/freeEmailProviders";
 
 // Session duration: 8 hours for email sessions, 24 hours for shared password sessions
 const EMAIL_SESSION_HOURS = 8;
@@ -253,18 +254,12 @@ export async function getPortalSessionFromCookieHeader(
   };
 }
 
-/** Check if an email domain is allowed for a given org. */
-export async function isEmailDomainAllowed(orgId: string, email: string): Promise<boolean> {
-  const domain = email.split("@")[1]?.toLowerCase();
-  if (!domain) {
-    return false;
-  }
-
-  const conn = getPortalDbConnection();
-  const result = await conn.execute(
-    "SELECT id FROM gc_portal_org_domains WHERE org_id = ? AND domain = ? AND is_active = 1",
-    [orgId, domain]
-  );
-
-  return result.rows.length > 0;
+/**
+ * Check if an email is an organisational address (i.e. not from a free/personal provider).
+ * This replaces the old allowlist approach (gc_portal_org_domains) with a blocklist.
+ *
+ * @deprecated Use isOrganizationalEmail from @/utils/freeEmailProviders directly.
+ */
+export function isEmailDomainAllowed(_orgId: string, email: string): boolean {
+  return isOrganizationalEmail(email);
 }

@@ -1,8 +1,10 @@
 /**
  * GET /api/public/portal/[slug]/auth-info
  * Returns public auth configuration for a portal:
- * - allowedDomains: email domains permitted for registration
  * - hasSharedPassword: whether any active shared passwords exist
+ *
+ * Note: The old allowedDomains field has been removed. Registration now accepts
+ * any organisational (non-free-provider) email address. See freeEmailProviders.ts.
  *
  * Does NOT expose password hashes.
  */
@@ -43,13 +45,6 @@ export default async function handler(req: NextRequest): Promise<Response> {
   }
   const orgId = (settingsResult.rows[0] as any).org_id as string;
 
-  // Fetch allowed domains
-  const domainsResult = await conn.execute(
-    "SELECT domain FROM gc_portal_org_domains WHERE org_id = ? AND is_active = 1",
-    [orgId]
-  );
-  const allowedDomains = (domainsResult.rows as any[]).map((r) => r.domain as string);
-
   // Check if any active shared passwords exist
   const sharedResult = await conn.execute(
     `SELECT COUNT(*) as cnt FROM gc_portal_shared_passwords
@@ -58,5 +53,5 @@ export default async function handler(req: NextRequest): Promise<Response> {
   );
   const hasSharedPassword = Number((sharedResult.rows[0] as any).cnt) > 0;
 
-  return jsonResponse({ allowedDomains, hasSharedPassword });
+  return jsonResponse({ hasSharedPassword });
 }
