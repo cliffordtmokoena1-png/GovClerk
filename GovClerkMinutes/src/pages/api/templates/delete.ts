@@ -76,8 +76,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<DeleteTemplateR
       `INSERT INTO gc_settings (user_id, setting_key, setting_value)
        VALUES (?, 'selected-template-id', ?)
        ON DUPLICATE KEY UPDATE
-         setting_value = VALUES(setting_value),
-         updated_at = CURRENT_TIMESTAMP`,
+         setting_value = VALUES(setting_value)`,
       [userId, defaultTemplateValue]
     );
   }

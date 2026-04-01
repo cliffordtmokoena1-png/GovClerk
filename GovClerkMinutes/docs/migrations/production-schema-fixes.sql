@@ -110,3 +110,17 @@ CREATE TABLE IF NOT EXISTS gc_templating (
   INDEX idx_gc_templating_user  (user_id),
   INDEX idx_gc_templating_org   (org_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
+-- N. gc_settings: Add missing updated_at column
+--    Resolves: "Unknown column 'updated_at' in 'field list'" (errno 1054)
+--              on /api/set-settings and /api/templates/delete
+--
+--    The code references updated_at in ON DUPLICATE KEY UPDATE clauses but the
+--    column was not present in the production table. Running this migration
+--    restores the column so timestamps are tracked.
+--    Safe to re-run: MySQL raises "Duplicate column name" if already present.
+-- ---------------------------------------------------------------------------
+ALTER TABLE gc_settings
+  ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP;

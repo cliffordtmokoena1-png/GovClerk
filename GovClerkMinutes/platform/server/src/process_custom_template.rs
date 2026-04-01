@@ -262,8 +262,7 @@ pub async fn process_custom_template_handler(
       INSERT INTO GC_settings (user_id, setting_key, setting_value)
       VALUES (?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        setting_value = VALUES(setting_value),
-        updated_at = CURRENT_TIMESTAMP
+        setting_value = VALUES(setting_value)
     ",
       (
         &user_id,
