@@ -2,7 +2,7 @@ import withErrorReporting from "@/error/withErrorReporting";
 import { DISCOUNT_COOKIE_NAME, getDiscountCodeId } from "@/cookies/discounts";
 import { getUserIdFromEmail } from "@/auth/getUserIdFromEmail";
 import { createUser } from "@/auth/createUser";
-import { createAuthToken } from "@/auth/createAuthToken";
+import { createSignInToken } from "@/utils/clerk";
 import { sendSignInMagicEmail, sendSignUpMagicEmail } from "@/utils/postmark";
 import { updateLeadInDb, upsertLeadToDb } from "@/crm/leads";
 import {
@@ -40,7 +40,10 @@ async function handleEmailStep(body: IntakeFormEmailStepBody, req: NextRequest):
   const existingUserId = await getUserIdFromEmail({ email, site });
   const userId = existingUserId ?? (await createUser({ email, firstName: null, site }));
   const discountCode = getDiscountCodeId(req.cookies.get(DISCOUNT_COOKIE_NAME)?.value);
-  const token = await createAuthToken(userId);
+  const token = await createSignInToken(userId, site);
+  if (!token) {
+    throw new Error(`[intake-form-step] Failed to create Clerk sign-in token for userId=${userId}`);
+  }
 
   if (existingUserId == null) {
     // New user
