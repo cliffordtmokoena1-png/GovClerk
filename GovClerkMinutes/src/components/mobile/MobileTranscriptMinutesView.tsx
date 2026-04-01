@@ -23,6 +23,7 @@ type Props = {
   isRegenerating?: boolean;
   onExport: () => void;
   onMoreActions: () => void;
+  onRetrieve?: () => void;
 };
 
 export default function MobileTranscriptMinutesView({
@@ -44,6 +45,7 @@ export default function MobileTranscriptMinutesView({
   isRegenerating = false,
   onExport,
   onMoreActions,
+  onRetrieve,
 }: Props) {
   const tabs = [
     { label: "Speakers", content: speakersContent },
@@ -74,6 +76,7 @@ export default function MobileTranscriptMinutesView({
       minutesReady={minutesReady}
       onExport={onExport}
       onMoreActions={onMoreActions}
+      onRetrieve={onRetrieve}
       audioPlayer={audioPlayer}
       audioPlayerHeight={AUDIO_PLAYER_HEIGHT}
     />

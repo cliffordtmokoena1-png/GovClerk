@@ -22,6 +22,11 @@ async function handler(req: NextRequest) {
 
   const { key, value } = body;
 
+  const ALLOWED_KEYS = ["send-email-when-minutes-done", "selected-template-id"] as const;
+  if (!ALLOWED_KEYS.includes(key as (typeof ALLOWED_KEYS)[number])) {
+    return new Response(JSON.stringify({ error: "Invalid setting key" }), { status: 400 });
+  }
+
   const conn = connect({
     host: process.env.PLANETSCALE_DB_HOST,
     username: process.env.PLANETSCALE_DB_USERNAME,

@@ -50,7 +50,14 @@ export default function MobileTemplateDetailDrawer({ isOpen, onClose, template }
         platform: "mobile",
       });
 
-      await setSetting("selected-template-id", template.id);
+      try {
+        await setSetting("selected-template-id", template.id);
+      } catch (firstError) {
+        // Retry once after a short delay
+        console.warn("Template selection failed, retrying...", firstError);
+        await new Promise((r) => setTimeout(r, 800));
+        await setSetting("selected-template-id", template.id);
+      }
 
       toast({
         title: "Template selected",

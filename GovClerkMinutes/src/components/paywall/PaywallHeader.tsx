@@ -43,6 +43,7 @@ import { safeCapture } from "@/utils/safePosthog";
 import { getClientReferenceId } from "@/utils/getClientReferenceId";
 import { UploadKind } from "@/uploadKind/uploadKind";
 import { openWhatsAppChat } from "@/utils/whatsapp";
+import { useOrgContext } from "@/contexts/OrgContext";
 
 type Props = {
   tokensRequired?: number;
@@ -91,6 +92,7 @@ export default function PaywallHeader({
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
+  const { orgId } = useOrgContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpLoading, setIsOtpLoading] = useState(false);
 
@@ -169,7 +171,7 @@ export default function PaywallHeader({
       } else {
         await upgradePlan(plan);
         setTimeout(() => {
-          revalidateCustomerDetails(transcriptId, user!.id);
+          revalidateCustomerDetails(transcriptId, user!.id, orgId);
         }, 5000);
         onClose();
       }
