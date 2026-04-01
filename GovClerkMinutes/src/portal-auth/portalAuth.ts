@@ -198,6 +198,61 @@ export async function destroyPortalSession(sessionId: string): Promise<void> {
   await conn.execute("DELETE FROM gc_portal_sessions WHERE id = ?", [sessionId]);
 }
 
+/**
+ * Extract and validate the portal session using a raw cookie header string.
+ * Use this in getServerSideProps (Node.js runtime) where the request is an
+ * IncomingMessage rather than a Web Fetch API Request.
+ */
+export async function getPortalSessionFromCookieHeader(
+  cookieHeader: string | undefined
+): Promise<PortalSessionPayload | null> {
+  const header = cookieHeader ?? "";
+  if (!header) {
+    return null;
+  }
+
+  const cookies: Record<string, string> = {};
+  for (const part of header.split(";")) {
+    const eqIndex = part.indexOf("=");
+    if (eqIndex === -1) continue;
+    const key = part.slice(0, eqIndex).trim();
+    const rawValue = part.slice(eqIndex + 1).trim();
+    try {
+      cookies[key] = decodeURIComponent(rawValue);
+    } catch {
+      cookies[key] = rawValue;
+    }
+  }
+
+  const sessionId = cookies[PORTAL_SESSION_COOKIE];
+  if (!sessionId) {
+    return null;
+  }
+
+  const conn = getPortalDbConnection();
+  const result = await conn.execute(
+    `SELECT id, org_id, portal_user_id, shared_password_id, email, auth_type, expires_at
+     FROM gc_portal_sessions
+     WHERE id = ? AND expires_at > UTC_TIMESTAMP()`,
+    [sessionId]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  const row = result.rows[0] as any;
+  return {
+    sessionId: row.id,
+    orgId: row.org_id,
+    portalUserId: row.portal_user_id ?? null,
+    sharedPasswordId: row.shared_password_id ?? null,
+    email: row.email ?? null,
+    authType: row.auth_type,
+    expiresAt: row.expires_at,
+  };
+}
+
 /** Check if an email domain is allowed for a given org. */
 export async function isEmailDomainAllowed(orgId: string, email: string): Promise<boolean> {
   const domain = email.split("@")[1]?.toLowerCase();

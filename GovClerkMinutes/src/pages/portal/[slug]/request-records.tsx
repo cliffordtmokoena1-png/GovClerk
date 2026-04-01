@@ -10,6 +10,7 @@ import type {
   RecordsRequestStatus,
 } from "@/types/publicRecords";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
+import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
 type Props = {
   settings: PublicPortalResponse["settings"];
@@ -481,6 +482,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
     if (!settingsRes.ok) return { notFound: true };
     const settingsData: PublicPortalResponse = await settingsRes.json();
+
+    // Require authentication to submit records requests
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    if (!session) {
+      return {
+        redirect: {
+          destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/request-records`,
+          permanent: false,
+        },
+      };
+    }
 
     return {
       props: {

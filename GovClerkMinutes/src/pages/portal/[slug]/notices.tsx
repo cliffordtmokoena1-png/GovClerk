@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useCallback } from "react";
 import type { PublicPortalResponse } from "@/types/portal";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
+import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
 type Props = {
   settings: PublicPortalResponse["settings"];
@@ -327,6 +328,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
     if (!settingsRes.ok) return { notFound: true };
     const settingsData: PublicPortalResponse = await settingsRes.json();
+
+    // Require authentication to view notices
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    if (!session) {
+      return {
+        redirect: {
+          destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/notices`,
+          permanent: false,
+        },
+      };
+    }
+
     const initialNotices = noticesRes.ok ? await noticesRes.json() : { notices: [], total: 0 };
 
     return {

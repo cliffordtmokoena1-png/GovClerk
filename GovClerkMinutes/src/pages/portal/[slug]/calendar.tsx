@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import type { PublicPortalResponse } from "@/types/portal";
 import type { MeetingCalendarResponse, CalendarMeeting } from "@/types/publicRecords";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
+import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
 type Props = {
   settings: PublicPortalResponse["settings"];
@@ -339,6 +340,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
 
     const settingsData: PublicPortalResponse = await settingsRes.json();
+
+    // Require authentication to view calendar
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    if (!session) {
+      return {
+        redirect: {
+          destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/calendar`,
+          permanent: false,
+        },
+      };
+    }
+
     const initialCalendar: MeetingCalendarResponse = calRes.ok
       ? await calRes.json()
       : { meetings: [], month, year };
