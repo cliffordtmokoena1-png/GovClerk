@@ -12,7 +12,7 @@ import { getCountry } from "../api/get-country";
 import { ApiGetCustomerDetailsResponse, getCustomerDetails } from "../api/get-customer-details";
 import { isDev } from "@/utils/dev";
 import { withGsspErrorHandling } from "@/error/withErrorReporting";
-import { getSiteFromRequest, isGovClerk } from "@/utils/site";
+import { getSiteFromHeaders, isGovClerk } from "@/utils/site";
 import whatsapp from "@/admin/whatsapp/api";
 import { Template } from "@/admin/whatsapp/api/templates";
 import BoardContent from "@/components/org-dashboard/content/BoardContent";
@@ -101,7 +101,7 @@ export const getServerSideProps = withGsspErrorHandling(async (context) => {
     };
   }
 
-  const site = getSiteFromRequest(context.req.headers);
+  const site = getSiteFromHeaders(context.req.headers);
 
   if (!orgId) {
     return {

@@ -11,7 +11,7 @@ import { withGsspErrorHandling } from "@/error/withErrorReporting";
 import { serialize } from "cookie";
 import { connect } from "@planetscale/database";
 import MgHead from "@/components/MgHead";
-import { getSiteFromRequest } from "@/utils/site";
+import { getSiteFromHeaders } from "@/utils/site";
 
 type Props = {
   signInToken: string;
@@ -63,7 +63,7 @@ export const getServerSideProps: GetServerSideProps = withGsspErrorHandling(asyn
     };
   }
 
-  const site = getSiteFromRequest(context.req.headers);
+  const site = getSiteFromHeaders(context.req.headers);
   const [signInToken, utmCookieValue] = await Promise.all([
     createSignInToken(userId, site),
     getUtmCookieValue(userId),

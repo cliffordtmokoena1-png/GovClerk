@@ -4,7 +4,7 @@ import getPrimaryEmail from "@/utils/email";
 import { getClientReferenceId } from "@/utils/getClientReferenceId";
 import { isPaidSubscriptionPlan, type PaidSubscriptionPlan } from "@/utils/price";
 import { Text, Flex, Spinner } from "@chakra-ui/react";
-import { getSiteFromRequest } from "@/utils/site";
+import { getSiteFromHeaders } from "@/utils/site";
 
 export const getServerSideProps = withGsspErrorHandling(async (context) => {
   const { country, plan, userId } = context.params as {
@@ -30,7 +30,7 @@ export const getServerSideProps = withGsspErrorHandling(async (context) => {
     };
   }
 
-  const site = getSiteFromRequest(context.req.headers);
+  const site = getSiteFromHeaders(context.req.headers);
   const email = await getPrimaryEmail(userId, site);
   if (email == null) {
     return {
