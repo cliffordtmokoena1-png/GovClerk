@@ -27,6 +27,16 @@ function getLogoUrl(settings: PublicPortalResponse["settings"]): string | null {
   return settings.logoUrl;
 }
 
+// Phase 3 portal navigation links
+const PORTAL_NAV_LINKS = [
+  { label: "Home", hrefSuffix: "" },
+  { label: "Meetings", hrefSuffix: "" },
+  { label: "Calendar", hrefSuffix: "/calendar" },
+  { label: "Public Records", hrefSuffix: "/records" },
+  { label: "Notices", hrefSuffix: "/notices" },
+  { label: "Request Records", hrefSuffix: "/request-records" },
+];
+
 export function PublicPortalHeader({
   settings,
   onMenuToggle,
@@ -86,6 +96,18 @@ export function PublicPortalHeader({
           <div className="flex items-center justify-between h-11">
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
+              {/* Phase 3 built-in portal nav links */}
+              {slug && PORTAL_NAV_LINKS.map((link) => (
+                <Link
+                  key={link.label}
+                  href={`/portal/${slug}${link.hrefSuffix}`}
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {/* Additional custom nav links from portal settings */}
               {settings.navLinks?.map((link, index) => (
                 <a
                   key={index}
@@ -93,7 +115,7 @@ export function PublicPortalHeader({
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                  className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
                 >
                   {link.label}
                 </a>
@@ -200,6 +222,19 @@ export function PublicPortalHeader({
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
+              {/* Phase 3 built-in portal nav links */}
+              {slug && PORTAL_NAV_LINKS.map((link) => (
+                <Link
+                  key={link.label}
+                  href={`/portal/${slug}${link.hrefSuffix}`}
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {/* Additional custom nav links */}
               {settings.navLinks?.map((link, index) => (
                 <a
                   key={index}
@@ -207,7 +242,7 @@ export function PublicPortalHeader({
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                  className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
                 >
                   {link.label}
                 </a>

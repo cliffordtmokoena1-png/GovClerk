@@ -87,7 +87,7 @@ function MyApp({ Component, pageProps, site: ssrSite }: MyAppProps) {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/service-worker.js?v=2", { scope: "/" })
+        .register("/service-worker.js?v=2", { scope: "" })
         .then((registration) => registration.update())
         .catch((err) => console.error("Service Worker failed: ", err));
     }
