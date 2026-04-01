@@ -89,7 +89,6 @@ async function handler(req: NextRequest) {
           instantlyId: lead.instantly_id ?? undefined,
           occupation: lead.occupation ?? undefined,
           organizationName: lead.organization_name ?? undefined,
-          lead_source: "db_migration",
         });
         created++;
       } else if (contact.properties.user_id === lead.user_id) {
