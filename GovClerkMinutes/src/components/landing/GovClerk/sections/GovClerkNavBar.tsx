@@ -73,12 +73,6 @@ const productItems: MegaMenuItem[] = [
     href: "/a/meetings",
   },
   {
-    icon: LuGlobe,
-    title: "Public Portal",
-    description: "Publish meeting records and minutes for public transparency",
-    href: "/a/portal",
-  },
-  {
     icon: LuShield,
     title: "Security & Compliance",
     description: "SOC 2 compliant with encryption and role-based access controls",
@@ -404,7 +398,7 @@ export default function GovClerkNavBar() {
               {isLoaded && !userId ? (
                 <>
                   <Link
-                    href="/sign-in?redirect=/portal"
+                    href="/portal"
                     className="flex items-center gap-1.5 rounded-md border border-green-600 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-50"
                   >
                     <LuGlobe className="h-4 w-4" />
@@ -591,7 +585,7 @@ export default function GovClerkNavBar() {
           {isLoaded && !userId && (
             <div className="mt-4 flex flex-col gap-0 border-t border-gray-100 pt-4">
               <Link
-                href="/sign-in?redirect=/portal"
+                href="/portal"
                 className="flex items-center gap-2 py-4 text-lg font-medium text-green-700 transition-colors hover:text-green-800"
                 onClick={handleClose}
               >
