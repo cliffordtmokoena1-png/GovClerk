@@ -12,6 +12,18 @@ export const config = {
   runtime: "edge",
 };
 
+/** Fire-and-forget fetch to the Rust server. Never throws. */
+function notifyServer(slug: string, body?: object) {
+  fetch(serverUri(slug), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET}`,
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  }).catch((err) => console.warn(`[whatsapp-webhook] notify ${slug} failed:`, err));
+}
+
 async function handler(req: Request): Promise<Response> {
   // 1. Handle GET verification challenge
   const verification = maybeHandleVerification(req);
@@ -40,66 +52,43 @@ async function handler(req: Request): Promise<Response> {
 
   console.info("Received WhatsApp webhook event:", payload);
 
-  // Iterate through entries & changes similar to wati webhook structure.
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
       switch (change.field) {
         case "messages": {
-          // A single change can include inbound messages, statuses, or both.
+          // Isolate handler errors — Meta must always get 200
           if (change.value.messages && change.value.messages.length > 0) {
-            await handleWhatsappMessages(change);
+            try {
+              await handleWhatsappMessages(change);
+            } catch (err) {
+              console.error("[whatsapp-webhook] handleWhatsappMessages failed:", err);
+            }
           }
           if (change.value.statuses && change.value.statuses.length > 0) {
-            await handleWhatsAppStatuses(change);
+            try {
+              await handleWhatsAppStatuses(change);
+            } catch (err) {
+              console.error("[whatsapp-webhook] handleWhatsAppStatuses failed:", err);
+            }
           }
 
-          // Trigger websocket to notify clients of new message
-          await fetch(serverUri("/admin/api/new-whatsapp"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET}`,
-            },
-          });
+          // Fire-and-forget — server being down must not cause a 500
+          notifyServer("/admin/api/new-whatsapp");
           break;
         }
         case "calls": {
-          // Relay connect events and statuses to unified call endpoint
           const value = change.value;
           const hasCalls = Array.isArray(value?.calls) && value.calls.length > 0;
           if (hasCalls) {
-            await fetch(serverUri("/admin/api/call"), {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET}`,
-              },
-              body: JSON.stringify({ kind: "calls", value }),
-            });
+            notifyServer("/admin/api/call", { kind: "calls", value });
           }
 
           const callStatuses = (value as any)?.statuses || [];
-          const hasStatuses = Array.isArray(callStatuses) && callStatuses.length > 0;
-          if (hasStatuses) {
-            await fetch(serverUri("/admin/api/call"), {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET}`,
-              },
-              body: JSON.stringify({ kind: "statuses", value }),
-            });
+          if (Array.isArray(callStatuses) && callStatuses.length > 0) {
+            notifyServer("/admin/api/call", { kind: "statuses", value });
           }
 
-          // Also notify generic WhatsApp event for consistency
-          await fetch(serverUri("/admin/api/new-whatsapp"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET}`,
-            },
-          });
-
+          notifyServer("/admin/api/new-whatsapp");
           break;
         }
         default: {
