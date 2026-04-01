@@ -15,6 +15,7 @@ import { PublicLiveCaptions } from "@/components/portal/public/PublicLiveCaption
 import { PublicStreamEmbed } from "@/components/portal/public/PublicStreamEmbed";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
 import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
+import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 
 interface LiveBroadcastResponse {
   broadcast: BroadcastWithMeeting | null;
@@ -297,27 +298,36 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
+  // Fetch portal settings — a 404 means org doesn't exist yet; still render the
+  // shell rather than showing a Next.js 404 page.
+  let settings: PublicPortalResponse["settings"] = makeDefaultPortalSettings(slug);
+
   try {
     const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
-    if (!settingsRes.ok) {
-      if (settingsRes.status === 404) {
-        return { notFound: true };
-      }
-      throw new Error(`Failed to fetch portal settings: ${settingsRes.status}`);
+    if (settingsRes.ok) {
+      const settingsData: PublicPortalResponse = await settingsRes.json();
+      settings = settingsData.settings;
+    } else if (settingsRes.status !== 404) {
+      console.error(`Failed to fetch portal settings: ${settingsRes.status}`);
     }
-    const settingsData: PublicPortalResponse = await settingsRes.json();
+    // 404 → org not set up yet; use defaults and continue
+  } catch (error) {
+    console.error("Error fetching portal settings:", error);
+    // Network error — still render shell with defaults
+  }
 
-    // Require authentication to view live stream
-    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
-    if (!session) {
-      return {
-        redirect: {
-          destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/live`,
-          permanent: false,
-        },
-      };
-    }
+  // Require authentication to view live stream
+  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+  if (!session) {
+    return {
+      redirect: {
+        destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/live`,
+        permanent: false,
+      },
+    };
+  }
 
+  try {
     const broadcastRes = await fetch(`${baseUrl}/api/public/portal/${slug}/live`);
     let broadcastData: LiveBroadcastResponse = { broadcast: null, agenda: [], segments: [] };
 
@@ -327,7 +337,7 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
 
     return {
       props: {
-        settings: settingsData.settings,
+        settings,
         broadcast: broadcastData.broadcast,
         agenda: broadcastData.agenda || [],
         segments: broadcastData.segments || [],
@@ -336,6 +346,14 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
     };
   } catch (error) {
     console.error("Error fetching live page data:", error);
-    return { notFound: true };
+    return {
+      props: {
+        settings,
+        broadcast: null,
+        agenda: [],
+        segments: [],
+        slug,
+      },
+    };
   }
 };

@@ -11,6 +11,7 @@ import {
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
 import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
+import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 
 const EMPTY_MEETINGS: PublicMeetingsListResponse = { meetings: [], total: 0, page: 1, pageSize: 12 };
 
@@ -22,6 +23,7 @@ interface PublicPortalPageProps {
   upcomingMeetings: Array<{ id: number; title: string; meetingDate: string }>;
   latestArtifacts: Array<{ id: number; fileName: string; artifactType: string; s3Url: string; meetingId: number | null }>;
   isAuthenticated: boolean;
+  portalExists: boolean;
 }
 
 function AnnouncementsBanner({ announcements, slug }: Readonly<{ announcements: PortalAnnouncement[]; slug: string }>) {
@@ -124,6 +126,7 @@ export default function PublicPortalPage({
   upcomingMeetings,
   latestArtifacts,
   isAuthenticated,
+  portalExists,
 }: PublicPortalPageProps) {
   const [useClientData, setUseClientData] = useState(false);
   const [sidebarFilter, setSidebarFilter] = useState<MeetingsFilter>({ sortBy: "newest" });
@@ -229,6 +232,24 @@ export default function PublicPortalPage({
               Create Account
             </Link>
           </div>
+        </div>
+      ) : !portalExists ? (
+        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+            <span className="text-3xl" aria-hidden="true">🏢</span>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Organization Not Found
+          </h2>
+          <p className="text-gray-500 mb-8 max-w-sm">
+            This organization hasn&apos;t been set up on GovClerk yet. Would you like to create it?
+          </p>
+          <Link
+            href="/org/signup"
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          >
+            Create Organization
+          </Link>
         </div>
       ) : (
         <>
@@ -354,36 +375,63 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
+  // Fetch portal settings — a 404 means the org doesn't exist yet; render the
+  // shell with default styling rather than showing a Next.js 404 page.
+  let settingsData: PublicPortalResponse = { settings: makeDefaultPortalSettings(slug) };
+  let portalExists = false;
+
   try {
-    // Fetch portal settings
     const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
-    if (!settingsRes.ok) {
-      if (settingsRes.status === 404) {
-        return { notFound: true };
-      }
-      throw new Error(`Failed to fetch portal settings: ${settingsRes.status}`);
+    if (settingsRes.ok) {
+      settingsData = await settingsRes.json();
+      portalExists = true;
+    } else if (settingsRes.status !== 404) {
+      // Unexpected error — log but still render shell
+      console.error(`Failed to fetch portal settings: ${settingsRes.status}`);
     }
-    const settingsData: PublicPortalResponse = await settingsRes.json();
+    // 404 → portalExists stays false, default settings used
+  } catch (error) {
+    console.error("Error fetching portal settings:", error);
+    // Network/parse error — still render shell with defaults
+  }
 
-    // Check if user has a valid portal session
-    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
-    const isAuthenticated = session !== null;
+  // Check if user has a valid portal session
+  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+  const isAuthenticated = session !== null;
 
-    // For unauthenticated users, return shell-only props (no content)
-    if (!isAuthenticated) {
-      return {
-        props: {
-          settings: settingsData.settings,
-          initialMeetings: EMPTY_MEETINGS,
-          slug,
-          announcements: [],
-          upcomingMeetings: [],
-          latestArtifacts: [],
-          isAuthenticated: false,
-        },
-      };
-    }
+  // For unauthenticated users, return shell-only props (no content)
+  if (!isAuthenticated) {
+    return {
+      props: {
+        settings: settingsData.settings,
+        initialMeetings: EMPTY_MEETINGS,
+        slug,
+        announcements: [],
+        upcomingMeetings: [],
+        latestArtifacts: [],
+        isAuthenticated: false,
+        portalExists,
+      },
+    };
+  }
 
+  // Authenticated but portal not set up — return shell with org-not-found state
+  if (!portalExists) {
+    return {
+      props: {
+        settings: settingsData.settings,
+        initialMeetings: EMPTY_MEETINGS,
+        slug,
+        announcements: [],
+        upcomingMeetings: [],
+        latestArtifacts: [],
+        isAuthenticated: true,
+        portalExists: false,
+      },
+    };
+  }
+
+  try {
     // Fetch initial meetings, announcements, upcoming meetings, and latest artifacts in parallel
     const [meetingsRes, announcementsRes, upcomingRes, artifactsRes] = await Promise.all([
       fetch(`${baseUrl}/api/public/portal/${slug}/meetings?page=1&limit=12&sortBy=newest`),
@@ -429,10 +477,22 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         upcomingMeetings,
         latestArtifacts,
         isAuthenticated: true,
+        portalExists: true,
       },
     };
   } catch (error) {
     console.error("Error fetching portal data:", error);
-    return { notFound: true };
+    return {
+      props: {
+        settings: settingsData.settings,
+        initialMeetings: EMPTY_MEETINGS,
+        slug,
+        announcements: [],
+        upcomingMeetings: [],
+        latestArtifacts: [],
+        isAuthenticated: true,
+        portalExists: true,
+      },
+    };
   }
 };
