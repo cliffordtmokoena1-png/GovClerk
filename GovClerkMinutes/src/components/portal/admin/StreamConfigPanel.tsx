@@ -15,7 +15,6 @@ const PLATFORM_OPTIONS: { value: StreamPlatform; label: string }[] = [
 ];
 
 export function StreamConfigPanel({ orgId: _orgId }: Props) {
-  const [config, setConfig] = useState<StreamConfig | null>(null);
   const [form, setForm] = useState({
     preferredPlatform: "youtube" as StreamPlatform,
     youtubeChannelId: "",
@@ -39,7 +38,6 @@ export function StreamConfigPanel({ orgId: _orgId }: Props) {
       .then((data) => {
         if (data.streamConfig) {
           const sc: StreamConfig = data.streamConfig;
-          setConfig(sc);
           setForm({
             preferredPlatform: sc.preferredPlatform,
             youtubeChannelId: sc.youtubeChannelId ?? "",
@@ -101,9 +99,6 @@ export function StreamConfigPanel({ orgId: _orgId }: Props) {
   if (isLoading) {
     return <div className="p-6 text-center text-gray-400 text-sm">Loading stream configuration...</div>;
   }
-
-  // Suppress unused variable warning — config is available for future use
-  void config;
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
