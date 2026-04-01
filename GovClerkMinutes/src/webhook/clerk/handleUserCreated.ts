@@ -53,7 +53,7 @@ export async function handleUserCreated(body: UserJSON, site: Site): Promise<voi
 
   if (email != null && !skip_welcome_email) {
     try {
-      await sendWelcomeEmail(email);
+      await sendWelcomeEmail(email, firstName);
     } catch (emailErr) {
       // Email failure must never prevent token granting.
       console.error(`[handleUserCreated] Failed to send welcome email to ${email}:`, emailErr);
