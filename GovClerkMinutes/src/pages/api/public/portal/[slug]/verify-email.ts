@@ -18,12 +18,20 @@ export const config = {
   runtime: "edge",
 };
 
-/** Generate a cryptographically random 6-digit verification code. */
+/** Generate a cryptographically random 6-digit verification code with no modulo bias. */
 function generateVerificationCode(): string {
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
-  const value = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
-  return String(value % 1000000).padStart(6, "0");
+  // Use rejection sampling to avoid modulo bias.
+  // The range [0, 1000000) fits within a 20-bit value (max 1048576).
+  // We draw random bytes until we get a value in range.
+  while (true) {
+    const bytes = new Uint8Array(3); // 3 bytes = up to 16777215
+    crypto.getRandomValues(bytes);
+    const value = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
+    if (value < 1000000) {
+      return String(value).padStart(6, "0");
+    }
+    // value >= 1000000 — discard and retry (prevents bias)
+  }
 }
 
 export default async function handler(req: NextRequest): Promise<Response> {

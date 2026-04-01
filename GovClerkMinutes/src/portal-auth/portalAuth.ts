@@ -211,12 +211,18 @@ export async function getPortalSessionFromCookieHeader(
     return null;
   }
 
-  const cookies = Object.fromEntries(
-    header.split(";").map((part) => {
-      const [key, ...rest] = part.trim().split("=");
-      return [key.trim(), decodeURIComponent(rest.join("="))];
-    })
-  );
+  const cookies: Record<string, string> = {};
+  for (const part of header.split(";")) {
+    const eqIndex = part.indexOf("=");
+    if (eqIndex === -1) continue;
+    const key = part.slice(0, eqIndex).trim();
+    const rawValue = part.slice(eqIndex + 1).trim();
+    try {
+      cookies[key] = decodeURIComponent(rawValue);
+    } catch {
+      cookies[key] = rawValue;
+    }
+  }
 
   const sessionId = cookies[PORTAL_SESSION_COOKIE];
   if (!sessionId) {

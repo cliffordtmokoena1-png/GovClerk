@@ -12,6 +12,8 @@ import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
 import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
+const EMPTY_MEETINGS: PublicMeetingsListResponse = { meetings: [], total: 0, page: 1, pageSize: 12 };
+
 interface PublicPortalPageProps {
   settings: PublicPortalResponse["settings"];
   initialMeetings: PublicMeetingsListResponse;
@@ -352,8 +354,6 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
-  const emptyMeetings: PublicMeetingsListResponse = { meetings: [], total: 0, page: 1, pageSize: 12 };
-
   try {
     // Fetch portal settings
     const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
@@ -374,7 +374,7 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
       return {
         props: {
           settings: settingsData.settings,
-          initialMeetings: emptyMeetings,
+          initialMeetings: EMPTY_MEETINGS,
           slug,
           announcements: [],
           upcomingMeetings: [],

@@ -8,8 +8,7 @@
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import { getPortalSession } from "@/portal-auth/portalAuth";
-import { jsonResponse } from "@/utils/apiHelpers";
-import { errorResponse } from "@/utils/apiHelpers";
+import { jsonResponse, errorResponse } from "@/utils/apiHelpers";
 
 export const config = {
   runtime: "edge",
