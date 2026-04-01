@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
-import { LuMenu, LuX, LuFilter, LuLayoutDashboard } from "react-icons/lu";
+import { LuMenu, LuX, LuFilter, LuLayoutDashboard, LuLogIn, LuLogOut, LuUser } from "react-icons/lu";
 import { useAuth } from "@clerk/nextjs";
+import { usePortalSession } from "@/hooks/portal/usePortalSession";
 import type { PublicPortalResponse } from "@/types/portal";
 
 interface PublicPortalHeaderProps {
@@ -25,18 +27,6 @@ function getLogoUrl(settings: PublicPortalResponse["settings"]): string | null {
   return settings.logoUrl;
 }
 
-function getSignInUrl(): string {
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    const currentPath = window.location.pathname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `/sign-in?redirect=${encodeURIComponent(currentPath)}`;
-    }
-    return `https://govclerkminutes.com/sign-in?redirect=${encodeURIComponent(currentPath)}`;
-  }
-  return "https://govclerkminutes.com/sign-in?redirect=/portal";
-}
-
 export function PublicPortalHeader({
   settings,
   onMenuToggle,
@@ -44,6 +34,21 @@ export function PublicPortalHeader({
 }: PublicPortalHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isSignedIn } = useAuth();
+  const { session, refresh: refreshSession } = usePortalSession();
+  const router = useRouter();
+
+  // Derive the slug from the current URL path (/portal/[slug]/...)
+  const slug = router.query.slug as string | undefined;
+
+  const handlePortalSignOut = useCallback(async () => {
+    await fetch("/api/portal/auth/logout", { method: "POST" });
+    await refreshSession();
+    if (slug) {
+      router.push(`/portal/${slug}/sign-in`);
+    }
+  }, [slug, router, refreshSession]);
+
+  const portalSignInUrl = slug ? `/portal/${slug}/sign-in` : "#";
 
   return (
     <header className="sticky top-0 z-40 print:static print:shadow-none">
@@ -95,24 +100,51 @@ export function PublicPortalHeader({
               ))}
             </nav>
 
-            {isSignedIn ? (
-              <Link
-                href="/a/portal"
-                style={{ color: settings.headerTextColor || "#ffffff" }}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
-              >
-                <LuLayoutDashboard className="w-3.5 h-3.5" />
-                Admin Dashboard
-              </Link>
-            ) : (
-              <a
-                href={getSignInUrl()}
-                style={{ color: settings.headerTextColor || "#ffffff" }}
-                className="hidden lg:block px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
-              >
-                Sign In
-              </a>
-            )}
+            {/* Desktop: right-side actions */}
+            <div className="hidden lg:flex items-center gap-2">
+              {/* Portal session: signed-in state */}
+              {session?.isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    style={{ color: settings.headerTextColor || "#ffffff" }}
+                    className="flex items-center gap-1 text-xs opacity-80"
+                  >
+                    <LuUser className="w-3.5 h-3.5" />
+                    {session.email ?? "Signed in"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handlePortalSignOut}
+                    style={{ color: settings.headerTextColor || "#ffffff" }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                  >
+                    <LuLogOut className="w-3.5 h-3.5" />
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href={portalSignInUrl}
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                >
+                  <LuLogIn className="w-3.5 h-3.5" />
+                  Sign In
+                </Link>
+              )}
+
+              {/* Clerk admin dashboard link */}
+              {isSignedIn && (
+                <Link
+                  href="/a/portal"
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                >
+                  <LuLayoutDashboard className="w-3.5 h-3.5" />
+                  Admin Dashboard
+                </Link>
+              )}
+            </div>
 
             {/* Mobile: Filter + Hamburger buttons side by side */}
             <div className="lg:hidden flex items-center gap-2">
@@ -180,7 +212,37 @@ export function PublicPortalHeader({
                   {link.label}
                 </a>
               ))}
-              {isSignedIn ? (
+              {/* Portal session in mobile menu */}
+              {session?.isAuthenticated ? (
+                <div className="border-t border-white/10 mt-2 pt-4">
+                  <span
+                    style={{ color: settings.headerTextColor || "#ffffff" }}
+                    className="flex items-center gap-1 px-4 py-1 text-xs opacity-70"
+                  >
+                    <LuUser className="w-3.5 h-3.5" />
+                    {session.email ?? "Signed in"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handlePortalSignOut}
+                    style={{ color: settings.headerTextColor || "#ffffff" }}
+                    className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors w-full uppercase tracking-wide"
+                  >
+                    <LuLogOut className="w-3.5 h-3.5" />
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href={portalSignInUrl}
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors border-t border-white/10 mt-2 pt-4 uppercase tracking-wide"
+                >
+                  <LuLogIn className="w-3.5 h-3.5" />
+                  Sign In
+                </Link>
+              )}
+              {isSignedIn && (
                 <Link
                   href="/a/portal"
                   style={{ color: settings.headerTextColor || "#ffffff" }}
@@ -189,14 +251,6 @@ export function PublicPortalHeader({
                   <LuLayoutDashboard className="w-3.5 h-3.5" />
                   Admin Dashboard
                 </Link>
-              ) : (
-                <a
-                  href={getSignInUrl()}
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors border-t border-white/10 mt-2 pt-4 uppercase tracking-wide"
-                >
-                  Sign In
-                </a>
               )}
             </nav>
           </div>

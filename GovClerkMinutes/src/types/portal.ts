@@ -230,3 +230,70 @@ export interface PublicMeetingsListResponse {
   page: number;
   pageSize: number;
 }
+
+// Portal user types
+export type PortalUserRole = "admin" | "member" | "readonly";
+
+export interface PortalUser {
+  id: number;
+  orgId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: PortalUserRole;
+  emailDomain: string;
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortalSharedPassword {
+  id: number;
+  orgId: string;
+  label: string;
+  expiresAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PortalLoginRequest {
+  slug: string;
+  email: string;
+  password: string;
+}
+
+export interface PortalSharedLoginRequest {
+  slug: string;
+  password: string;
+}
+
+export interface PortalLoginResponse {
+  success: boolean;
+  authType: "email" | "shared";
+  email?: string;
+  role?: PortalUserRole;
+}
+
+export interface PortalSessionResponse {
+  isAuthenticated: boolean;
+  authType?: "email" | "shared";
+  email?: string;
+  role?: PortalUserRole;
+  orgId?: string;
+  expiresAt?: string;
+}
+
+export interface CreatePortalUserRequest {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  role?: PortalUserRole;
+}
+
+export interface CreateSharedPasswordRequest {
+  label: string;
+  password: string;
+  expiresAt?: string;
+}
