@@ -5,7 +5,6 @@ import { useState, useCallback } from "react";
 import type { PublicPortalResponse } from "@/types/portal";
 import type { MeetingCalendarResponse, CalendarMeeting } from "@/types/publicRecords";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
-import "@/styles/portal-print.css";
 
 type Props = {
   settings: PublicPortalResponse["settings"];

@@ -6,9 +6,6 @@ import type { PublicPortalResponse } from "@/types/portal";
 import type { PublicRecordsSearchResponse, PublicRecordsSearchResult } from "@/types/publicRecords";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
 
-// Print styles
-import "@/styles/portal-print.css";
-
 type Props = {
   settings: PublicPortalResponse["settings"];
   slug: string;
