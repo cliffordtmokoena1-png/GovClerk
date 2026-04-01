@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import withErrorReporting from "@/error/withErrorReporting";
 import { sendSignInMagicEmail, sendSignUpMagicEmail } from "@/utils/postmark";
-import { createAuthToken } from "@/auth/createAuthToken";
+import { createSignInToken } from "@/utils/clerk";
 import { getUserIdFromEmail } from "@/auth/getUserIdFromEmail";
 import { createUser } from "@/auth/createUser";
 import { getSiteFromHeaders } from "@/utils/site";
@@ -42,7 +42,10 @@ async function handler(
     const userExists = userIdFromEmail !== null;
 
     if (userExists && userIdFromEmail) {
-      const token = await createAuthToken(userIdFromEmail);
+      const token = await createSignInToken(userIdFromEmail, site);
+      if (!token) {
+        throw new Error(`Failed to create Clerk sign-in token for userId=${userIdFromEmail}`);
+      }
       await sendSignInMagicEmail(email, token);
     } else {
       const newUserId = await createUser({
@@ -51,7 +54,10 @@ async function handler(
         env,
         site,
       });
-      const token = await createAuthToken(newUserId);
+      const token = await createSignInToken(newUserId, site);
+      if (!token) {
+        throw new Error(`Failed to create Clerk sign-in token for userId=${newUserId}`);
+      }
       await sendSignUpMagicEmail(email, token);
     }
 
