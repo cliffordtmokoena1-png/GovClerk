@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { LuCalendar, LuClock, LuRadio } from "react-icons/lu";
@@ -6,11 +6,14 @@ import type { PublicPortalResponse } from "@/types/portal";
 import type { BroadcastWithMeeting, BroadcastTranscriptSegment } from "@/types/broadcast";
 import type { MgAgendaItemWithRelations } from "@/types/agenda";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
-import { HlsVideoPlayer } from "@/components/broadcast/HlsVideoPlayer";
-import { getHlsStreamUrlByBroadcastId } from "@/sophon/config";
-import { usePublicLiveBroadcast } from "@/hooks/broadcast/usePublicLiveBroadcast";
-import { PublicAgendaList } from "@/components/broadcast/PublicAgendaList";
-import { PublicTranscriptView } from "@/components/broadcast/PublicTranscriptView";
+import { PublicLiveAgenda } from "@/components/portal/public/PublicLiveAgenda";
+import { PublicMotionsPanel } from "@/components/portal/public/PublicMotionsPanel";
+import { PublicSpeakerQueue } from "@/components/portal/public/PublicSpeakerQueue";
+import { PublicCommentForm } from "@/components/portal/public/PublicCommentForm";
+import { PublicLiveCaptions } from "@/components/portal/public/PublicLiveCaptions";
+import { PublicStreamEmbed } from "@/components/portal/public/PublicStreamEmbed";
+import { useLiveSession } from "@/hooks/portal/useLiveSession";
+import type { LiveSessionResponse } from "@/types/liveSession";
 
 interface LiveBroadcastResponse {
   broadcast: BroadcastWithMeeting | null;
@@ -25,6 +28,8 @@ interface PublicLivePageProps {
   segments: BroadcastTranscriptSegment[];
   slug: string;
 }
+
+type ActiveTab = "agenda" | "motions" | "speakers" | "comment" | "captions";
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
@@ -44,17 +49,17 @@ function formatTime(dateStr: string) {
   });
 }
 
-function LiveStreamPlayer({ broadcastId }: Readonly<{ broadcastId: number }>) {
-  const streamUrl = getHlsStreamUrlByBroadcastId(broadcastId);
-
-  return (
-    <HlsVideoPlayer
-      streamUrl={streamUrl}
-      liveLabel="Live"
-      waitingMessage="Connecting to stream..."
-      waitingSubMessage="This may take a moment"
-    />
-  );
+function flattenAgenda(items: any[]): { id: number; title: string }[] {
+  const result: { id: number; title: string }[] = [];
+  for (const item of items) {
+    if (!item.isSection) {
+      result.push({ id: item.id, title: item.title });
+    }
+    if (item.children?.length) {
+      result.push(...flattenAgenda(item.children));
+    }
+  }
+  return result;
 }
 
 export default function PublicLivePage({
@@ -64,12 +69,17 @@ export default function PublicLivePage({
   segments: initialSegments,
   slug,
 }: PublicLivePageProps) {
-  const { broadcast, agenda, segments } = usePublicLiveBroadcast({
-    slug,
-    initialBroadcast,
-    initialAgenda,
-    initialSegments,
-  });
+  const [activeTab, setActiveTab] = useState<ActiveTab>("agenda");
+  const { data: liveData } = useLiveSession(slug);
+
+  // Use live data if available, else fall back to SSR initial data
+  const broadcast = liveData?.broadcast ?? initialBroadcast;
+  const agenda = (liveData?.agenda ?? initialAgenda) as any[];
+  const segments = liveData?.segments ?? initialSegments;
+  const streamConfig = liveData?.streamConfig ?? null;
+  const motions = liveData?.motions ?? [];
+  const speakerQueue = liveData?.speakerQueue ?? [];
+  const publicCommentQueue = liveData?.publicCommentQueue ?? [];
 
   const completedItemIds = useMemo(() => {
     if (!broadcast?.agendaTimestamps) {
@@ -83,6 +93,16 @@ export default function PublicLivePage({
     }
     return completed;
   }, [broadcast?.agendaTimestamps, broadcast?.currentAgendaItemId]);
+
+  const flatAgendaItems = useMemo(() => flattenAgenda(agenda), [agenda]);
+
+  const tabs: { id: ActiveTab; label: string; count?: number }[] = [
+    { id: "agenda", label: "Agenda" },
+    { id: "motions", label: "Motions & Voting", count: motions.length || undefined },
+    { id: "speakers", label: "Speaker Queue", count: speakerQueue.length || undefined },
+    { id: "comment", label: "Public Comment" },
+    { id: "captions", label: "Live Captions", count: segments.length || undefined },
+  ];
 
   const pageTitle = settings.pageTitle ?? "Live Meeting";
 
@@ -111,7 +131,6 @@ export default function PublicLivePage({
               </a>
             </div>
           </main>
-
           <footer className="shrink-0 border-t border-gray-200 bg-white py-4">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <p className="text-center text-sm text-gray-500">
@@ -145,6 +164,7 @@ export default function PublicLivePage({
         <PublicPortalHeader settings={settings} />
 
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+          {/* Live badge */}
           <div className="mb-6 flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -153,15 +173,18 @@ export default function PublicLivePage({
             <span className="text-red-600 text-sm">This meeting is currently being broadcast</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              {broadcast.id && <LiveStreamPlayer broadcastId={broadcast.id} />}
+          {/* Top section: stream + meeting info */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
+              <PublicStreamEmbed streamConfig={streamConfig} />
+            </div>
 
+            <div className="space-y-4">
               <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h1 className="text-xl font-semibold text-gray-900 mb-2">
+                <h1 className="text-lg font-semibold text-gray-900 mb-2">
                   {broadcast.meeting.title}
                 </h1>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-2">
                   <span className="flex items-center gap-1">
                     <LuCalendar className="w-4 h-4" />
                     {formatDate(broadcast.meeting.meetingDate)}
@@ -172,36 +195,80 @@ export default function PublicLivePage({
                   </span>
                 </div>
                 {broadcast.meeting.description && (
-                  <p className="mt-3 text-gray-600 text-sm">{broadcast.meeting.description}</p>
+                  <p className="text-gray-600 text-sm">{broadcast.meeting.description}</p>
                 )}
               </div>
 
-              <PublicTranscriptView
-                slug={slug}
-                broadcastId={broadcast.id}
-                initialSegments={segments}
-              />
+              {/* Attendance summary */}
+              {liveData?.attendance && liveData.attendance.length > 0 && (
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <h2 className="text-sm font-semibold text-gray-700 mb-2">Attendance</h2>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {liveData.attendance.filter((rec) => rec.status === "present" || rec.status === "late").length}
+                    </span>
+                    <span className="text-gray-500">/ {liveData.attendance.length} present</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="flex overflow-x-auto border-b border-gray-200">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count !== undefined && (
+                    <span className={`px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab.id ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
 
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden sticky top-4">
-                <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                  <h2 className="font-medium text-gray-900 text-sm">Meeting Agenda</h2>
-                  {broadcast.currentAgendaItemId && (
-                    <span className="text-xs text-blue-600 font-medium">In Progress</span>
-                  )}
-                </div>
-                <div className="max-h-[60vh] overflow-y-auto">
-                  <PublicAgendaList
-                    items={agenda}
-                    currentAgendaItemId={broadcast.currentAgendaItemId}
-                    completedItemIds={completedItemIds}
-                  />
-                </div>
-              </div>
+            <div className="p-4">
+              {activeTab === "agenda" && (
+                <PublicLiveAgenda
+                  agenda={agenda}
+                  currentAgendaItemId={broadcast.currentAgendaItemId}
+                />
+              )}
+
+              {activeTab === "motions" && (
+                <PublicMotionsPanel motions={motions} />
+              )}
+
+              {activeTab === "speakers" && (
+                <PublicSpeakerQueue queue={speakerQueue} />
+              )}
+
+              {activeTab === "comment" && (
+                <PublicCommentForm
+                  slug={slug}
+                  meetingId={broadcast.meeting.id}
+                  agendaItems={flatAgendaItems}
+                  approvedComments={publicCommentQueue}
+                />
+              )}
+
+              {activeTab === "captions" && (
+                <PublicLiveCaptions segments={segments} />
+              )}
             </div>
           </div>
         </main>
+
         <footer className="shrink-0 border-t border-gray-200 bg-white py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p className="text-center text-sm text-gray-500">
