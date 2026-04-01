@@ -139,7 +139,7 @@ export function PublicStreamEmbed({ streamConfig }: Props) {
       <div className="text-center text-gray-400">
         <div className="text-4xl mb-3">📡</div>
         <p className="text-sm font-medium">Stream not configured</p>
-        <p className="text-xs mt-1 text-gray-500">Contact the organisation for access details</p>
+        <p className="text-xs mt-1 text-gray-500">Contact the organization for access details</p>
       </div>
     </div>
   );
