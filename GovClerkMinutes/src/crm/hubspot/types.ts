@@ -8,9 +8,11 @@ export type HubspotContactProperties =
   | "minutes_due"
   | "user_id"
   | "hubspot_owner_id"
+  | "jobtitle"
+  | "company"
   | keyof ExtraContactProperties;
 
-export type LeadSource = "gc_landing_page" | "gc_school" | "test_source";
+export type LeadSource = "gc_landing_page" | "gc_school" | "gc_whatsapp" | "test_source";
 export type ExtraContactProperties = {
   lead_source: LeadSource;
 };

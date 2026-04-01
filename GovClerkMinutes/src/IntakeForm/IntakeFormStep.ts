@@ -7,6 +7,8 @@ export enum IntakeFormStep {
   ASK_PHONE = 2,
   ASK_FREQUENCY = 3,
   ASK_DUE_DATE = 4,
+  ASK_OCCUPATION = 5,
+  ASK_ORGANIZATION = 6,
 }
 
 export type IntakeFormEmailStepBody = {
@@ -39,12 +41,26 @@ export type IntakeFormDueDateStepBody = {
   userId: string;
 };
 
+export type IntakeFormOccupationStepBody = {
+  step: IntakeFormStep.ASK_OCCUPATION;
+  occupation: string;
+  userId: string;
+};
+
+export type IntakeFormOrganizationStepBody = {
+  step: IntakeFormStep.ASK_ORGANIZATION;
+  organizationName: string;
+  userId: string;
+};
+
 export type IntakeFormStepBody =
   | IntakeFormEmailStepBody
   | IntakeFormFirstNameStepBody
   | IntakeFormPhoneStepBody
   | IntakeFormFrequencyStepBody
-  | IntakeFormDueDateStepBody;
+  | IntakeFormDueDateStepBody
+  | IntakeFormOccupationStepBody
+  | IntakeFormOrganizationStepBody;
 
 function isIntakeFormStepBody(body: any): body is IntakeFormStepBody {
   if (typeof body !== "object" || body === null) {
@@ -68,6 +84,12 @@ function isIntakeFormStepBody(body: any): body is IntakeFormStepBody {
 
     case IntakeFormStep.ASK_DUE_DATE:
       return typeof body.dueDate === "string" && body.userId != null;
+
+    case IntakeFormStep.ASK_OCCUPATION:
+      return typeof body.occupation === "string" && body.userId != null;
+
+    case IntakeFormStep.ASK_ORGANIZATION:
+      return typeof body.organizationName === "string" && body.userId != null;
 
     default: {
       const _exhaustiveCheck: never = step;

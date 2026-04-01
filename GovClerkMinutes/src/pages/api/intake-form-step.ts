@@ -17,6 +17,8 @@ import {
   IntakeFormEmailStepBody,
   IntakeFormFirstNameStepBody,
   IntakeFormFrequencyStepBody,
+  IntakeFormOccupationStepBody,
+  IntakeFormOrganizationStepBody,
   IntakeFormPhoneStepBody,
   IntakeFormStep,
   validateBody,
@@ -233,6 +235,70 @@ async function handleDueDateStep(body: IntakeFormDueDateStepBody): Promise<Respo
   );
 }
 
+async function handleOccupationStep(body: IntakeFormOccupationStepBody): Promise<Response> {
+  const { userId, occupation } = body;
+
+  await Promise.all([
+    updateLeadInDb({
+      userId,
+      occupation,
+    }),
+    hubspot.updateContact({
+      filter: {
+        propertyName: "user_id",
+        value: userId,
+      },
+      properties: {
+        occupation,
+      },
+    }),
+  ]);
+
+  return new Response(
+    JSON.stringify({
+      userId,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+}
+
+async function handleOrganizationStep(body: IntakeFormOrganizationStepBody): Promise<Response> {
+  const { userId, organizationName } = body;
+
+  await Promise.all([
+    updateLeadInDb({
+      userId,
+      organizationName,
+    }),
+    hubspot.updateContact({
+      filter: {
+        propertyName: "user_id",
+        value: userId,
+      },
+      properties: {
+        organizationName,
+      },
+    }),
+  ]);
+
+  return new Response(
+    JSON.stringify({
+      userId,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+}
+
 async function handler(req: NextRequest) {
   const body = await validateBody(req);
 
@@ -252,6 +318,12 @@ async function handler(req: NextRequest) {
     }
     case IntakeFormStep.ASK_DUE_DATE: {
       return await handleDueDateStep(body);
+    }
+    case IntakeFormStep.ASK_OCCUPATION: {
+      return await handleOccupationStep(body);
+    }
+    case IntakeFormStep.ASK_ORGANIZATION: {
+      return await handleOrganizationStep(body);
     }
     default: {
       const _exhaustiveCheck: never = step;

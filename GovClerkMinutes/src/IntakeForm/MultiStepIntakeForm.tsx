@@ -25,6 +25,8 @@ import {
   IntakeFormEmailStepBody,
   IntakeFormFirstNameStepBody,
   IntakeFormFrequencyStepBody,
+  IntakeFormOccupationStepBody,
+  IntakeFormOrganizationStepBody,
   IntakeFormPhoneStepBody,
   IntakeFormStep,
 } from "./IntakeFormStep";
@@ -49,6 +51,8 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
   const [dueDate, setDueDate] = useState("");
   const [frequency, setFrequency] = useState("");
   const [phone, setPhone] = useState<string>();
+  const [occupation, setOccupation] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [error, setError] = useState("");
   const isMobile = useBreakpointValue({ base: true, md: false });
   const { setFreshUserId, setFreshEmail } = usePosthogProvider();
@@ -60,6 +64,8 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const frequencySelectRef = useRef<HTMLSelectElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
+  const occupationInputRef = useRef<HTMLInputElement>(null);
+  const organizationInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus the current step's input when step changes
   useEffect(() => {
@@ -91,6 +97,16 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
           case IntakeFormStep.ASK_DUE_DATE:
             if (dueDateInputRef.current) {
               dueDateInputRef.current.focus();
+            }
+            break;
+          case IntakeFormStep.ASK_OCCUPATION:
+            if (occupationInputRef.current) {
+              occupationInputRef.current.focus();
+            }
+            break;
+          case IntakeFormStep.ASK_ORGANIZATION:
+            if (organizationInputRef.current) {
+              organizationInputRef.current.focus();
             }
             break;
         }
@@ -166,6 +182,16 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
         setError("Please select a due date.");
         return false;
       }
+    } else if (step === IntakeFormStep.ASK_OCCUPATION) {
+      if (!occupation.trim()) {
+        setError("Please enter your occupation.");
+        return false;
+      }
+    } else if (step === IntakeFormStep.ASK_ORGANIZATION) {
+      if (!organizationName.trim()) {
+        setError("Please enter your organization name.");
+        return false;
+      }
     }
     setError("");
     return true;
@@ -185,6 +211,8 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
         first_name: firstName,
         due_date: dueDate,
         frequency,
+        occupation,
+        organization_name: organizationName,
       });
 
       switch (step) {
@@ -324,6 +352,54 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
 
           break;
         }
+        case IntakeFormStep.ASK_OCCUPATION: {
+          const body: IntakeFormOccupationStepBody = {
+            step: IntakeFormStep.ASK_OCCUPATION,
+            userId: assertString(newUserId),
+            occupation,
+          };
+          const res = await fetch("/api/intake-form-step", {
+            method: "POST",
+            body: JSON.stringify({
+              ...body,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (res.ok) {
+            setStep(step + 1);
+          } else {
+            setError("Something went wrong. Please try again.");
+          }
+
+          break;
+        }
+        case IntakeFormStep.ASK_ORGANIZATION: {
+          const body: IntakeFormOrganizationStepBody = {
+            step: IntakeFormStep.ASK_ORGANIZATION,
+            userId: assertString(newUserId),
+            organizationName,
+          };
+          const res = await fetch("/api/intake-form-step", {
+            method: "POST",
+            body: JSON.stringify({
+              ...body,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (res.ok) {
+            setStep(step + 1);
+          } else {
+            setError("Something went wrong. Please try again.");
+          }
+
+          break;
+        }
       }
     } finally {
       setIsLoadingNextStep(false);
@@ -335,6 +411,8 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
           first_name: firstName,
           due_date: dueDate,
           frequency,
+          occupation,
+          organization_name: organizationName,
         });
 
         setSubmitState("signup_submit");
@@ -557,10 +635,58 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
             />
           </>
         );
+      case IntakeFormStep.ASK_OCCUPATION:
+        return (
+          <>
+            <Text fontSize="lg" textAlign="center" fontWeight="semibold">
+              What is your occupation?
+            </Text>
+            <Input
+              id="occupation-input"
+              type="text"
+              ref={occupationInputRef}
+              value={occupation}
+              onChange={(e) => {
+                setOccupation(e.target.value);
+                setError("");
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="e.g. City Clerk, Town Secretary"
+              size="lg"
+              bg="white"
+              _placeholder={{ color: "gray.500" }}
+            />
+          </>
+        );
+      case IntakeFormStep.ASK_ORGANIZATION:
+        return (
+          <>
+            <Text fontSize="lg" textAlign="center" fontWeight="semibold">
+              What organization do you work for?
+            </Text>
+            <Input
+              id="organization-input"
+              type="text"
+              ref={organizationInputRef}
+              value={organizationName}
+              onChange={(e) => {
+                setOrganizationName(e.target.value);
+                setError("");
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="e.g. City of Springfield"
+              size="lg"
+              bg="white"
+              _placeholder={{ color: "gray.500" }}
+            />
+          </>
+        );
       default:
         return null;
     }
   };
+
+  const totalSteps = Object.keys(IntakeFormStep).filter((k) => isNaN(Number(k))).length;
 
   return (
     <Box id="intake-form">
@@ -575,7 +701,7 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
               onClick={handleNext}
               isLoading={isLoadingNextStep}
             >
-              {step < 3 ? "Next" : "Get Started"}
+              {step < totalSteps - 1 ? "Next" : "Get Started"}
             </Button>
           )}
           {error && (

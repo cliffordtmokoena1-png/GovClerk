@@ -12,6 +12,8 @@ export async function createContact({
   minutesFreq,
   minutesDue,
   instantlyId,
+  occupation,
+  organizationName,
   lead_source,
 }: Partial<MgLead> & ExtraContactProperties): Promise<string> {
   const response = await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
@@ -29,6 +31,8 @@ export async function createContact({
         ...(minutesDue && { minutes_due: formatDueDate(minutesDue) }),
         ...(userId && { user_id: userId }),
         ...(instantlyId && { instantly_id: instantlyId }),
+        ...(occupation && { jobtitle: occupation }),
+        ...(organizationName && { company: organizationName }),
         ...(lead_source && { lead_source }),
       },
     }),
