@@ -84,7 +84,7 @@ export async function sendMinutesFinishedEmail(transcriptId: number): Promise<vo
   const docBase64 = Buffer.from(docBuffer).toString("base64");
 
   await sendEmail({
-    From: '"GovClerkMinutes" <max@mail.GovClerkMinutes.com>',
+    From: '"GovClerk Minutes" <admin@govclerkminutes.com>',
     To: email,
     Bcc: [OUTGOING_BCC_EMAIL],
     Subject: `Your meeting minutes are ready: ${title}`,

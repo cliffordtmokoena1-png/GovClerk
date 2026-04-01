@@ -18,6 +18,7 @@ import { connect } from "@planetscale/database";
 import withErrorReporting from "@/error/withErrorReporting";
 import { verifyWebhookSignature, getTokensForPlan } from "@/utils/paystack";
 import type { PaidSubscriptionPlan } from "@/utils/price";
+import { sendPaymentConfirmationEmail } from "@/utils/postmark";
 
 export const config = {
   api: {
@@ -77,6 +78,13 @@ interface PaystackWebhookEvent {
 // ---------------------------------------------------------------------------
 // Database helpers
 // ---------------------------------------------------------------------------
+
+/** Derives a human-readable plan display name from plan metadata or plan code. */
+function getPlanDisplayName(planName: string | undefined, planCode: string | null | undefined): string {
+  if (planName) return planName;
+  if (planCode?.toLowerCase().includes("pro")) return "Pro";
+  return "Basic";
+}
 
 function getDbConn() {
   return connect({
@@ -267,6 +275,16 @@ async function handleChargeSuccess(
       checkoutSessionId: data.reference,
     });
 
+    // Send payment confirmation email (fire-and-forget — never blocks the webhook response)
+    const planDisplayName = getPlanDisplayName(metaPlan, planCode);
+    sendPaymentConfirmationEmail(
+      data.customer.email,
+      planDisplayName,
+      data.customer.first_name ?? null
+    ).catch((emailErr) => {
+      console.error("[paystack-webhook] Failed to send payment confirmation email:", emailErr);
+    });
+
     console.info(
       `[paystack-webhook] charge.success (subscription): userId=${userId} credit=${credit} ref=${data.reference}`
     );
@@ -316,6 +334,16 @@ async function handleSubscriptionCreate(
     customerCode: data.customer.customer_code,
     subscriptionCode: data.subscription_code,
     planCode: data.plan.plan_code,
+  });
+
+  // Send payment confirmation email (fire-and-forget — never blocks the webhook response)
+  const planDisplayName = getPlanDisplayName(data.plan.name, data.plan.plan_code);
+  sendPaymentConfirmationEmail(
+    data.customer.email,
+    planDisplayName,
+    data.customer.first_name ?? null
+  ).catch((emailErr) => {
+    console.error("[paystack-webhook] Failed to send payment confirmation email (subscription.create):", emailErr);
   });
 
   console.info(
