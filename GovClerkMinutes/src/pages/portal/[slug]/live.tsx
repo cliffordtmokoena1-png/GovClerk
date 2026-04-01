@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import { LuCalendar, LuClock, LuRadio } from "react-icons/lu";
 import type { PublicPortalResponse } from "@/types/portal";
 import type { BroadcastWithMeeting, BroadcastTranscriptSegment } from "@/types/broadcast";
@@ -13,6 +14,7 @@ import { PublicCommentForm } from "@/components/portal/public/PublicCommentForm"
 import { PublicLiveCaptions } from "@/components/portal/public/PublicLiveCaptions";
 import { PublicStreamEmbed } from "@/components/portal/public/PublicStreamEmbed";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
+import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
 interface LiveBroadcastResponse {
   broadcast: BroadcastWithMeeting | null;
@@ -304,6 +306,17 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
       throw new Error(`Failed to fetch portal settings: ${settingsRes.status}`);
     }
     const settingsData: PublicPortalResponse = await settingsRes.json();
+
+    // Require authentication to view live stream
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    if (!session) {
+      return {
+        redirect: {
+          destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/live`,
+          permanent: false,
+        },
+      };
+    }
 
     const broadcastRes = await fetch(`${baseUrl}/api/public/portal/${slug}/live`);
     let broadcastData: LiveBroadcastResponse = { broadcast: null, agenda: [], segments: [] };

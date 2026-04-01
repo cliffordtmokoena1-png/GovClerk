@@ -10,6 +10,7 @@ import {
 } from "@/components/portal/public";
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
+import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
 interface PublicPortalPageProps {
   settings: PublicPortalResponse["settings"];
@@ -18,6 +19,7 @@ interface PublicPortalPageProps {
   announcements: PortalAnnouncement[];
   upcomingMeetings: Array<{ id: number; title: string; meetingDate: string }>;
   latestArtifacts: Array<{ id: number; fileName: string; artifactType: string; s3Url: string; meetingId: number | null }>;
+  isAuthenticated: boolean;
 }
 
 function AnnouncementsBanner({ announcements, slug }: Readonly<{ announcements: PortalAnnouncement[]; slug: string }>) {
@@ -119,6 +121,7 @@ export default function PublicPortalPage({
   announcements,
   upcomingMeetings,
   latestArtifacts,
+  isAuthenticated,
 }: PublicPortalPageProps) {
   const [useClientData, setUseClientData] = useState(false);
   const [sidebarFilter, setSidebarFilter] = useState<MeetingsFilter>({ sortBy: "newest" });
@@ -199,6 +202,34 @@ export default function PublicPortalPage({
       filter={sidebarFilter}
       onFilterChange={handleSidebarFilterChange}
     >
+      {!isAuthenticated ? (
+        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
+            <span className="text-3xl" aria-hidden="true">🔒</span>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Sign in to access this portal
+          </h2>
+          <p className="text-gray-500 mb-8 max-w-sm">
+            Sign in with your organisational email to access meetings, documents, and other portal content.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href={`/portal/${slug}/sign-in`}
+              className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href={`/portal/${slug}/register`}
+              className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            >
+              Create Account
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Quick Access Links */}
       <nav aria-label="Quick access links" className="mb-6">
         <ul className="grid grid-cols-2 sm:grid-cols-5 gap-3 list-none">
@@ -307,6 +338,8 @@ export default function PublicPortalPage({
         onSearchChange={handleSearchChange}
         portalSlug={slug}
       />
+        </>
+      )}
     </PublicPortalLayout>
     </>
   );
@@ -319,6 +352,8 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
+  const emptyMeetings: PublicMeetingsListResponse = { meetings: [], total: 0, page: 1, pageSize: 12 };
+
   try {
     // Fetch portal settings
     const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
@@ -329,6 +364,25 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
       throw new Error(`Failed to fetch portal settings: ${settingsRes.status}`);
     }
     const settingsData: PublicPortalResponse = await settingsRes.json();
+
+    // Check if user has a valid portal session
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    const isAuthenticated = session !== null;
+
+    // For unauthenticated users, return shell-only props (no content)
+    if (!isAuthenticated) {
+      return {
+        props: {
+          settings: settingsData.settings,
+          initialMeetings: emptyMeetings,
+          slug,
+          announcements: [],
+          upcomingMeetings: [],
+          latestArtifacts: [],
+          isAuthenticated: false,
+        },
+      };
+    }
 
     // Fetch initial meetings, announcements, upcoming meetings, and latest artifacts in parallel
     const [meetingsRes, announcementsRes, upcomingRes, artifactsRes] = await Promise.all([
@@ -374,6 +428,7 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         announcements,
         upcomingMeetings,
         latestArtifacts,
+        isAuthenticated: true,
       },
     };
   } catch (error) {

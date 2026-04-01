@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import type { PublicPortalResponse } from "@/types/portal";
 import type { PublicRecordsSearchResponse, PublicRecordsSearchResult } from "@/types/publicRecords";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
+import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 
 type Props = {
   settings: PublicPortalResponse["settings"];
@@ -346,6 +347,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
 
     const settingsData: PublicPortalResponse = await settingsRes.json();
+
+    // Require authentication to view records
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    if (!session) {
+      return {
+        redirect: {
+          destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/records`,
+          permanent: false,
+        },
+      };
+    }
+
     const initialResults: PublicRecordsSearchResponse = searchRes.ok
       ? await searchRes.json()
       : { results: [], total: 0, page: 1, pageSize: 20, query: "" };

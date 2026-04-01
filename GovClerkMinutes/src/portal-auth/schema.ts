@@ -61,6 +61,19 @@ CREATE TABLE IF NOT EXISTS gc_portal_org_domains (
   UNIQUE KEY uq_org_domain (org_id, domain),
   KEY idx_org_id (org_id)
 );
+
+-- Email verification codes: 6-digit codes sent to organisational emails for identity confirmation
+CREATE TABLE IF NOT EXISTS gc_portal_email_verifications (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  org_id VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  verification_code VARCHAR(10) NOT NULL,
+  is_verified TINYINT(1) NOT NULL DEFAULT 0,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_org_email (org_id, email),
+  KEY idx_email (email)
+);
 `;
 
 export const PORTAL_RECORDS_SCHEMA = `
