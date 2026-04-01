@@ -1,5 +1,5 @@
 import { connect, type Connection } from "@planetscale/database";
-import { createAuthToken } from "@/auth/createAuthToken";
+import { createSignInToken } from "@/utils/clerk";
 import { CAMPAIGNS } from "@/instantly/campaigns";
 import {
   getLeadByInstantlyId,
@@ -69,7 +69,10 @@ async function startPaywallAbandonmentEmailSequence(
 
   // Ensure signInToken exists
   if (variables.signInToken == null) {
-    const signInToken = await createAuthToken(lead.userId);
+    const signInToken = await createSignInToken(lead.userId);
+    if (!signInToken) {
+      throw new Error(`[handlePaywallAbandoners] Failed to create Clerk sign-in token for userId=${lead.userId}`);
+    }
     variables.signInToken = signInToken;
   }
 
