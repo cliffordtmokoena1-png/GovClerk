@@ -246,9 +246,9 @@ async function processGrayMessage(
         HtmlBody: `
           <p>Hi there,</p>
           <p>Great news! Your <strong>${planLabel}</strong> payment link for GovClerkMinutes is ready.</p>
-          <p><a href="${safeUrl}" style="background:#1a73e8;color:#fff;padding:12px 24px;border-radius:4px;text-decoration:none;">Complete Payment</a></p>
+          <p><a href="${authorizationUrl}" style="background:#1a73e8;color:#fff;padding:12px 24px;border-radius:4px;text-decoration:none;">Complete Payment</a></p>
           <p>Reference: <code>${safeRef}</code></p>
-          <p>If the button above does not work, paste this link into your browser:<br/>${safeUrl}</p>
+          <p>If the button above does not work, paste this link into your browser:<br/>${authorizationUrl}</p>
           <p>Once payment is confirmed, you will receive onboarding instructions to get started with GovClerkMinutes.</p>
           <p>Best regards,<br/>Gray<br/>GovClerkMinutes Sales</p>
         `.trim(),
@@ -271,7 +271,7 @@ async function processGrayMessage(
           <p>Please send them a manual onboarding email with instructions on how to use GovClerk and the short welcome video once payment is confirmed.</p>
         `.trim(),
         TextBody: `New ${planLabel} customer: ${emailFromHistory}\nPayStack reference: ${reference}\n\nPlease send onboarding email with GovClerk instructions and welcome video.`,
-        MessageStream: "outbound",
+        MessageStream: "signup_and_purchase",
       });
 
       const reply = `Perfect! I've sent the ${planLabel} payment link to ${emailFromHistory}. Please check your email and complete the payment. Once confirmed, our team will reach out with onboarding details to get you started with GovClerkMinutes! 🎉`;
