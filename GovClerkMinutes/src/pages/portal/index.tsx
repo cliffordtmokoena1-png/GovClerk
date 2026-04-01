@@ -9,9 +9,10 @@ export default function PortalHubPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = slug.trim().toLowerCase();
-    if (trimmed) {
-      router.push(`/portal/${trimmed}`);
+    // Allow only alphanumeric characters, hyphens, and underscores to prevent open-redirect or XSS
+    const sanitized = slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "");
+    if (sanitized) {
+      router.push(`/portal/${sanitized}`);
     }
   }
 
