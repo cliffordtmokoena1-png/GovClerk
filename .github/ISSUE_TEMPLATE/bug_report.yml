@@ -1,0 +1,89 @@
+name: Bug Report
+description: Report a bug or unexpected behaviour in GovClerk
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "When I click 'Upload Audio', the page crashes with an error…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Numbered steps to reproduce the behaviour.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Upload a file of type '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+      description: What actually happened instead. Include any error messages or stack traces.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of GovClerk is affected?
+      options:
+        - Frontend (Next.js)
+        - Sophon API Server (Node.js)
+        - Rust Backend
+        - Python ML Server
+        - Docker / Deployment
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App Version / Commit SHA
+      description: The version of the app or the git commit SHA where the bug was observed.
+      placeholder: "e.g. abc1234 or main@2026-04-01"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser (if frontend issue)
+      description: Which browser are you using?
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Mobile Chrome
+        - Mobile Safari
+        - Not applicable
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context / Screenshots
+      description: Add any other context, logs, or screenshots about the problem here.
+    validations:
+      required: false
