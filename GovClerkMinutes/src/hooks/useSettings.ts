@@ -26,7 +26,10 @@ export function useSettings() {
       if (!res.ok) {
         throw new Error("Failed to save setting");
       }
-      await mutate();
+      // Revalidate in the background — don't await or throw if it fails
+      mutate().catch((err) => {
+        console.warn("Settings revalidation failed after save:", err);
+      });
     } catch (e) {
       await mutate(); // revert by revalidating from server
       throw e;

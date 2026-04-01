@@ -176,7 +176,7 @@ export default function MobileHomeScreen({
   filePickerTrigger,
 }: Props) {
   const router = useRouter();
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   const { orgId } = useOrgContext();
   const { startNavMeasurement } = useNavigationPerfAnalytics();
   const { isOpen: isRenameOpen, onOpen: onRenameOpen, onClose: onRenameClose } = useDisclosure();
@@ -268,7 +268,7 @@ export default function MobileHomeScreen({
   );
 
   const { data: tokenData } = useSWR<ApiGetTokenResponse>(
-    ["/api/get-tokens", orgId],
+    ["/api/get-tokens", userId, orgId],
     async (_) => {
       await getToken();
       return await fetch("/api/get-tokens", {
@@ -276,7 +276,7 @@ export default function MobileHomeScreen({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ orgId }),
+        body: JSON.stringify({ userId, orgId }),
       }).then((res) => res.json());
     },
     {

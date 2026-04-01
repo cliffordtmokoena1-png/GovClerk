@@ -28,6 +28,7 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { revalidateCustomerDetails } from "@/revalidations/revalidateCustomerDetails";
 import { useUser } from "@clerk/nextjs";
+import { useOrgContext } from "@/contexts/OrgContext";
 
 type Props = {
   transcriptId?: number;
@@ -44,6 +45,7 @@ export default function UpgradePlanConfirmModal({
   onClose,
 }: Props) {
   const { user } = useUser();
+  const { orgId } = useOrgContext();
 
   const currentBillingPeriod = getBillingPeriod(planName);
   const targetPlan = getPlanForBillingPeriod("Pro", currentBillingPeriod);
@@ -108,7 +110,7 @@ export default function UpgradePlanConfirmModal({
                         try {
                           await trigger();
                           setTimeout(() => {
-                            revalidateCustomerDetails(transcriptId, user!.id);
+                            revalidateCustomerDetails(transcriptId, user!.id, orgId);
                           }, 5000);
                         } finally {
                           onClose();

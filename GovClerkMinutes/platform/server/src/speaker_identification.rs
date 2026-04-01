@@ -102,7 +102,7 @@ pub async fn identify_speakers_from_transcript(
       {"role": "user", "content": user_prompt}
   ]);
 
-  let model = "openai/gpt-5-mini";
+  let model = "openai/gpt-4o-mini";
 
   let response = match call_openrouter(model.to_string(), 0.0, messages).await {
     Ok(response) => response,
