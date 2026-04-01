@@ -13,6 +13,9 @@ import { handleAiAutoReply } from "@/ai-agent/whatsappAutoReply";
 import hubspot from "@/crm/hubspot";
 import { v4 as uuidv4 } from "uuid";
 
+/** Prefix for user IDs auto-generated from inbound WhatsApp contacts. */
+const WHATSAPP_USER_ID_PREFIX = "wa_";
+
 export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesChange) {
   const value = change.value;
   const messages = value.messages ?? [];
@@ -42,7 +45,7 @@ export async function handleWhatsappMessages(change: WhatsappWebhook.MessagesCha
 
     // Option C: auto-create HubSpot contact and gc_leads entry for unknown inbound users
     if (!lead) {
-      const newUserId = `wa_${uuidv4()}`;
+      const newUserId = `${WHATSAPP_USER_ID_PREFIX}${uuidv4()}`;
       const firstName = displayName ?? undefined;
       const phone = `+${contactWaId}`;
 

@@ -686,7 +686,7 @@ export default function MultiStepIntakeForm({ fromFbAd, emailInputRef, country }
     }
   };
 
-  const totalSteps = Object.keys(IntakeFormStep).filter((k) => isNaN(Number(k))).length;
+  const totalSteps = Object.values(IntakeFormStep).filter((v) => typeof v === "number").length;
 
   return (
     <Box id="intake-form">
