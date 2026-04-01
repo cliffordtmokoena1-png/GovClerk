@@ -10,7 +10,6 @@ import {
 } from "@/components/portal/public";
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
-import "@/styles/portal-print.css";
 
 interface PublicPortalPageProps {
   settings: PublicPortalResponse["settings"];

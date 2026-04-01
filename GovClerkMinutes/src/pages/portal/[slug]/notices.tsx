@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useCallback } from "react";
 import type { PublicPortalResponse } from "@/types/portal";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
-import "@/styles/portal-print.css";
 
 type Props = {
   settings: PublicPortalResponse["settings"];

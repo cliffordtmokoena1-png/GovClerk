@@ -10,7 +10,6 @@ import type {
   RecordsRequestStatus,
 } from "@/types/publicRecords";
 import { PublicPortalHeader } from "@/components/portal/public/PublicPortalHeader";
-import "@/styles/portal-print.css";
 
 type Props = {
   settings: PublicPortalResponse["settings"];
