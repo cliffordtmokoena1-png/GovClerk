@@ -159,7 +159,7 @@ export default function MobileTabbedView({
             transition="all 0.2s ease"
           >
             <Icon as={HiArrowUpTray} boxSize={4} />
-            <Text>Export</Text>
+            <Text>Retrieve File</Text>
           </Flex>
           <IconButton
             aria-label="More actions"
