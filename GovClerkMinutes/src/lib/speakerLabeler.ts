@@ -141,7 +141,11 @@ export function applySpeakerLabel({
     suggestedSpeakers: options?.clearSuggestions ? [] : speakerData.suggestedSpeakers,
   };
 
-  triggerSpeakerLabel?.(updatedSpeaker, selectedLabel);
+  if (triggerSpeakerLabel) {
+    triggerSpeakerLabel(updatedSpeaker, selectedLabel);
+  } else {
+    console.warn("[applySpeakerLabel] triggerSpeakerLabel is not defined — label update was not persisted.");
+  }
 }
 
 export type SpeakerListItemType = SpeakerListItem;

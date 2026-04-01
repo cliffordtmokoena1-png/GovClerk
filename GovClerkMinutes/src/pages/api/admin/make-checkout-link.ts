@@ -57,8 +57,10 @@ async function handler(req: NextRequest) {
     const sendInEmail = Boolean(body.sendInEmail);
 
     if (!VALID_COUNTRIES.has(country)) {
-      // Default to USD
-      country = "US";
+      return json(
+        { error: `Unsupported country code: ${country}. Supported values: ${[...VALID_COUNTRIES].join(", ")}` },
+        400
+      );
     }
 
     if (!VALID_PLANS.has(plan)) {
