@@ -13,7 +13,6 @@ import { PublicCommentForm } from "@/components/portal/public/PublicCommentForm"
 import { PublicLiveCaptions } from "@/components/portal/public/PublicLiveCaptions";
 import { PublicStreamEmbed } from "@/components/portal/public/PublicStreamEmbed";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
-import type { LiveSessionResponse } from "@/types/liveSession";
 
 interface LiveBroadcastResponse {
   broadcast: BroadcastWithMeeting | null;
