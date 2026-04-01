@@ -7,11 +7,38 @@ import {
   type MeetingsFilter,
 } from "@/components/portal/public";
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
+import { useLiveSession } from "@/hooks/portal/useLiveSession";
 
 interface PublicPortalPageProps {
   settings: PublicPortalResponse["settings"];
   initialMeetings: PublicMeetingsListResponse;
   slug: string;
+}
+
+function LiveNowBanner({ slug }: Readonly<{ slug: string }>) {
+  const { data } = useLiveSession(slug);
+
+  if (!data?.broadcast) return null;
+
+  return (
+    <div className="bg-red-50 border-b border-red-200 px-4 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-red-700 font-bold text-sm uppercase tracking-wide">🔴 LIVE NOW</span>
+          </div>
+          <span className="text-red-600 text-sm font-medium">{data.broadcast.meeting.title}</span>
+        </div>
+        <a
+          href={`/portal/${slug}/live`}
+          className="shrink-0 px-4 py-1.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Join Live Meeting
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function PublicPortalPage({
@@ -89,7 +116,9 @@ export default function PublicPortalPage({
   );
 
   return (
-    <PublicPortalLayout
+    <>
+      <LiveNowBanner slug={slug} />
+      <PublicPortalLayout
       settings={settings}
       meetings={allMeetings}
       filter={sidebarFilter}
@@ -108,6 +137,7 @@ export default function PublicPortalPage({
         portalSlug={slug}
       />
     </PublicPortalLayout>
+    </>
   );
 }
 
