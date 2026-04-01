@@ -1,4 +1,7 @@
 import { processMessage, detectPersonaFromHistory } from "@/ai-agent/conversation";
+import { extractIntakeFields } from "@/ai-agent/intakeExtractor";
+import { triggerWhatsappIntakePipeline } from "@/ai-agent/triggerWhatsappIntakePipeline";
+import { upsertLeadToDb } from "@/crm/leads";
 import { capture, WHATSAPP_WEBHOOK_ANONYMOUS_ID } from "@/utils/posthog";
 import { connect } from "@planetscale/database";
 import { makeConversationId } from "@/admin/whatsapp/utils";
@@ -86,6 +89,35 @@ export async function handleAiAutoReply({
     // Process the message through the AI agent
     const response = await processMessage(inboundText, history, activePersona);
 
+    // Extract any intake fields embedded in the AI reply, and get the clean reply to send
+    const { fields: intakeFields, cleanReply } = extractIntakeFields(response.reply);
+
+    // Persist any newly collected intake fields to gc_leads
+    if (userId && Object.keys(intakeFields).length > 0) {
+      try {
+        await upsertLeadToDb({
+          userId,
+          email: intakeFields.email,
+          firstName: intakeFields.firstName,
+          lastName: intakeFields.lastName,
+          occupation: intakeFields.occupation,
+          minutesFreq: intakeFields.minutesFreq,
+          minutesDue: intakeFields.minutesDue,
+        });
+
+        // If we just captured an email for a WhatsApp-only user, trigger the signup pipeline
+        if (intakeFields.email && userId.startsWith("wa_")) {
+          await triggerWhatsappIntakePipeline({
+            conn,
+            userId,
+            email: intakeFields.email,
+          });
+        }
+      } catch (err) {
+        console.error("[ai-agent] Failed to persist intake fields:", err);
+      }
+    }
+
     // Send the reply via WhatsApp Cloud API
     const phoneNumberId = getPhoneNumberIdFor(businessWaId);
     const url = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`;
@@ -103,7 +135,7 @@ export async function handleAiAutoReply({
         to: contactWaId,
         text: {
           preview_url: false,
-          body: response.reply,
+          body: cleanReply,
         },
       }),
     });
@@ -134,7 +166,7 @@ export async function handleAiAutoReply({
         businessWaId,
         conversationId,
         messageId,
-        response.reply,
+        cleanReply,
       ]
     );
 
