@@ -63,6 +63,77 @@ CREATE TABLE IF NOT EXISTS gc_portal_org_domains (
 );
 `;
 
+export const PORTAL_RECORDS_SCHEMA = `
+-- FOIA / Public Records Requests: citizens request documents not yet published
+CREATE TABLE IF NOT EXISTS gc_public_records_requests (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  org_id VARCHAR(255) NOT NULL,
+  requester_name VARCHAR(255) NOT NULL,
+  requester_email VARCHAR(255) NOT NULL,
+  requester_phone VARCHAR(50),
+  request_type ENUM('foia','open_records','inspection','certification') NOT NULL DEFAULT 'foia',
+  description TEXT NOT NULL COMMENT 'What records the citizen is requesting',
+  date_range_from DATE COMMENT 'Optional: date range of records requested',
+  date_range_to DATE,
+  related_meeting_id INT UNSIGNED COMMENT 'gc_meetings.id if related to a specific meeting',
+  status ENUM('received','acknowledged','in_review','fulfilled','partially_fulfilled','denied','withdrawn') NOT NULL DEFAULT 'received',
+  denial_reason TEXT COMMENT 'If denied, explanation (e.g. executive privilege, personal info)',
+  response_due_date DATE COMMENT 'Statutory deadline for response (typically 5-30 business days)',
+  fulfilled_at DATETIME,
+  response_notes TEXT COMMENT 'Clerk notes on how the request was handled',
+  tracking_number VARCHAR(50) NOT NULL COMMENT 'Public-facing reference number',
+  submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_org_id (org_id),
+  KEY idx_tracking (tracking_number),
+  KEY idx_status (status)
+);
+
+-- Meeting notices: advance public notice of upcoming meetings (Open Meetings Act compliance)
+CREATE TABLE IF NOT EXISTS gc_meeting_notices (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  org_id VARCHAR(255) NOT NULL,
+  meeting_id INT UNSIGNED NOT NULL COMMENT 'gc_meetings.id',
+  notice_type ENUM('regular','special','emergency','executive_session','cancelled','rescheduled') NOT NULL DEFAULT 'regular',
+  posted_at DATETIME NOT NULL COMMENT 'When the notice was officially posted',
+  notice_text TEXT COMMENT 'Official public notice text',
+  posting_location VARCHAR(500) COMMENT 'Where physically posted (e.g. City Hall bulletin board)',
+  hours_notice_given INT COMMENT 'Computed: hours between posted_at and meeting time',
+  is_compliant TINYINT(1) COMMENT 'Whether statutory notice period was met',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_org_meeting (org_id, meeting_id)
+);
+
+-- Document retention schedules: each artifact has a legal retention label
+CREATE TABLE IF NOT EXISTS gc_document_retention (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  org_id VARCHAR(255) NOT NULL,
+  artifact_id INT UNSIGNED COMMENT 'gc_artifacts.id',
+  document_type VARCHAR(100) NOT NULL COMMENT 'e.g. "meeting_minutes", "ordinance", "budget"',
+  retention_period VARCHAR(100) NOT NULL COMMENT 'e.g. "Permanent", "7 years", "3 years"',
+  retention_basis VARCHAR(255) COMMENT 'Legal authority, e.g. "LGTA s.12(3)" or "State Archives Act"',
+  destruction_date DATE COMMENT 'When the document may be destroyed (NULL = permanent)',
+  is_permanent TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_org (org_id),
+  KEY idx_artifact (artifact_id)
+);
+
+-- Portal announcements: org admin can post notices on the portal homepage
+CREATE TABLE IF NOT EXISTS gc_portal_announcements (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  org_id VARCHAR(255) NOT NULL,
+  title VARCHAR(500) NOT NULL,
+  body TEXT NOT NULL,
+  type ENUM('notice','alert','info','emergency') NOT NULL DEFAULT 'notice',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  published_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at DATETIME COMMENT 'NULL = no expiry',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_org_active (org_id, is_active)
+);
+`;
+
 export const PORTAL_LIVE_SCHEMA = `
 -- Stream configuration per org
 CREATE TABLE IF NOT EXISTS gc_portal_stream_config (
