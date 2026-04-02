@@ -282,6 +282,10 @@ export interface PortalSessionResponse {
   role?: PortalUserRole;
   orgId?: string;
   expiresAt?: string;
+  hasActiveSubscription?: boolean;
+  subscriptionTier?: string;
+  isGovClerkAdmin?: boolean;
+  portalMode?: "live" | "demo";
 }
 
 export interface CreatePortalUserRequest {

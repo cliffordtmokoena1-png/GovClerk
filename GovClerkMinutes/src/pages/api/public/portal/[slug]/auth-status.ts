@@ -7,7 +7,7 @@
 
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
-import { getPortalSession } from "@/portal-auth/portalAuth";
+import { getPortalSession, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { jsonResponse, errorResponse } from "@/utils/apiHelpers";
 
 export const config = {
@@ -46,9 +46,31 @@ export default async function handler(req: NextRequest): Promise<Response> {
     return jsonResponse({ isAuthenticated: false, email: null, authType: null });
   }
 
+  // Check GovClerk admin status
+  const govClerkAdmin = isGovClerkAdmin(session.email);
+
+  // Check for active subscription
+  const subResult = await conn.execute(
+    "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+    [session.orgId]
+  );
+
+  const hasActiveSubscription = subResult.rows.length > 0;
+  const subscriptionTier = hasActiveSubscription
+    ? ((subResult.rows[0] as any).tier as string)
+    : undefined;
+
+  // Determine portal mode
+  const portalMode: "live" | "demo" =
+    govClerkAdmin || hasActiveSubscription ? "live" : "demo";
+
   return jsonResponse({
     isAuthenticated: true,
     email: session.email,
     authType: session.authType,
+    hasActiveSubscription,
+    subscriptionTier,
+    isGovClerkAdmin: govClerkAdmin,
+    portalMode,
   });
 }
