@@ -165,13 +165,30 @@ export function useBroadcast(meetingId?: number) {
 
   const goLive = useCallback(
     async (broadcastId: number, streamKey?: string): Promise<BroadcastWithMeeting> => {
-      const result = await updateBroadcast(broadcastId, { status: "live" });
+      const response = await fetch(`/api/broadcast/${broadcastId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId, status: "live" }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to go live");
+      }
+
+      const result: BroadcastResponse = await response.json();
+      await mutate(
+        (currentData) =>
+          currentData ? { ...currentData, broadcast: result.broadcast } : currentData,
+        { revalidate: false }
+      );
+
       if (streamKey) {
         await sendTranscriptMarker(streamKey, "go_live");
       }
-      return result;
+      return result.broadcast;
     },
-    [updateBroadcast]
+    [orgId, mutate]
   );
 
   const pauseBroadcast = useCallback(

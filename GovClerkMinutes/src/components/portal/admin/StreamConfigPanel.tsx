@@ -10,6 +10,7 @@ const PLATFORM_OPTIONS: { value: StreamPlatform; label: string }[] = [
   { value: "zoom", label: "Zoom Webinar" },
   { value: "google_meet", label: "Google Meet" },
   { value: "facebook", label: "Facebook Live" },
+  { value: "tiktok", label: "TikTok Live" },
   { value: "rtmp", label: "RTMP / HLS" },
   { value: "custom", label: "Custom Embed" },
 ];
@@ -24,6 +25,7 @@ export function StreamConfigPanel({ orgId: _orgId }: Props) {
     googleMeetUrl: "",
     facebookPageId: "",
     facebookLiveUrl: "",
+    tiktokLiveUrl: "",
     rtmpHlsUrl: "",
     customEmbedUrl: "",
   });
@@ -47,6 +49,7 @@ export function StreamConfigPanel({ orgId: _orgId }: Props) {
             googleMeetUrl: sc.googleMeetUrl ?? "",
             facebookPageId: sc.facebookPageId ?? "",
             facebookLiveUrl: sc.facebookLiveUrl ?? "",
+            tiktokLiveUrl: sc.tiktokLiveUrl ?? "",
             rtmpHlsUrl: sc.rtmpHlsUrl ?? "",
             customEmbedUrl: sc.customEmbedUrl ?? "",
           });
@@ -74,6 +77,7 @@ export function StreamConfigPanel({ orgId: _orgId }: Props) {
           googleMeetUrl: form.googleMeetUrl || undefined,
           facebookPageId: form.facebookPageId || undefined,
           facebookLiveUrl: form.facebookLiveUrl || undefined,
+          tiktokLiveUrl: form.tiktokLiveUrl || undefined,
           rtmpHlsUrl: form.rtmpHlsUrl || undefined,
           customEmbedUrl: form.customEmbedUrl || undefined,
         }),
@@ -208,6 +212,22 @@ export function StreamConfigPanel({ orgId: _orgId }: Props) {
               onChange={(e) => handleChange("facebookLiveUrl", e.target.value)}
               placeholder="https://www.facebook.com/.../videos/..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      )}
+
+      {form.preferredPlatform === "tiktok" && (
+        <div className="space-y-3 p-4 bg-pink-50 border border-pink-200 rounded-xl">
+          <h3 className="text-sm font-semibold text-pink-800">TikTok Live</h3>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">TikTok Live URL</label>
+            <input
+              type="url"
+              value={form.tiktokLiveUrl}
+              onChange={(e) => handleChange("tiktokLiveUrl", e.target.value)}
+              placeholder="https://www.tiktok.com/@username/live"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
             />
           </div>
         </div>

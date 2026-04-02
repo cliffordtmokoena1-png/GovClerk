@@ -107,7 +107,7 @@ async function handlePut(
   const conn = getPortalDbConnection();
 
   const existing = await conn.execute(
-    "SELECT id, started_by_user_id, agenda_timestamps, stream_key, status FROM gc_broadcasts WHERE id = ? AND org_id = ?",
+    "SELECT id, started_by_user_id, agenda_timestamps, stream_key, status, went_live_at FROM gc_broadcasts WHERE id = ? AND org_id = ?",
     [id, orgId]
   );
 
@@ -132,6 +132,9 @@ async function handlePut(
 
     if (body.status === "live") {
       updates.push("started_at = COALESCE(started_at, NOW())");
+      if (oldStatus !== "live") {
+        updates.push("went_live_at = NOW()");
+      }
     } else if (body.status === "ended") {
       updates.push("ended_at = NOW()");
     }
@@ -160,6 +163,25 @@ async function handlePut(
     return errorResponse("No fields to update", 400);
   }
 
+  // Check streaming hours before going live
+  if (body.status === "live" && oldStatus !== "live") {
+    const subResult = await conn.execute(
+      "SELECT stream_hours_included, stream_hours_used FROM gc_portal_subscriptions WHERE org_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+      [orgId]
+    );
+    if (subResult.rows.length > 0) {
+      const sub = subResult.rows[0] as any;
+      const hoursIncluded = Number(sub.stream_hours_included);
+      const hoursUsed = Number(sub.stream_hours_used);
+      if (hoursUsed >= hoursIncluded) {
+        return errorResponse(
+          "Streaming hours exhausted. Please upgrade your plan to continue streaming.",
+          403
+        );
+      }
+    }
+  }
+
   values.push(id, orgId);
 
   const result = await conn.transaction(async (tx) => {
@@ -179,6 +201,25 @@ async function handlePut(
   });
 
   const updatedBroadcast = rowToBroadcastWithMeeting(result.rows[0]);
+
+  // Increment stream_hours_used when a broadcast ends
+  if (body.status === "ended" && oldStatus === "live") {
+    const wentLiveAt = broadcast.went_live_at;
+    if (wentLiveAt) {
+      waitUntil(
+        conn
+          .execute(
+            `UPDATE gc_portal_subscriptions
+             SET stream_hours_used = stream_hours_used + TIMESTAMPDIFF(SECOND, ?, NOW()) / 3600
+             WHERE org_id = ? AND status = 'active'`,
+            [wentLiveAt, orgId]
+          )
+          .catch((err) => {
+            console.error("[broadcast] Error updating stream_hours_used:", err);
+          })
+      );
+    }
+  }
 
   // Start recording via Sophon only if status transitioned to "live"
   if (body.status === "live" && oldStatus !== "live" && streamKey) {
