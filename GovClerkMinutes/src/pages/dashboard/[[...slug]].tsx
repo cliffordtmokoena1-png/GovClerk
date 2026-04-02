@@ -18,7 +18,7 @@ import { ApiTranscriptStatusResponseResult, getTranscriptStatus } from "../api/t
 import { getAuth } from "@clerk/nextjs/server";
 import { getCountry } from "../api/get-country";
 import { ApiSidebarResponse } from "../api/sidebar";
-import { ApiGetCustomerDetailsResponse } from "../api/get-customer-details";
+import { ApiGetCustomerDetailsResponse, getCustomerDetails } from "../api/get-customer-details";
 import UpgradePlanConfirmModal from "@/components/UpgradePlanConfirmModal";
 import isMobile from "@/utils/isMobile";
 import { isDev } from "@/utils/dev";
@@ -76,6 +76,13 @@ export const getServerSideProps = withGsspErrorHandling(async (context) => {
 
   const country = isDev() ? "US" : getCountry((h) => context.req.headers[h] as any);
 
+  let customerDetails: ApiGetCustomerDetailsResponse | null = null;
+  try {
+    customerDetails = await getCustomerDetails(userId);
+  } catch {
+    // fall back to null if the fetch fails
+  }
+
   timer.stop("dashboard_get_serverside_props");
 
   waitUntil(
@@ -104,7 +111,7 @@ export const getServerSideProps = withGsspErrorHandling(async (context) => {
       transcriptStatus,
       country,
       sidebarItems: null,
-      customerDetails: null,
+      customerDetails,
       tokens: null,
       isMobile: isMobile(context.req.headers),
     },
