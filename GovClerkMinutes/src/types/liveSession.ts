@@ -1,4 +1,4 @@
-export type StreamPlatform = "youtube" | "zoom" | "google_meet" | "facebook" | "rtmp" | "custom";
+export type StreamPlatform = "youtube" | "zoom" | "google_meet" | "facebook" | "rtmp" | "custom" | "tiktok";
 
 export interface StreamConfig {
   id: number;
@@ -12,6 +12,7 @@ export interface StreamConfig {
   facebookPageId: string | null;
   rtmpHlsUrl: string | null;
   customEmbedUrl: string | null;
+  tiktokLiveUrl: string | null;
   preferredPlatform: StreamPlatform;
   isActive: boolean;
 }

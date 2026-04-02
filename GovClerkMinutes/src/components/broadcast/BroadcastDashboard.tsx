@@ -124,7 +124,14 @@ export function BroadcastDashboard({
       await goLive(broadcast.id, broadcast.streamKey);
       toast.success("Broadcast is now live!");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to go live");
+      const message = err instanceof Error ? err.message : "";
+      if (message === "Streaming hours exhausted. Please upgrade your plan to continue streaming.") {
+        toast.error(
+          "Your organization has used all included streaming hours. Please contact your administrator to upgrade."
+        );
+      } else {
+        toast.error(message || "Failed to go live");
+      }
     } finally {
       setIsActionLoading(false);
     }

@@ -21,6 +21,7 @@ function rowToStreamConfig(row: any): StreamConfig {
     facebookPageId: row.facebook_page_id ?? null,
     rtmpHlsUrl: row.rtmp_hls_url ?? null,
     customEmbedUrl: row.custom_embed_url ?? null,
+    tiktokLiveUrl: row.tiktok_live_url ?? null,
     preferredPlatform: row.preferred_platform ?? "youtube",
     isActive: Boolean(row.is_active),
   };
@@ -53,6 +54,7 @@ async function handler(req: NextRequest): Promise<Response> {
       googleMeetUrl,
       facebookPageId,
       facebookLiveUrl,
+      tiktokLiveUrl,
       rtmpHlsUrl,
       customEmbedUrl,
       preferredPlatform,
@@ -65,6 +67,7 @@ async function handler(req: NextRequest): Promise<Response> {
       googleMeetUrl?: string;
       facebookPageId?: string;
       facebookLiveUrl?: string;
+      tiktokLiveUrl?: string;
       rtmpHlsUrl?: string;
       customEmbedUrl?: string;
       preferredPlatform?: StreamPlatform;
@@ -78,6 +81,7 @@ async function handler(req: NextRequest): Promise<Response> {
       "facebook",
       "rtmp",
       "custom",
+      "tiktok",
     ];
     if (preferredPlatform && !validPlatforms.includes(preferredPlatform)) {
       return errorResponse("Invalid preferred_platform value", 400);
@@ -86,9 +90,9 @@ async function handler(req: NextRequest): Promise<Response> {
     await conn.execute(
       `INSERT INTO gc_portal_stream_config
         (org_id, youtube_channel_id, youtube_live_url, zoom_join_url, zoom_webinar_id,
-         google_meet_url, facebook_page_id, facebook_live_url, rtmp_hls_url,
-         custom_embed_url, preferred_platform, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         google_meet_url, facebook_page_id, facebook_live_url, tiktok_live_url,
+         rtmp_hls_url, custom_embed_url, preferred_platform, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          youtube_channel_id = VALUES(youtube_channel_id),
          youtube_live_url = VALUES(youtube_live_url),
@@ -97,6 +101,7 @@ async function handler(req: NextRequest): Promise<Response> {
          google_meet_url = VALUES(google_meet_url),
          facebook_page_id = VALUES(facebook_page_id),
          facebook_live_url = VALUES(facebook_live_url),
+         tiktok_live_url = VALUES(tiktok_live_url),
          rtmp_hls_url = VALUES(rtmp_hls_url),
          custom_embed_url = VALUES(custom_embed_url),
          preferred_platform = VALUES(preferred_platform),
@@ -111,6 +116,7 @@ async function handler(req: NextRequest): Promise<Response> {
         googleMeetUrl ?? null,
         facebookPageId ?? null,
         facebookLiveUrl ?? null,
+        tiktokLiveUrl ?? null,
         rtmpHlsUrl ?? null,
         customEmbedUrl ?? null,
         preferredPlatform ?? "youtube",

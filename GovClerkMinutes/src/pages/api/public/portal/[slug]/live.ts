@@ -81,6 +81,7 @@ function rowToStreamConfig(row: any): StreamConfig {
     facebookPageId: row.facebook_page_id ?? null,
     rtmpHlsUrl: row.rtmp_hls_url ?? null,
     customEmbedUrl: row.custom_embed_url ?? null,
+    tiktokLiveUrl: row.tiktok_live_url ?? null,
     preferredPlatform: row.preferred_platform ?? "youtube",
     isActive: Boolean(row.is_active),
   };
@@ -210,8 +211,8 @@ async function handler(req: NextRequest): Promise<Response> {
   // Fetch stream config (public-safe fields only — no stream keys)
   const streamConfigResult = await conn.execute(
     `SELECT id, org_id, youtube_channel_id, youtube_live_url, zoom_join_url, zoom_webinar_id,
-            google_meet_url, facebook_page_id, facebook_live_url, rtmp_hls_url,
-            custom_embed_url, preferred_platform, is_active
+            google_meet_url, facebook_page_id, facebook_live_url, tiktok_live_url,
+            rtmp_hls_url, custom_embed_url, preferred_platform, is_active
      FROM gc_portal_stream_config
      WHERE org_id = ? AND is_active = 1
      LIMIT 1`,

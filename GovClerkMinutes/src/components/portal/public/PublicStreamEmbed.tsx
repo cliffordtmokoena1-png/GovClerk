@@ -105,6 +105,25 @@ export function PublicStreamEmbed({ streamConfig }: Props) {
     );
   }
 
+  if (preferredPlatform === "tiktok" && streamConfig.tiktokLiveUrl) {
+    return (
+      <div className="aspect-video bg-gray-900 rounded-xl flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-3">🎵</div>
+          <p className="text-white font-semibold mb-3">This meeting is live on TikTok</p>
+          <a
+            href={streamConfig.tiktokLiveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors font-medium"
+          >
+            Watch on TikTok
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (preferredPlatform === "rtmp" && streamConfig.rtmpHlsUrl) {
     return (
       <div className="aspect-video rounded-xl overflow-hidden bg-black">
