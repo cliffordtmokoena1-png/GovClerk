@@ -73,9 +73,15 @@ export function estimatePortalCost(
 ): { estimated_zar: number; recommended_tier: PortalTier } {
   let recommended_tier: PortalTier = "starter";
 
-  if (seats > PORTAL_PAYSTACK_PLANS.professional.seats || stream_hours > PORTAL_PAYSTACK_PLANS.professional.stream_hours) {
+  if (
+    seats > PORTAL_PAYSTACK_PLANS.professional.seats ||
+    stream_hours > PORTAL_PAYSTACK_PLANS.professional.stream_hours
+  ) {
     recommended_tier = "enterprise";
-  } else if (seats > PORTAL_PAYSTACK_PLANS.starter.seats || stream_hours > PORTAL_PAYSTACK_PLANS.starter.stream_hours) {
+  } else if (
+    seats > PORTAL_PAYSTACK_PLANS.starter.seats ||
+    stream_hours > PORTAL_PAYSTACK_PLANS.starter.stream_hours
+  ) {
     recommended_tier = "professional";
   }
 

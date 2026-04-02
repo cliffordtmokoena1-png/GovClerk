@@ -32,12 +32,17 @@ function ResultIcon({ type, artifactType }: { type: string; artifactType?: strin
 }
 
 function ResultCard({ result, slug }: { result: PublicRecordsSearchResult; slug: string }) {
-  const typeLabel = result.type === "meeting"
-    ? "Meeting"
-    : ARTIFACT_TYPE_LABELS[result.artifactType || ""] || "Document";
+  const typeLabel =
+    result.type === "meeting"
+      ? "Meeting"
+      : ARTIFACT_TYPE_LABELS[result.artifactType || ""] || "Document";
 
   const formattedDate = result.date
-    ? new Date(result.date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+    ? new Date(result.date).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
     : "";
 
   return (
@@ -137,7 +142,10 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
     <>
       <Head>
         <title>Public Records — {settings.pageTitle || "Public Portal"}</title>
-        <meta name="description" content={`Search public records for ${settings.pageTitle || "our organization"}`} />
+        <meta
+          name="description"
+          content={`Search public records for ${settings.pageTitle || "our organization"}`}
+        />
       </Head>
 
       {/* Skip to main content link */}
@@ -154,18 +162,31 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-4 text-sm text-gray-500">
           <ol className="flex items-center gap-2">
-            <li><Link href={`/portal/${slug}`} className="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">Portal Home</Link></li>
+            <li>
+              <Link
+                href={`/portal/${slug}`}
+                className="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
+                Portal Home
+              </Link>
+            </li>
             <li aria-hidden="true">/</li>
-            <li aria-current="page" className="text-gray-800 font-medium">Public Records</li>
+            <li aria-current="page" className="text-gray-800 font-medium">
+              Public Records
+            </li>
           </ol>
         </nav>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Public Records</h1>
-        <p className="text-gray-600 mb-6">{settings.pageTitle || "Our Organization"} — public meeting records and documents</p>
+        <p className="text-gray-600 mb-6">
+          {settings.pageTitle || "Our Organization"} — public meeting records and documents
+        </p>
 
         {/* Search bar */}
         <div className="portal-search-bar mb-4">
-          <label htmlFor="records-search" className="sr-only">Search all public records</label>
+          <label htmlFor="records-search" className="sr-only">
+            Search all public records
+          </label>
           <div className="flex gap-2">
             <input
               id="records-search"
@@ -190,7 +211,9 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-6" role="group" aria-label="Filter results">
           <div>
-            <label htmlFor="type-filter" className="sr-only">Filter by type</label>
+            <label htmlFor="type-filter" className="sr-only">
+              Filter by type
+            </label>
             <select
               id="type-filter"
               value={typeFilter}
@@ -203,7 +226,9 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
             </select>
           </div>
           <div>
-            <label htmlFor="start-date" className="sr-only">Start date</label>
+            <label htmlFor="start-date" className="sr-only">
+              Start date
+            </label>
             <input
               id="start-date"
               type="date"
@@ -214,7 +239,9 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
             />
           </div>
           <div>
-            <label htmlFor="end-date" className="sr-only">End date</label>
+            <label htmlFor="end-date" className="sr-only">
+              End date
+            </label>
             <input
               id="end-date"
               type="date"
@@ -227,7 +254,10 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
         </div>
 
         {/* Quick Links */}
-        <section aria-label="Quick links" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-8">
+        <section
+          aria-label="Quick links"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-8"
+        >
           {[
             { href: `/portal/${slug}/calendar`, icon: "📅", label: "Meeting Calendar" },
             { href: `/portal/${slug}`, icon: "📋", label: "Agendas" },
@@ -242,7 +272,9 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
               className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center"
               aria-label={link.label}
             >
-              <span className="text-2xl" aria-hidden="true">{link.icon}</span>
+              <span className="text-2xl" aria-hidden="true">
+                {link.icon}
+              </span>
               <span className="text-xs font-medium text-gray-700">{link.label}</span>
             </Link>
           ))}
@@ -275,7 +307,10 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
         <section aria-label="Search results" aria-busy={isLoading}>
           {isLoading ? (
             <div className="flex justify-center py-16" role="status" aria-label="Loading results">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" aria-hidden="true" />
+              <div
+                className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+                aria-hidden="true"
+              />
             </div>
           ) : results.results.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
@@ -298,7 +333,10 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <nav aria-label="Search results pagination" className="mt-8 flex justify-center gap-2">
+                <nav
+                  aria-label="Search results pagination"
+                  className="mt-8 flex justify-center gap-2"
+                >
                   <button
                     type="button"
                     onClick={() => handlePageChange(page - 1)}
@@ -349,7 +387,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     const settingsData: PublicPortalResponse = await settingsRes.json();
 
     // Require authentication to view records
-    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
+      () => null
+    );
     if (!session) {
       return {
         redirect: {

@@ -13,7 +13,8 @@ export function isMissingTableError(error: unknown): boolean {
   // Check for a numeric errno property (PlanetScale/MySQL client may expose this)
   if (typeof (error as any).errno === "number" && (error as any).errno === 1146) return true;
   // Check for MySQL error code string (e.g. ER_NO_SUCH_TABLE)
-  if (typeof (error as any).code === "string" && (error as any).code === "ER_NO_SUCH_TABLE") return true;
+  if (typeof (error as any).code === "string" && (error as any).code === "ER_NO_SUCH_TABLE")
+    return true;
   // Fall back to message substring matching
   const msg = error instanceof Error ? error.message : String(error);
   return msg.includes("doesn't exist") || msg.includes("1146") || msg.includes("ER_NO_SUCH_TABLE");
@@ -472,7 +473,9 @@ export async function buildConversationsFor(
       );
   } catch (err) {
     if (isMissingTableError(err)) {
-      console.warn("[buildConversationsFor] WhatsApp table(s) not yet created — returning empty conversations");
+      console.warn(
+        "[buildConversationsFor] WhatsApp table(s) not yet created — returning empty conversations"
+      );
       return { conversations: [] };
     }
     throw err;
@@ -518,7 +521,9 @@ export async function buildConversationsFor(
         );
     } catch (err) {
       if (isMissingTableError(err)) {
-        console.warn("[buildConversationsFor] gc_scheduled_whatsapps table not yet created — skipping schedules");
+        console.warn(
+          "[buildConversationsFor] gc_scheduled_whatsapps table not yet created — skipping schedules"
+        );
         scheduleRows = [];
       } else {
         throw err;

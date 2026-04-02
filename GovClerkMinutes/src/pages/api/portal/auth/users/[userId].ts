@@ -120,10 +120,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   if (req.method === "DELETE") {
     // Soft-delete by deactivating
-    await conn.execute(
-      "UPDATE gc_portal_users SET is_active = 0 WHERE id = ? AND org_id = ?",
-      [userId, orgId]
-    );
+    await conn.execute("UPDATE gc_portal_users SET is_active = 0 WHERE id = ? AND org_id = ?", [
+      userId,
+      orgId,
+    ]);
     return jsonResponse({ success: true });
   }
 

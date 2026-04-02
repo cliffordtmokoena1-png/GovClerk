@@ -111,7 +111,12 @@ async function handler(
   }
 
   try {
-    const transactionId = await modifyUserToken(targetUserId, amount, action === "add", targetOrgId);
+    const transactionId = await modifyUserToken(
+      targetUserId,
+      amount,
+      action === "add",
+      targetOrgId
+    );
 
     return res.status(200).json({
       userId: targetUserId,

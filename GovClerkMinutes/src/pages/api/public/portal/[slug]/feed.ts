@@ -47,7 +47,11 @@ export default async function handler(req: NextRequest): Promise<Response> {
   if (settingsRes.rows.length === 0) {
     return errorResponse("Portal not found", 404);
   }
-  const { org_id: orgId, page_title: pageTitle, description: portalDesc } = settingsRes.rows[0] as any;
+  const {
+    org_id: orgId,
+    page_title: pageTitle,
+    description: portalDesc,
+  } = settingsRes.rows[0] as any;
 
   const meetingsRes = await conn.execute(
     `SELECT id, title, description, meeting_date, created_at

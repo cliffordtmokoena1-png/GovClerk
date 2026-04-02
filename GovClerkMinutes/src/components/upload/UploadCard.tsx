@@ -11,7 +11,12 @@ type UploadCardProps = {
   disabled?: boolean;
 };
 
-export default function UploadCard({ config, getRootProps, getInputProps, disabled }: UploadCardProps) {
+export default function UploadCard({
+  config,
+  getRootProps,
+  getInputProps,
+  disabled,
+}: UploadCardProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) {
       e.preventDefault();
@@ -56,7 +61,11 @@ export default function UploadCard({ config, getRootProps, getInputProps, disabl
       justifyContent="center"
       position="relative"
       role="button"
-      aria-label={disabled ? "Upload disabled — insufficient tokens" : "Upload media file by dragging and dropping or clicking to browse"}
+      aria-label={
+        disabled
+          ? "Upload disabled — insufficient tokens"
+          : "Upload media file by dragging and dropping or clicking to browse"
+      }
       aria-describedby="upload-instructions"
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
@@ -65,7 +74,12 @@ export default function UploadCard({ config, getRootProps, getInputProps, disabl
       {!disabled && <input {...getInputProps()} />}
 
       <VStack spacing={config.spacing} textAlign="center">
-        <Box p={config.icon.padding} bg={disabled ? "gray.200" : config.icon.bg} borderRadius="full" transition="all 0.2s">
+        <Box
+          p={config.icon.padding}
+          bg={disabled ? "gray.200" : config.icon.bg}
+          borderRadius="full"
+          transition="all 0.2s"
+        >
           <Icon
             as={disabled ? FiLock : FiUpload}
             boxSize={config.icon.size}

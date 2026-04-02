@@ -127,8 +127,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
       res.status(404).json({ error: "Transcript not found" });
       return;
     }
-    const transcriptLanguage = (transcriptCheck.rows[0] as { id: number; language: string | null })
-      .language ?? undefined;
+    const transcriptLanguage =
+      (transcriptCheck.rows[0] as { id: number; language: string | null }).language ?? undefined;
 
     await linkMinutesToMeeting(conn, meetingId, orgId, transcriptId);
 

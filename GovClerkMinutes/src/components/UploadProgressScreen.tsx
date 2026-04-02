@@ -26,7 +26,13 @@ import { useRouter } from "next/router";
 import { safeCapture } from "@/utils/safePosthog";
 import { isDev } from "@/utils/dev";
 import { TOP_BAR_HEIGHT_PX } from "./ProductTopBar";
-import { MdErrorOutline, MdOutlineArrowBack, MdRefresh, MdDashboard, MdAudiotrack } from "react-icons/md";
+import {
+  MdErrorOutline,
+  MdOutlineArrowBack,
+  MdRefresh,
+  MdDashboard,
+  MdAudiotrack,
+} from "react-icons/md";
 import { openWhatsAppChat } from "@/utils/whatsapp";
 
 type Props = {
@@ -55,7 +61,8 @@ export default function UploadProgressScreen({
   const { chunksUploaded, totalChunks, uploadProgressError } = useUploadProgress(transcriptId);
   const [fileExistsInIndexedDB, setFileExistsInIndexedDB] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
-  const [isRetryTranscriptionInProgress, setIsRetryTranscriptionInProgress] = useState<boolean>(false);
+  const [isRetryTranscriptionInProgress, setIsRetryTranscriptionInProgress] =
+    useState<boolean>(false);
   const [isRetryInProgress, setIsRetryInProgress] = useState<boolean>(false);
   const router = useRouter();
   const toast = useToast();
@@ -339,9 +346,16 @@ export default function UploadProgressScreen({
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <Text fontSize="xs" color="white" fontWeight="bold">1</Text>
+                    <Text fontSize="xs" color="white" fontWeight="bold">
+                      1
+                    </Text>
                   </Box>
-                  <Text fontSize="xs" color={uploadComplete || isUploading ? "blue.600" : "gray.400"} mt={1} fontWeight={isUploading ? "semibold" : "normal"}>
+                  <Text
+                    fontSize="xs"
+                    color={uploadComplete || isUploading ? "blue.600" : "gray.400"}
+                    mt={1}
+                    fontWeight={isUploading ? "semibold" : "normal"}
+                  >
                     Upload
                   </Text>
                 </Flex>
@@ -359,14 +373,27 @@ export default function UploadProgressScreen({
                     w={7}
                     h={7}
                     borderRadius="full"
-                    bg={transcribeFinished ? "blue.500" : uploadComplete && !transcribeFinished ? "blue.500" : "gray.200"}
+                    bg={
+                      transcribeFinished
+                        ? "blue.500"
+                        : uploadComplete && !transcribeFinished
+                          ? "blue.500"
+                          : "gray.200"
+                    }
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <Text fontSize="xs" color="white" fontWeight="bold">2</Text>
+                    <Text fontSize="xs" color="white" fontWeight="bold">
+                      2
+                    </Text>
                   </Box>
-                  <Text fontSize="xs" color={uploadComplete ? "blue.600" : "gray.400"} mt={1} fontWeight={uploadComplete && !transcribeFinished ? "semibold" : "normal"}>
+                  <Text
+                    fontSize="xs"
+                    color={uploadComplete ? "blue.600" : "gray.400"}
+                    mt={1}
+                    fontWeight={uploadComplete && !transcribeFinished ? "semibold" : "normal"}
+                  >
                     Process
                   </Text>
                 </Flex>
@@ -389,9 +416,16 @@ export default function UploadProgressScreen({
                     alignItems="center"
                     justifyContent="center"
                   >
-                    <Text fontSize="xs" color="white" fontWeight="bold">3</Text>
+                    <Text fontSize="xs" color="white" fontWeight="bold">
+                      3
+                    </Text>
                   </Box>
-                  <Text fontSize="xs" color={transcribeFinished ? "green.600" : "gray.400"} mt={1} fontWeight={transcribeFinished ? "semibold" : "normal"}>
+                  <Text
+                    fontSize="xs"
+                    color={transcribeFinished ? "green.600" : "gray.400"}
+                    mt={1}
+                    fontWeight={transcribeFinished ? "semibold" : "normal"}
+                  >
                     Complete
                   </Text>
                 </Flex>

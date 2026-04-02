@@ -57,9 +57,7 @@ export default function RecordingsPage() {
 
       <Flex w="full" h={mainContainerHeight} mt={`${announcementBarHeight}px`}>
         <Box display={{ base: "none", md: "flex" }} w="full" h="full">
-          <DesktopLayout>
-            {recordingsContent}
-          </DesktopLayout>
+          <DesktopLayout>{recordingsContent}</DesktopLayout>
         </Box>
 
         <Box display={{ base: "flex", md: "none" }} w="full" h="full" overflowY="auto">

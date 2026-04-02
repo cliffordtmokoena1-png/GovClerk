@@ -43,10 +43,9 @@ export async function getCurrentBalance(
   // Admin-added tokens are always inserted without an org_id, so this
   // ensures they are visible regardless of the user's org context.
   const personalRows = await conn
-    .execute(
-      "SELECT SUM(credit) AS balance FROM payments WHERE user_id = ? AND org_id IS NULL;",
-      [userId]
-    )
+    .execute("SELECT SUM(credit) AS balance FROM payments WHERE user_id = ? AND org_id IS NULL;", [
+      userId,
+    ])
     .then((res) => res.rows as Record<string, unknown>[]);
 
   const personalBalance = parseBalance(personalRows);
@@ -54,10 +53,7 @@ export async function getCurrentBalance(
   if (orgId) {
     // Also fetch tokens that belong to the organisation.
     const orgRows = await conn
-      .execute(
-        "SELECT SUM(credit) AS balance FROM payments WHERE org_id = ?;",
-        [orgId]
-      )
+      .execute("SELECT SUM(credit) AS balance FROM payments WHERE org_id = ?;", [orgId])
       .then((res) => res.rows as Record<string, unknown>[]);
 
     const orgBalance = parseBalance(orgRows);
@@ -100,10 +96,7 @@ async function handler(req: NextRequest) {
       let existingRows: unknown[] = [];
       try {
         existingRows = await conn
-          .execute(
-            "SELECT id FROM payments WHERE user_id = ? AND action = 'add' LIMIT 1",
-            [userId]
-          )
+          .execute("SELECT id FROM payments WHERE user_id = ? AND action = 'add' LIMIT 1", [userId])
           .then((res) => res.rows);
       } catch (selectErr: unknown) {
         if (!isActionColumnMissing(selectErr)) {
@@ -122,10 +115,9 @@ async function handler(req: NextRequest) {
       }
 
       try {
-        await conn.execute(
-          'INSERT INTO payments (user_id, credit, action) VALUES (?, 30, "add")',
-          [userId]
-        );
+        await conn.execute('INSERT INTO payments (user_id, credit, action) VALUES (?, 30, "add")', [
+          userId,
+        ]);
       } catch (insertErr: unknown) {
         // Some DB branches don't have the 'action' column yet (MySQL errno 1054).
         if (isActionColumnMissing(insertErr)) {

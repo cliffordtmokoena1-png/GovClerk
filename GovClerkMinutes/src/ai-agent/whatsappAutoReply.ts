@@ -67,7 +67,9 @@ export async function handleAiAutoReply({
     );
 
     // Convert DB rows into AgentMessage format (reverse to chronological order)
-    const history: AgentMessage[] = (historyResult.rows as Array<{ text: string; direction: string }>)
+    const history: AgentMessage[] = (
+      historyResult.rows as Array<{ text: string; direction: string }>
+    )
       .reverse()
       .map((row) => ({
         role: row.direction === "inbound" ? ("user" as const) : ("assistant" as const),

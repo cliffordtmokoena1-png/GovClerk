@@ -70,7 +70,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
   } = body;
 
   if (!requesterName || !requesterEmail || !requestType || !description) {
-    return errorResponse("requesterName, requesterEmail, requestType, and description are required", 400);
+    return errorResponse(
+      "requesterName, requesterEmail, requestType, and description are required",
+      400
+    );
   }
 
   const validTypes = ["foia", "open_records", "inspection", "certification"];

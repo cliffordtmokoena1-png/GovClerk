@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Text,
-  Spinner,
-  VStack,
-  Box,
-  Grid,
-  GridItem,
-} from "@chakra-ui/react";
+import { Text, Spinner, VStack, Box, Grid, GridItem } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { useDropzoneLayout } from "@/hooks/useDropzoneLayout";
 import DragDropOverlay from "./DragDropOverlay";

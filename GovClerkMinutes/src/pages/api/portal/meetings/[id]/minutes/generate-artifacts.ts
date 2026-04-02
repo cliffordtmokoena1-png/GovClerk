@@ -617,11 +617,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
             "transcript_txt",
             region
           );
-          await uploadToS3(
-            transcriptTxtUploadDetails.uploadUrl,
-            transcriptTxtBytes,
-            "text/plain"
-          );
+          await uploadToS3(transcriptTxtUploadDetails.uploadUrl, transcriptTxtBytes, "text/plain");
           const transcriptTxtArtifactId = await createArtifact(
             conn,
             orgId,

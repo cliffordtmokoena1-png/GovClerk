@@ -48,9 +48,7 @@ async function handler(req: NextRequest) {
          AND operator_email = 'ai-agent'`,
       [today]
     );
-    const callsMade = Number(
-      (callsMadeResult.rows[0] as Record<string, unknown>)?.cnt ?? 0
-    );
+    const callsMade = Number((callsMadeResult.rows[0] as Record<string, unknown>)?.cnt ?? 0);
 
     // Messages processed: total messages where the AI replied today
     const messagesResult = await conn.execute(
@@ -60,9 +58,7 @@ async function handler(req: NextRequest) {
          AND operator_email = 'ai-agent'`,
       [today]
     );
-    const messagesProcessed = Number(
-      (messagesResult.rows[0] as Record<string, unknown>)?.cnt ?? 0
-    );
+    const messagesProcessed = Number((messagesResult.rows[0] as Record<string, unknown>)?.cnt ?? 0);
 
     // Payment plans sent: AI messages containing a payment link today
     const paymentPlansSentResult = await conn.execute(
@@ -89,9 +85,7 @@ async function handler(req: NextRequest) {
            AND (action = 'whatsapp_ai_agent' OR action = 'paystack_ai')`,
         [today]
       );
-      paidPlans = Number(
-        (paidPlansResult.rows[0] as Record<string, unknown>)?.cnt ?? 0
-      );
+      paidPlans = Number((paidPlansResult.rows[0] as Record<string, unknown>)?.cnt ?? 0);
     } catch (err) {
       // payments table may not have the action column in all environments
       console.warn("[admin/ai-activities] Could not query paid plans (schema may differ):", err);
@@ -107,12 +101,13 @@ async function handler(req: NextRequest) {
          WHERE needs_followup = 1`,
         []
       );
-      followUpCount = Number(
-        (followUpResult.rows[0] as Record<string, unknown>)?.cnt ?? 0
-      );
+      followUpCount = Number((followUpResult.rows[0] as Record<string, unknown>)?.cnt ?? 0);
     } catch (err) {
       // needs_followup column may not exist in all environments
-      console.warn("[admin/ai-activities] Could not query follow-up count (schema may differ):", err);
+      console.warn(
+        "[admin/ai-activities] Could not query follow-up count (schema may differ):",
+        err
+      );
       followUpCount = 0;
     }
 

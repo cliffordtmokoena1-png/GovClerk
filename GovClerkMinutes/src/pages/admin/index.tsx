@@ -82,7 +82,10 @@ export const getServerSideProps: GetServerSideProps = withGsspErrorHandling(asyn
     });
     whatsappTemplates = result.templates;
   } catch (err) {
-    console.warn("Failed to fetch WhatsApp templates (META_WHATSAPP_BUSINESS_API_KEY may not be configured):", err);
+    console.warn(
+      "Failed to fetch WhatsApp templates (META_WHATSAPP_BUSINESS_API_KEY may not be configured):",
+      err
+    );
   }
 
   return {
@@ -192,13 +195,7 @@ export default function AdminPage({
       >
         <DesktopLayout>
           <Box maxW="1000px" mx="auto" p={4} flexGrow={1} overflowY="auto">
-            <Flex
-              justify="space-between"
-              align="center"
-              mb={6}
-              wrap="wrap"
-              gap={3}
-            >
+            <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={3}>
               <Flex alignItems="center" gap={3}>
                 <Heading as="h1" size="lg" color="purple.700">
                   🛡️ GovClerk Admin Panel
@@ -208,16 +205,14 @@ export default function AdminPage({
                     apiHealthy === null
                       ? "Checking API…"
                       : apiHealthy
-                      ? "API healthy"
-                      : "API unhealthy – check server logs"
+                        ? "API healthy"
+                        : "API unhealthy – check server logs"
                   }
                   hasArrow
                 >
                   <Circle
                     size="10px"
-                    bg={
-                      apiHealthy === null ? "gray.300" : apiHealthy ? "green.400" : "red.500"
-                    }
+                    bg={apiHealthy === null ? "gray.300" : apiHealthy ? "green.400" : "red.500"}
                   />
                 </Tooltip>
               </Flex>

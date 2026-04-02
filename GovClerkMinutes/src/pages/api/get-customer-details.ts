@@ -13,17 +13,17 @@ function isActionColumnMissing(error: unknown): boolean {
   return isUnknownColumnOrMissingTableError(error);
 }
 
-async function autoGrantTrialTokens(conn: ReturnType<typeof connect>, userId: string): Promise<number> {
+async function autoGrantTrialTokens(
+  conn: ReturnType<typeof connect>,
+  userId: string
+): Promise<number> {
   try {
     // Idempotency check: skip if a grant row already exists.
     // If 'action' column is missing (errno 1054) treat as no existing row.
     let existingRows: unknown[] = [];
     try {
       existingRows = await conn
-        .execute(
-          "SELECT id FROM payments WHERE user_id = ? AND action = 'add' LIMIT 1",
-          [userId]
-        )
+        .execute("SELECT id FROM payments WHERE user_id = ? AND action = 'add' LIMIT 1", [userId])
         .then((res) => res.rows);
     } catch (selectErr: unknown) {
       if (!isActionColumnMissing(selectErr)) {
@@ -36,10 +36,9 @@ async function autoGrantTrialTokens(conn: ReturnType<typeof connect>, userId: st
     }
 
     try {
-      await conn.execute(
-        'INSERT INTO payments (user_id, credit, action) VALUES (?, 30, "add")',
-        [userId]
-      );
+      await conn.execute('INSERT INTO payments (user_id, credit, action) VALUES (?, 30, "add")', [
+        userId,
+      ]);
     } catch (insertErr: unknown) {
       if (isActionColumnMissing(insertErr)) {
         console.warn("[get-customer-details] 'action' column not found, retrying without it");
@@ -102,23 +101,28 @@ export async function getCustomerDetails(
   let params: string[];
 
   if (orgId) {
-    query = "SELECT paystack_customer_code, paystack_subscription_code, paystack_plan_code, billing_model FROM gc_customers WHERE org_id = ?";
+    query =
+      "SELECT paystack_customer_code, paystack_subscription_code, paystack_plan_code, billing_model FROM gc_customers WHERE org_id = ?";
     params = [orgId];
   } else {
-    query = "SELECT paystack_customer_code, paystack_subscription_code, paystack_plan_code, billing_model FROM gc_customers WHERE user_id = ?";
+    query =
+      "SELECT paystack_customer_code, paystack_subscription_code, paystack_plan_code, billing_model FROM gc_customers WHERE user_id = ?";
     params = [userId];
   }
 
-  const customerRows = await conn.execute(query, params).then((result) => result.rows).catch((err: unknown) => {
-    if (isUnknownColumnOrMissingTableError(err)) {
-      console.warn(
-        "[get-customer-details] PayStack columns not found in gc_customers " +
-          "(schema migration pending). Falling back to free-user defaults."
-      );
-      return [] as { [key: string]: unknown }[];
-    }
-    throw err;
-  });
+  const customerRows = await conn
+    .execute(query, params)
+    .then((result) => result.rows)
+    .catch((err: unknown) => {
+      if (isUnknownColumnOrMissingTableError(err)) {
+        console.warn(
+          "[get-customer-details] PayStack columns not found in gc_customers " +
+            "(schema migration pending). Falling back to free-user defaults."
+        );
+        return [] as { [key: string]: unknown }[];
+      }
+      throw err;
+    });
 
   let planName: SubscriptionPlan = "Free";
   let subscriptionStatus: ApiGetCustomerDetailsResponse["subscriptionStatus"] = "free";
@@ -133,7 +137,8 @@ export async function getCustomerDetails(
   if (customerRows.length > 0) {
     const customerRow = customerRows[customerRows.length - 1];
     billingModel = customerRow["billing_model"];
-    const paystackSubscriptionCode: string | null = customerRow["paystack_subscription_code"] ?? null;
+    const paystackSubscriptionCode: string | null =
+      customerRow["paystack_subscription_code"] ?? null;
     const paystackPlanCode: string | null = customerRow["paystack_plan_code"] ?? null;
 
     // Derive subscription status and plan details from the stored PayStack codes.
@@ -160,7 +165,9 @@ export async function getCustomerDetails(
   if (balance === null && !orgId) {
     // New user with no payment rows — auto-grant 30 trial tokens so the
     // dashboard always shows the correct initial balance.
-    console.warn(`[get-customer-details] No payment rows for user ${userId}, auto-granting 30 trial tokens`);
+    console.warn(
+      `[get-customer-details] No payment rows for user ${userId}, auto-granting 30 trial tokens`
+    );
     remainingToken = await autoGrantTrialTokens(conn, userId);
   } else {
     remainingToken = balance ?? 0;

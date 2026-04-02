@@ -12,10 +12,7 @@ import { getPortalSession, PortalSessionPayload } from "./portalAuth";
 import { errorResponse } from "@/utils/apiHelpers";
 import { NextRequest } from "next/server";
 
-type PortalHandler = (
-  req: NextRequest,
-  session: PortalSessionPayload
-) => Promise<Response>;
+type PortalHandler = (req: NextRequest, session: PortalSessionPayload) => Promise<Response>;
 
 export function requirePortalAuth(handler: PortalHandler) {
   return async (req: NextRequest): Promise<Response> => {

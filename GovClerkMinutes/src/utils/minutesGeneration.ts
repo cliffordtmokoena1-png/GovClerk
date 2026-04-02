@@ -136,7 +136,20 @@ export async function createMinutesTranscript(
      (userId, org_id, dateCreated, title, file_size, aws_region, upload_kind, recording_state, extension,
       transcribe_finished, preview_transcribe_finished, upload_complete, language)
      VALUES (?, ?, UTC_TIMESTAMP(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [userId, orgId, title, transcriptText.length, DEFAULT_REGION, "text", -1, null, 1, 1, 1, language || null]
+    [
+      userId,
+      orgId,
+      title,
+      transcriptText.length,
+      DEFAULT_REGION,
+      "text",
+      -1,
+      null,
+      1,
+      1,
+      1,
+      language || null,
+    ]
   );
 
   return Number(transcriptResult.insertId);
@@ -224,7 +237,10 @@ export async function copyRecordingToUploadKey(
   );
 }
 
-export async function triggerAudioDiarization(transcriptId: number, language?: string): Promise<void> {
+export async function triggerAudioDiarization(
+  transcriptId: number,
+  language?: string
+): Promise<void> {
   const s3AudioKey = getUploadKey(transcriptId, { env: isDev() ? "dev" : "prod" });
   const testQueryParam = isDev() ? "?test=1" : "";
 

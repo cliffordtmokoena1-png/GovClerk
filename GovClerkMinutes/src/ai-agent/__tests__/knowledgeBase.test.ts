@@ -1,4 +1,9 @@
-import { buildSystemPrompt, buildSamanthaSystemPrompt, buildGraySystemPrompt, PRODUCT_KNOWLEDGE_BASE } from "../knowledgeBase";
+import {
+  buildSystemPrompt,
+  buildSamanthaSystemPrompt,
+  buildGraySystemPrompt,
+  PRODUCT_KNOWLEDGE_BASE,
+} from "../knowledgeBase";
 
 describe("AI Agent Knowledge Base", () => {
   describe("PRODUCT_KNOWLEDGE_BASE", () => {

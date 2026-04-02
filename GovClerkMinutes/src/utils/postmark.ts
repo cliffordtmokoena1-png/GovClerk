@@ -130,7 +130,10 @@ export async function sendWelcomeEmail(email: string, firstName?: string) {
       console.info(`[sendWelcomeEmail] Welcome email sent to ${email} (attempt ${attempt})`);
       return;
     } catch (err) {
-      console.error(`[sendWelcomeEmail] Failed to send welcome email to ${email} (attempt ${attempt}):`, err);
+      console.error(
+        `[sendWelcomeEmail] Failed to send welcome email to ${email} (attempt ${attempt}):`,
+        err
+      );
       if (attempt === MAX_EMAIL_RETRY_ATTEMPTS) {
         console.error(`[sendWelcomeEmail] Exhausted retries for ${email}`);
       }

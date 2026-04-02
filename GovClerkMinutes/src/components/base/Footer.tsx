@@ -16,7 +16,6 @@ import { FaTwitter, FaGithub, FaLinkedin } from "react-icons/fa";
 import { getAllSlugs } from "@/utils/landing/landingUtils";
 import IconWordmark from "@/components/IconWordmark";
 
-
 const ListHeader = ({ children }: { children: React.ReactNode }) => {
   return (
     <Text fontWeight="500" fontSize="lg" mb={2}>
@@ -58,7 +57,9 @@ export const Footer = () => {
             <ChakraLink as={Link} href="/">
               About Us
             </ChakraLink>
-            <ChakraLink as={Link} href="/contact">Contact Us</ChakraLink>
+            <ChakraLink as={Link} href="/contact">
+              Contact Us
+            </ChakraLink>
             <ChakraLink href="https://www.linkedin.com/company/GovClerkMinutes" isExternal>
               Careers
             </ChakraLink>

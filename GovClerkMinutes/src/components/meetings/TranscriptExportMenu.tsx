@@ -97,11 +97,7 @@ export function TranscriptExportMenu({ meeting, orgId }: Props) {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} aria-hidden="true" />
           {/* Dropdown */}
           <div className="absolute right-0 top-full mt-1 z-20 bg-popover border border-border rounded-md shadow-md min-w-40 py-1">
             {formats.map((format) => {

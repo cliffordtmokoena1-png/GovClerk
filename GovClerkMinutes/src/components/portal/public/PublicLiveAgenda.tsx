@@ -40,8 +40,8 @@ function AgendaItemRow({
           isCurrent
             ? "bg-blue-50 border border-blue-200"
             : item.isSection
-            ? "bg-gray-50"
-            : "hover:bg-gray-50"
+              ? "bg-gray-50"
+              : "hover:bg-gray-50"
         }`}
         style={{ paddingLeft: `${12 + depth * 16}px` }}
       >
@@ -73,11 +73,7 @@ function AgendaItemRow({
 
 export function PublicLiveAgenda({ agenda, currentAgendaItemId }: Props) {
   if (agenda.length === 0) {
-    return (
-      <div className="py-8 text-center text-gray-400 text-sm">
-        No agenda items available
-      </div>
-    );
+    return <div className="py-8 text-center text-gray-400 text-sm">No agenda items available</div>;
   }
 
   return (

@@ -27,13 +27,19 @@ const STATUS_CLASSES: Record<RecordsRequestStatus, string> = {
 
 function StatusBadge({ status }: { status: RecordsRequestStatus }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASSES[status]}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASSES[status]}`}
+    >
       {STATUS_LABELS[status]}
     </span>
   );
 }
 
-type RowData = PublicRecordsRequest & { _isExpanded?: boolean; _isSaving?: boolean; _saveError?: string };
+type RowData = PublicRecordsRequest & {
+  _isExpanded?: boolean;
+  _isSaving?: boolean;
+  _saveError?: string;
+};
 
 export function RecordsRequestsPanel({}: Props) {
   const [requests, setRequests] = useState<RowData[]>([]);
@@ -42,7 +48,9 @@ export function RecordsRequestsPanel({}: Props) {
   const [statusFilter, setStatusFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [editState, setEditState] = useState<Record<number, { status?: string; responseNotes?: string; denialReason?: string }>>({});
+  const [editState, setEditState] = useState<
+    Record<number, { status?: string; responseNotes?: string; denialReason?: string }>
+  >({});
 
   const pageSize = 20;
 
@@ -66,60 +74,79 @@ export function RecordsRequestsPanel({}: Props) {
     fetchRequests(1, "");
   }, [fetchRequests]);
 
-  const handleStatusFilterChange = useCallback((status: string) => {
-    setStatusFilter(status);
-    setPage(1);
-    fetchRequests(1, status);
-  }, [fetchRequests]);
+  const handleStatusFilterChange = useCallback(
+    (status: string) => {
+      setStatusFilter(status);
+      setPage(1);
+      fetchRequests(1, status);
+    },
+    [fetchRequests]
+  );
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-    fetchRequests(newPage, statusFilter);
-  }, [statusFilter, fetchRequests]);
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      fetchRequests(newPage, statusFilter);
+    },
+    [statusFilter, fetchRequests]
+  );
 
   const handleToggleExpand = useCallback((id: number) => {
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
 
-  const handleSave = useCallback(async (id: number) => {
-    const edit = editState[id] || {};
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, _isSaving: true, _saveError: undefined } : r))
-    );
-    try {
-      const res = await fetch(`/api/portal/admin/records-requests/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(edit),
-      });
-      if (res.ok) {
-        // Update local state
+  const handleSave = useCallback(
+    async (id: number) => {
+      const edit = editState[id] || {};
+      setRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, _isSaving: true, _saveError: undefined } : r))
+      );
+      try {
+        const res = await fetch(`/api/portal/admin/records-requests/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(edit),
+        });
+        if (res.ok) {
+          // Update local state
+          setRequests((prev) =>
+            prev.map((r) =>
+              r.id === id
+                ? {
+                    ...r,
+                    status: (edit.status as RecordsRequestStatus) || r.status,
+                    responseNotes: edit.responseNotes ?? r.responseNotes,
+                    denialReason: edit.denialReason ?? r.denialReason,
+                    _isSaving: false,
+                  }
+                : r
+            )
+          );
+          setEditState((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        } else {
+          const err = await res.json();
+          setRequests((prev) =>
+            prev.map((r) =>
+              r.id === id
+                ? { ...r, _isSaving: false, _saveError: err.error || "Failed to save" }
+                : r
+            )
+          );
+        }
+      } catch {
         setRequests((prev) =>
           prev.map((r) =>
-            r.id === id
-              ? {
-                  ...r,
-                  status: (edit.status as RecordsRequestStatus) || r.status,
-                  responseNotes: edit.responseNotes ?? r.responseNotes,
-                  denialReason: edit.denialReason ?? r.denialReason,
-                  _isSaving: false,
-                }
-              : r
+            r.id === id ? { ...r, _isSaving: false, _saveError: "Network error" } : r
           )
         );
-        setEditState((prev) => { const next = { ...prev }; delete next[id]; return next; });
-      } else {
-        const err = await res.json();
-        setRequests((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, _isSaving: false, _saveError: err.error || "Failed to save" } : r))
-        );
       }
-    } catch {
-      setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, _isSaving: false, _saveError: "Network error" } : r))
-      );
-    }
-  }, [editState]);
+    },
+    [editState]
+  );
 
   const handleQuickStatusChange = useCallback(async (id: number, status: RecordsRequestStatus) => {
     setRequests((prev) =>
@@ -138,7 +165,9 @@ export function RecordsRequestsPanel({}: Props) {
       } else {
         const err = await res.json();
         setRequests((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, _isSaving: false, _saveError: err.error || "Failed to save" } : r))
+          prev.map((r) =>
+            r.id === id ? { ...r, _isSaving: false, _saveError: err.error || "Failed to save" } : r
+          )
         );
       }
     } catch {
@@ -159,7 +188,9 @@ export function RecordsRequestsPanel({}: Props) {
       r.submittedAt,
       r.responseDueDate || "",
     ]);
-    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -185,7 +216,9 @@ export function RecordsRequestsPanel({}: Props) {
           >
             <option value="">All Statuses</option>
             {(Object.keys(STATUS_LABELS) as RecordsRequestStatus[]).map((s) => (
-              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
             ))}
           </select>
           <button
@@ -201,7 +234,10 @@ export function RecordsRequestsPanel({}: Props) {
 
       {isLoading ? (
         <div className="flex justify-center py-12" role="status" aria-label="Loading requests">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" aria-hidden="true" />
+          <div
+            className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+            aria-hidden="true"
+          />
         </div>
       ) : requests.length === 0 ? (
         <div className="text-center py-12 text-gray-500">No requests found.</div>
@@ -212,13 +248,48 @@ export function RecordsRequestsPanel({}: Props) {
               <caption className="sr-only">FOIA and public records requests</caption>
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tracking #</th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Submitted</th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Due Date</th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Tracking #
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Name
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Type
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Submitted
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Due Date
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
@@ -230,24 +301,37 @@ export function RecordsRequestsPanel({}: Props) {
                       onClick={() => handleToggleExpand(req.id)}
                       aria-expanded={expandedId === req.id}
                     >
-                      <td className="px-3 py-3 font-mono text-xs font-semibold text-gray-700">{req.trackingNumber}</td>
+                      <td className="px-3 py-3 font-mono text-xs font-semibold text-gray-700">
+                        {req.trackingNumber}
+                      </td>
                       <td className="px-3 py-3">
                         <div className="font-medium text-gray-900">{req.requesterName}</div>
                         <div className="text-xs text-gray-500">{req.requesterEmail}</div>
                       </td>
-                      <td className="px-3 py-3 text-gray-600 capitalize">{req.requestType.replace("_", " ")}</td>
-                      <td className="px-3 py-3"><StatusBadge status={req.status} /></td>
+                      <td className="px-3 py-3 text-gray-600 capitalize">
+                        {req.requestType.replace("_", " ")}
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={req.status} />
+                      </td>
                       <td className="px-3 py-3 text-gray-600 text-xs">
                         {new Date(req.submittedAt).toLocaleDateString()}
                       </td>
                       <td className="px-3 py-3 text-gray-600 text-xs">
-                        {req.responseDueDate ? new Date(req.responseDueDate).toLocaleDateString() : "—"}
+                        {req.responseDueDate
+                          ? new Date(req.responseDueDate).toLocaleDateString()
+                          : "—"}
                       </td>
                       <td className="px-3 py-3">
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); handleToggleExpand(req.id); }}
-                          aria-label={expandedId === req.id ? "Collapse row" : "Expand row to update status"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleExpand(req.id);
+                          }}
+                          aria-label={
+                            expandedId === req.id ? "Collapse row" : "Expand row to update status"
+                          }
                           className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                         >
                           {expandedId === req.id ? "Collapse ▲" : "Manage ▼"}
@@ -259,51 +343,83 @@ export function RecordsRequestsPanel({}: Props) {
                         <td colSpan={7} className="px-4 py-4">
                           <div className="space-y-3 max-w-2xl">
                             <div>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">Description</p>
+                              <p className="text-xs font-semibold text-gray-600 mb-1">
+                                Description
+                              </p>
                               <p className="text-sm text-gray-700">{req.description}</p>
                             </div>
                             {req._saveError && (
-                              <div role="alert" className="text-sm text-red-600">{req._saveError}</div>
+                              <div role="alert" className="text-sm text-red-600">
+                                {req._saveError}
+                              </div>
                             )}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1" htmlFor={`status-${req.id}`}>
+                                <label
+                                  className="block text-xs font-medium text-gray-600 mb-1"
+                                  htmlFor={`status-${req.id}`}
+                                >
                                   Update Status
                                 </label>
                                 <select
                                   id={`status-${req.id}`}
                                   value={editState[req.id]?.status ?? req.status}
-                                  onChange={(e) => setEditState((prev) => ({ ...prev, [req.id]: { ...prev[req.id], status: e.target.value } }))}
+                                  onChange={(e) =>
+                                    setEditState((prev) => ({
+                                      ...prev,
+                                      [req.id]: { ...prev[req.id], status: e.target.value },
+                                    }))
+                                  }
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                  {(Object.keys(STATUS_LABELS) as RecordsRequestStatus[]).map((s) => (
-                                    <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                                  ))}
+                                  {(Object.keys(STATUS_LABELS) as RecordsRequestStatus[]).map(
+                                    (s) => (
+                                      <option key={s} value={s}>
+                                        {STATUS_LABELS[s]}
+                                      </option>
+                                    )
+                                  )}
                                 </select>
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1" htmlFor={`denial-${req.id}`}>
+                                <label
+                                  className="block text-xs font-medium text-gray-600 mb-1"
+                                  htmlFor={`denial-${req.id}`}
+                                >
                                   Denial Reason
                                 </label>
                                 <input
                                   id={`denial-${req.id}`}
                                   type="text"
                                   value={editState[req.id]?.denialReason ?? req.denialReason ?? ""}
-                                  onChange={(e) => setEditState((prev) => ({ ...prev, [req.id]: { ...prev[req.id], denialReason: e.target.value } }))}
+                                  onChange={(e) =>
+                                    setEditState((prev) => ({
+                                      ...prev,
+                                      [req.id]: { ...prev[req.id], denialReason: e.target.value },
+                                    }))
+                                  }
                                   placeholder="If denied, enter reason..."
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1" htmlFor={`notes-${req.id}`}>
+                              <label
+                                className="block text-xs font-medium text-gray-600 mb-1"
+                                htmlFor={`notes-${req.id}`}
+                              >
                                 Response Notes (internal)
                               </label>
                               <textarea
                                 id={`notes-${req.id}`}
                                 rows={3}
                                 value={editState[req.id]?.responseNotes ?? req.responseNotes ?? ""}
-                                onChange={(e) => setEditState((prev) => ({ ...prev, [req.id]: { ...prev[req.id], responseNotes: e.target.value } }))}
+                                onChange={(e) =>
+                                  setEditState((prev) => ({
+                                    ...prev,
+                                    [req.id]: { ...prev[req.id], responseNotes: e.target.value },
+                                  }))
+                                }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                               />
                             </div>

@@ -52,7 +52,9 @@ export default function LoginLinkGenerator() {
       try {
         data = await res.json();
       } catch (e) {
-        throw new Error(`Server error (${res.status}): ${e instanceof Error ? e.message : "Invalid JSON"}`);
+        throw new Error(
+          `Server error (${res.status}): ${e instanceof Error ? e.message : "Invalid JSON"}`
+        );
       }
 
       if (!res.ok) {

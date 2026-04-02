@@ -62,14 +62,18 @@ function StatusTimeline({ status }: { status: RecordsRequestStatus }) {
                 isDone
                   ? "bg-green-100 text-green-800"
                   : isCurrent
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-gray-100 text-gray-500"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-gray-100 text-gray-500"
               }`}
               aria-current={isCurrent ? "step" : undefined}
             >
               {isDone ? "✅" : isCurrent ? "🔄" : "⏳"} {step.label}
             </span>
-            {i < STATUS_STEPS.length - 1 && <span aria-hidden="true" className="text-gray-400">→</span>}
+            {i < STATUS_STEPS.length - 1 && (
+              <span aria-hidden="true" className="text-gray-400">
+                →
+              </span>
+            )}
           </li>
         );
       })}
@@ -153,7 +157,9 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
       setIsTracking(true);
 
       try {
-        const res = await fetch(`/api/public/portal/${slug}/records/track/${encodeURIComponent(trackingNumber)}`);
+        const res = await fetch(
+          `/api/public/portal/${slug}/records/track/${encodeURIComponent(trackingNumber)}`
+        );
         if (!res.ok) {
           const err = await res.json();
           setTrackError(err.error || "Request not found. Please check your tracking number.");
@@ -174,7 +180,10 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
     <>
       <Head>
         <title>Request Records — {settings.pageTitle || "Public Portal"}</title>
-        <meta name="description" content="Submit a FOIA / public records request or track an existing request." />
+        <meta
+          name="description"
+          content="Submit a FOIA / public records request or track an existing request."
+        />
       </Head>
 
       <a
@@ -190,17 +199,32 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-4 text-sm text-gray-500">
           <ol className="flex items-center gap-2">
-            <li><Link href={`/portal/${slug}`} className="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">Portal Home</Link></li>
+            <li>
+              <Link
+                href={`/portal/${slug}`}
+                className="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
+                Portal Home
+              </Link>
+            </li>
             <li aria-hidden="true">/</li>
-            <li aria-current="page" className="text-gray-800 font-medium">Request Records</li>
+            <li aria-current="page" className="text-gray-800 font-medium">
+              Request Records
+            </li>
           </ol>
         </nav>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Records</h1>
-        <p className="text-gray-600 mb-6">Submit a public records request or track an existing one.</p>
+        <p className="text-gray-600 mb-6">
+          Submit a public records request or track an existing one.
+        </p>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 border-b border-gray-200" role="tablist" aria-label="Request records tabs">
+        <div
+          className="flex gap-1 mb-6 border-b border-gray-200"
+          role="tablist"
+          aria-label="Request records tabs"
+        >
           {(["submit", "track"] as ActiveTab[]).map((tab) => (
             <button
               key={tab}
@@ -239,12 +263,23 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
               <h2 className="text-xl font-bold text-green-800 mb-2">Request Submitted!</h2>
               <p className="text-green-700 mb-4">Save your tracking number:</p>
               <div className="inline-block bg-white border border-green-400 rounded-lg px-6 py-3 mb-4">
-                <span className="text-2xl font-mono font-bold text-green-900">{submitResult.trackingNumber}</span>
+                <span className="text-2xl font-mono font-bold text-green-900">
+                  {submitResult.trackingNumber}
+                </span>
               </div>
               <p className="text-sm text-green-700">{submitResult.message}</p>
               <button
                 type="button"
-                onClick={() => { setSubmitResult(null); setForm({ requesterName: "", requesterEmail: "", requesterPhone: "", requestType: "foia", description: "" }); }}
+                onClick={() => {
+                  setSubmitResult(null);
+                  setForm({
+                    requesterName: "",
+                    requesterEmail: "",
+                    requesterPhone: "",
+                    requestType: "foia",
+                    description: "",
+                  });
+                }}
                 className="mt-4 px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 Submit Another Request
@@ -253,15 +288,24 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
           ) : (
             <form onSubmit={handleSubmit} noValidate aria-label="Submit a records request">
               {submitError && (
-                <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-700">
+                <div
+                  role="alert"
+                  className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-700"
+                >
                   {submitError}
                 </div>
               )}
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="requesterName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name <span aria-hidden="true" className="text-red-500">*</span>
+                  <label
+                    htmlFor="requesterName"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Full Name{" "}
+                    <span aria-hidden="true" className="text-red-500">
+                      *
+                    </span>
                     <span className="sr-only">(required)</span>
                   </label>
                   <input
@@ -276,8 +320,14 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                 </div>
 
                 <div>
-                  <label htmlFor="requesterEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address <span aria-hidden="true" className="text-red-500">*</span>
+                  <label
+                    htmlFor="requesterEmail"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email Address{" "}
+                    <span aria-hidden="true" className="text-red-500">
+                      *
+                    </span>
                     <span className="sr-only">(required)</span>
                   </label>
                   <input
@@ -292,7 +342,10 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                 </div>
 
                 <div>
-                  <label htmlFor="requesterPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="requesterPhone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Phone Number <span className="text-gray-400 font-normal">(optional)</span>
                   </label>
                   <input
@@ -306,15 +359,26 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                 </div>
 
                 <div>
-                  <label htmlFor="requestType" className="block text-sm font-medium text-gray-700 mb-1">
-                    Request Type <span aria-hidden="true" className="text-red-500">*</span>
+                  <label
+                    htmlFor="requestType"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Request Type{" "}
+                    <span aria-hidden="true" className="text-red-500">
+                      *
+                    </span>
                     <span className="sr-only">(required)</span>
                   </label>
                   <select
                     id="requestType"
                     required
                     value={form.requestType}
-                    onChange={(e) => setForm((f) => ({ ...f, requestType: e.target.value as SubmitRecordsRequestBody["requestType"] }))}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        requestType: e.target.value as SubmitRecordsRequestBody["requestType"],
+                      }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-blue-500 text-sm"
                   >
                     <option value="foia">FOIA Request</option>
@@ -325,8 +389,14 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                 </div>
 
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    Description of Records Requested <span aria-hidden="true" className="text-red-500">*</span>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Description of Records Requested{" "}
+                    <span aria-hidden="true" className="text-red-500">
+                      *
+                    </span>
                     <span className="sr-only">(required)</span>
                   </label>
                   <textarea
@@ -342,7 +412,10 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="dateRangeFrom" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="dateRangeFrom"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Date Range From <span className="text-gray-400 font-normal">(optional)</span>
                     </label>
                     <input
@@ -354,7 +427,10 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                     />
                   </div>
                   <div>
-                    <label htmlFor="dateRangeTo" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="dateRangeTo"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Date Range To <span className="text-gray-400 font-normal">(optional)</span>
                     </label>
                     <input
@@ -391,7 +467,10 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
         >
           <form onSubmit={handleTrack} aria-label="Track a records request">
             <div className="mb-4">
-              <label htmlFor="trackingNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="trackingNumber"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Tracking Number
               </label>
               <div className="flex gap-2">
@@ -417,7 +496,10 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
           </form>
 
           {trackError && (
-            <div role="alert" className="mt-4 p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-700">
+            <div
+              role="alert"
+              className="mt-4 p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-700"
+            >
               {trackError}
             </div>
           )}
@@ -432,14 +514,22 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                 <div>
                   <dt className="text-gray-500">Submitted</dt>
                   <dd className="font-medium text-gray-800">
-                    {new Date(trackResult.submittedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}
+                    {new Date(trackResult.submittedAt).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </dd>
                 </div>
                 {trackResult.responseDueDate && (
                   <div>
                     <dt className="text-gray-500">Response Due</dt>
                     <dd className="font-medium text-gray-800">
-                      {new Date(trackResult.responseDueDate).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}
+                      {new Date(trackResult.responseDueDate).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </dd>
                   </div>
                 )}
@@ -447,7 +537,11 @@ export default function RequestRecordsPage({ settings, slug }: Props) {
                   <div>
                     <dt className="text-gray-500">Fulfilled</dt>
                     <dd className="font-medium text-gray-800">
-                      {new Date(trackResult.fulfilledAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}
+                      {new Date(trackResult.fulfilledAt).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </dd>
                   </div>
                 )}
@@ -484,7 +578,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     const settingsData: PublicPortalResponse = await settingsRes.json();
 
     // Require authentication to submit records requests
-    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
+      () => null
+    );
     if (!session) {
       return {
         redirect: {

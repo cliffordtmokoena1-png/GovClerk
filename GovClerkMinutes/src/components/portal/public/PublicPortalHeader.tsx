@@ -1,7 +1,15 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { LuMenu, LuX, LuFilter, LuLayoutDashboard, LuLogIn, LuLogOut, LuUser } from "react-icons/lu";
+import {
+  LuMenu,
+  LuX,
+  LuFilter,
+  LuLayoutDashboard,
+  LuLogIn,
+  LuLogOut,
+  LuUser,
+} from "react-icons/lu";
 import { useAuth } from "@clerk/nextjs";
 import { usePortalSession } from "@/hooks/portal/usePortalSession";
 import type { PublicPortalResponse } from "@/types/portal";
@@ -97,16 +105,17 @@ export function PublicPortalHeader({
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
               {/* Phase 3 built-in portal nav links */}
-              {slug && PORTAL_NAV_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={`/portal/${slug}${link.hrefSuffix}`}
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {slug &&
+                PORTAL_NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={`/portal/${slug}${link.hrefSuffix}`}
+                    style={{ color: settings.headerTextColor || "#ffffff" }}
+                    className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               {/* Additional custom nav links from portal settings */}
               {settings.navLinks?.map((link, index) => (
                 <a
@@ -223,17 +232,18 @@ export function PublicPortalHeader({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
               {/* Phase 3 built-in portal nav links */}
-              {slug && PORTAL_NAV_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={`/portal/${slug}${link.hrefSuffix}`}
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {slug &&
+                PORTAL_NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={`/portal/${slug}${link.hrefSuffix}`}
+                    style={{ color: settings.headerTextColor || "#ffffff" }}
+                    className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               {/* Additional custom nav links */}
               {settings.navLinks?.map((link, index) => (
                 <a

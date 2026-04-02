@@ -34,8 +34,8 @@ export default function GovClerkIntegrationsSection() {
               Connects With the Tools You Already Use
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base text-blue-200 md:text-lg">
-              GovClerk integrates with leading conferencing, collaboration, and storage platforms
-              so your team can work without switching contexts.
+              GovClerk integrates with leading conferencing, collaboration, and storage platforms so
+              your team can work without switching contexts.
             </p>
           </div>
         </FadeContent>

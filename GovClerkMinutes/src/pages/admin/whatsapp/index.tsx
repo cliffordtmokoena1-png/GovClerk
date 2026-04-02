@@ -391,7 +391,7 @@ export default function WhatsappTool({ whatsappMessageTemplates }: Props) {
           callerName={incomingCall ? incomingCallerName : outboundTarget?.name}
           isOutbound={Boolean(
             (outboundCall && outboundCall.direction === "BUSINESS_INITIATED") ||
-              (!!outboundTarget && !incomingCall)
+            (!!outboundTarget && !incomingCall)
           )}
           status={outboundStatus ?? undefined}
           setMicDevice={engine.setInputDevice}
@@ -399,7 +399,7 @@ export default function WhatsappTool({ whatsappMessageTemplates }: Props) {
           onReject={() => {
             const doEnd = Boolean(
               (outboundCall && outboundCall.direction === "BUSINESS_INITIATED") ||
-                (!!outboundTarget && !incomingCall)
+              (!!outboundTarget && !incomingCall)
             );
             const fn = doEnd ? engine.terminate : engine.reject;
             fn().finally(() => {

@@ -1,230 +1,231 @@
 <!-- Subject: Your {{plan_name}} subscription is now active! -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Payment Confirmed — GovClerk Minutes</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #1e293b;
-    }
-    .wrapper {
-      width: 100%;
-      background-color: #f8fafc;
-      padding: 32px 16px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .header {
-      background-color: #2563eb;
-      padding: 32px 40px;
-      text-align: center;
-    }
-    .header-logo {
-      font-size: 22px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.5px;
-    }
-    .header-logo span {
-      opacity: 0.75;
-      font-weight: 400;
-    }
-    .success-banner {
-      background-color: #f0fdf4;
-      border-top: 4px solid #22c55e;
-      padding: 24px 40px;
-      text-align: center;
-    }
-    .success-badge {
-      display: inline-block;
-      background-color: #dcfce7;
-      color: #15803d;
-      font-size: 15px;
-      font-weight: 700;
-      padding: 10px 22px;
-      border-radius: 100px;
-    }
-    .body {
-      padding: 36px 40px 32px;
-    }
-    .greeting {
-      font-size: 22px;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0 0 16px;
-    }
-    .body p {
-      font-size: 15px;
-      line-height: 1.65;
-      color: #475569;
-      margin: 0 0 20px;
-    }
-    .plan-badge {
-      display: inline-block;
-      background-color: #eff6ff;
-      color: #2563eb;
-      font-size: 14px;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 6px;
-      border: 1px solid #bfdbfe;
-    }
-    .next-steps {
-      background-color: #f8fafc;
-      border-radius: 10px;
-      padding: 24px 28px;
-      margin: 24px 0;
-    }
-    .next-steps-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin: 0 0 16px;
-    }
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 14px;
-    }
-    .step-item:last-child {
-      margin-bottom: 0;
-    }
-    .step-icon {
-      font-size: 18px;
-      margin-right: 12px;
-      flex-shrink: 0;
-      line-height: 1.5;
-    }
-    .step-text {
-      font-size: 14px;
-      line-height: 1.55;
-      color: #334155;
-    }
-    .cta-wrapper {
-      text-align: center;
-      margin: 32px 0;
-    }
-    .cta-button {
-      display: inline-block;
-      padding: 14px 32px;
-      background-color: #2563eb;
-      color: #ffffff !important;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.2px;
-    }
-    .divider {
-      border: none;
-      border-top: 1px solid #e2e8f0;
-      margin: 28px 0;
-    }
-    .footer {
-      background-color: #f8fafc;
-      padding: 24px 40px;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-    .footer p {
-      font-size: 13px;
-      color: #94a3b8;
-      margin: 0 0 6px;
-      line-height: 1.6;
-    }
-    .footer a {
-      color: #2563eb;
-      text-decoration: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="wrapper">
-    <div class="container">
-
-      <!-- Header -->
-      <div class="header">
-        <div class="header-logo">GovClerk <span>Minutes</span></div>
-      </div>
-
-      <!-- Success Banner -->
-      <div class="success-banner">
-        <div class="success-badge">🎉 Payment Confirmed!</div>
-      </div>
-
-      <!-- Body -->
-      <div class="body">
-        <p class="greeting">Hi {{first_name}},</p>
-
-        <p>
-          Your payment was successful and your
-          <span class="plan-badge">{{plan_name}}</span>
-          subscription is now active. Thank you for choosing GovClerk Minutes!
-        </p>
-
-        <!-- What happens next -->
-        <div class="next-steps">
-          <div class="next-steps-title">What happens next</div>
-
-          <div class="step-item">
-            <span class="step-icon">✅</span>
-            <span class="step-text">
-              <strong>Your account credits have been added</strong> — they are ready to use
-              right away in your dashboard.
-            </span>
-          </div>
-
-          <div class="step-item">
-            <span class="step-icon">📧</span>
-            <span class="step-text">
-              <strong>Our team will reach out with onboarding details</strong> — keep an eye
-              on your inbox for tips on getting the most out of your plan.
-            </span>
-          </div>
-
-          <div class="step-item">
-            <span class="step-icon">🚀</span>
-            <span class="step-text">
-              <strong>You can start uploading meeting recordings right away</strong> — head
-              to your dashboard to get started immediately.
-            </span>
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Confirmed — GovClerk Minutes</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8fafc;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #1e293b;
+      }
+      .wrapper {
+        width: 100%;
+        background-color: #f8fafc;
+        padding: 32px 16px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .header {
+        background-color: #2563eb;
+        padding: 32px 40px;
+        text-align: center;
+      }
+      .header-logo {
+        font-size: 22px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+      }
+      .header-logo span {
+        opacity: 0.75;
+        font-weight: 400;
+      }
+      .success-banner {
+        background-color: #f0fdf4;
+        border-top: 4px solid #22c55e;
+        padding: 24px 40px;
+        text-align: center;
+      }
+      .success-badge {
+        display: inline-block;
+        background-color: #dcfce7;
+        color: #15803d;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 10px 22px;
+        border-radius: 100px;
+      }
+      .body {
+        padding: 36px 40px 32px;
+      }
+      .greeting {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 16px;
+      }
+      .body p {
+        font-size: 15px;
+        line-height: 1.65;
+        color: #475569;
+        margin: 0 0 20px;
+      }
+      .plan-badge {
+        display: inline-block;
+        background-color: #eff6ff;
+        color: #2563eb;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 6px;
+        border: 1px solid #bfdbfe;
+      }
+      .next-steps {
+        background-color: #f8fafc;
+        border-radius: 10px;
+        padding: 24px 28px;
+        margin: 24px 0;
+      }
+      .next-steps-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin: 0 0 16px;
+      }
+      .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+      .step-item:last-child {
+        margin-bottom: 0;
+      }
+      .step-icon {
+        font-size: 18px;
+        margin-right: 12px;
+        flex-shrink: 0;
+        line-height: 1.5;
+      }
+      .step-text {
+        font-size: 14px;
+        line-height: 1.55;
+        color: #334155;
+      }
+      .cta-wrapper {
+        text-align: center;
+        margin: 32px 0;
+      }
+      .cta-button {
+        display: inline-block;
+        padding: 14px 32px;
+        background-color: #2563eb;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid #e2e8f0;
+        margin: 28px 0;
+      }
+      .footer {
+        background-color: #f8fafc;
+        padding: 24px 40px;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+      }
+      .footer p {
+        font-size: 13px;
+        color: #94a3b8;
+        margin: 0 0 6px;
+        line-height: 1.6;
+      }
+      .footer a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="container">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-logo">GovClerk <span>Minutes</span></div>
         </div>
 
-        <!-- CTA -->
-        <div class="cta-wrapper">
-          <a href="{{dashboard_url}}" class="cta-button">Go to Dashboard →</a>
+        <!-- Success Banner -->
+        <div class="success-banner">
+          <div class="success-badge">🎉 Payment Confirmed!</div>
         </div>
 
-        <hr class="divider" />
+        <!-- Body -->
+        <div class="body">
+          <p class="greeting">Hi {{first_name}},</p>
 
-        <p style="font-size:13px;color:#64748b;margin:0;">
-          Questions? Reply to this email or contact
-          <a href="mailto:{{support_email}}" style="color:#2563eb;text-decoration:none;">{{support_email}}</a>
-          and our support team will be happy to help.
-        </p>
+          <p>
+            Your payment was successful and your
+            <span class="plan-badge">{{plan_name}}</span>
+            subscription is now active. Thank you for choosing GovClerk Minutes!
+          </p>
+
+          <!-- What happens next -->
+          <div class="next-steps">
+            <div class="next-steps-title">What happens next</div>
+
+            <div class="step-item">
+              <span class="step-icon">✅</span>
+              <span class="step-text">
+                <strong>Your account credits have been added</strong> — they are ready to use right
+                away in your dashboard.
+              </span>
+            </div>
+
+            <div class="step-item">
+              <span class="step-icon">📧</span>
+              <span class="step-text">
+                <strong>Our team will reach out with onboarding details</strong> — keep an eye on
+                your inbox for tips on getting the most out of your plan.
+              </span>
+            </div>
+
+            <div class="step-item">
+              <span class="step-icon">🚀</span>
+              <span class="step-text">
+                <strong>You can start uploading meeting recordings right away</strong> — head to
+                your dashboard to get started immediately.
+              </span>
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div class="cta-wrapper">
+            <a href="{{dashboard_url}}" class="cta-button">Go to Dashboard →</a>
+          </div>
+
+          <hr class="divider" />
+
+          <p style="font-size: 13px; color: #64748b; margin: 0">
+            Questions? Reply to this email or contact
+            <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none"
+              >{{support_email}}</a
+            >
+            and our support team will be happy to help.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+          <p>© {{current_year}} {{company_name}}. All rights reserved.</p>
+        </div>
       </div>
-
-      <!-- Footer -->
-      <div class="footer">
-        <p>© {{current_year}} {{company_name}}. All rights reserved.</p>
-      </div>
-
     </div>
-  </div>
-</body>
+  </body>
 </html>

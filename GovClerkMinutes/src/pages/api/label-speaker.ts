@@ -270,10 +270,9 @@ async function getTranscript(
           "(schema migration pending). Falling back to query without it."
       );
       const rows = await conn
-        .execute<Omit<Transcript, "is_user_visible">>(
-          "SELECT speaker, start, stop, transcript FROM gc_segments WHERE transcript_id = ? AND fast_mode = ? ORDER BY CAST(start AS TIME);",
-          [transcriptId, options.fastMode ? 1 : 0]
-        )
+        .execute<
+          Omit<Transcript, "is_user_visible">
+        >("SELECT speaker, start, stop, transcript FROM gc_segments WHERE transcript_id = ? AND fast_mode = ? ORDER BY CAST(start AS TIME);", [transcriptId, options.fastMode ? 1 : 0])
         .then((result) => result.rows);
       return rows.map((r) => ({ ...r, is_user_visible: true }));
     }

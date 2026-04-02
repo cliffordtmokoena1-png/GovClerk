@@ -61,7 +61,13 @@ export default function PaywallPricingCard({
     ) {
       const effectiveMonthlyPrice = getEffectiveMonthlyPrice(
         country,
-        (plan + "_Annual") as "Basic_Annual" | "Pro_Annual" | "Essential_Annual" | "Professional_Annual" | "Elite_Annual" | "Premium_Annual"
+        (plan + "_Annual") as
+          | "Basic_Annual"
+          | "Pro_Annual"
+          | "Essential_Annual"
+          | "Professional_Annual"
+          | "Elite_Annual"
+          | "Premium_Annual"
       );
 
       return (

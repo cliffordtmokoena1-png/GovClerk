@@ -78,7 +78,15 @@ export async function getSidebarItems(
   // does not yet exist), fall back to an empty list so the page still loads.
   const agendasPromise = conn
     .execute(agendasQuery, agendasParams)
-    .then((result) => result.rows as Array<{ id: unknown; series_id: unknown; title: unknown; updated_at: unknown }>)
+    .then(
+      (result) =>
+        result.rows as Array<{
+          id: unknown;
+          series_id: unknown;
+          title: unknown;
+          updated_at: unknown;
+        }>
+    )
     .catch((error) => {
       console.error("[sidebar] Failed to fetch agendas:", error);
       return [] as Array<{ id: unknown; series_id: unknown; title: unknown; updated_at: unknown }>;

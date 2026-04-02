@@ -38,7 +38,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   const upcomingOnly = url.searchParams.get("upcoming") === "true";
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-  const pageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get("pageSize") || "20", 10)));
+  const pageSize = Math.min(
+    50,
+    Math.max(1, parseInt(url.searchParams.get("pageSize") || "20", 10))
+  );
   const offset = (page - 1) * pageSize;
 
   let dateFilter = "";

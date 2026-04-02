@@ -16,9 +16,7 @@ export function PublicLiveCaptions({ segments }: Props) {
 
   if (segments.length === 0) {
     return (
-      <div className="py-8 text-center text-gray-400 text-sm">
-        No live captions available yet
-      </div>
+      <div className="py-8 text-center text-gray-400 text-sm">No live captions available yet</div>
     );
   }
 

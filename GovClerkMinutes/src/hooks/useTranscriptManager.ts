@@ -238,7 +238,7 @@ export default function useTranscriptManager({
     // For word/text uploads, still check transcribePaused even though they might have transcribeFinished=true
     showPaywall = Boolean(
       showPaywall &&
-        (transcriptStatus?.transcribePaused || getMinutesData?.status === "NOT_STARTED")
+      (transcriptStatus?.transcribePaused || getMinutesData?.status === "NOT_STARTED")
     );
   }
 
@@ -250,13 +250,13 @@ export default function useTranscriptManager({
 
   const showFinishTranscribingButton = Boolean(
     !redirectFromPurchase &&
-      transcriptStatus?.transcribePaused &&
-      transcriptStatus?.tokensRequired != null &&
-      transcriptStatus?.currentBalance != null &&
-      transcriptStatus?.tokensRequired <= transcriptStatus.currentBalance &&
-      (transcriptStatus?.uploadKind === "audio" ||
-        transcriptStatus?.uploadKind === "text" ||
-        transcriptStatus?.uploadKind === "word")
+    transcriptStatus?.transcribePaused &&
+    transcriptStatus?.tokensRequired != null &&
+    transcriptStatus?.currentBalance != null &&
+    transcriptStatus?.tokensRequired <= transcriptStatus.currentBalance &&
+    (transcriptStatus?.uploadKind === "audio" ||
+      transcriptStatus?.uploadKind === "text" ||
+      transcriptStatus?.uploadKind === "word")
   );
 
   // Track paywall views

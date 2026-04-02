@@ -1,15 +1,21 @@
 /**
  * POST /api/portal/quote-request
  *
- * Stores a portal pricing quote request in gc_portal_quote_requests and
- * logs a notification (email/Slack integration can be added later).
+ * Accepts both the legacy org-details format and the new portal-quote format
+ * from the /portal/request-quote page.
  *
- * Body: {
- *   org_name, org_type, contact_name, contact_email,
- *   contact_phone?, estimated_seats?, estimated_monthly_meetings?,
+ * New format body: {
+ *   firstName, lastName, email, phone, organizationName, websiteUrl?,
+ *   selectedPlan?, estimatedSeats?, estimatedStreamingHours?,
+ *   comments?, formType: "portal-quote"
+ * }
+ *
+ * Legacy format body: {
+ *   org_name, org_type, contact_name, contact_email, contact_phone?,
+ *   estimated_seats?, estimated_monthly_meetings?,
  *   estimated_avg_meeting_duration_hours?,
- *   needs_live_streaming, needs_public_records, needs_document_archival, needs_govclerk_minutes,
- *   additional_notes?
+ *   needs_live_streaming, needs_public_records, needs_document_archival,
+ *   needs_govclerk_minutes, additional_notes?
  * }
  */
 
@@ -30,9 +36,26 @@ const VALID_ORG_TYPES = [
   "other",
 ] as const;
 
-type OrgType = (typeof VALID_ORG_TYPES)[number];
+const VALID_PLANS = ["Starter", "Professional", "Enterprise"] as const;
 
-interface QuoteRequestBody {
+type OrgType = (typeof VALID_ORG_TYPES)[number];
+type PlanTier = (typeof VALID_PLANS)[number];
+
+interface NewQuoteBody {
+  formType: "portal-quote";
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  organizationName?: string;
+  websiteUrl?: string;
+  selectedPlan?: PlanTier;
+  estimatedSeats?: number;
+  estimatedStreamingHours?: number;
+  comments?: string;
+}
+
+interface LegacyQuoteBody {
   org_name?: string;
   org_type?: OrgType;
   contact_name?: string;
@@ -48,6 +71,14 @@ interface QuoteRequestBody {
   additional_notes?: string;
 }
 
+type QuoteRequestBody = NewQuoteBody | LegacyQuoteBody;
+
+function isNewFormat(body: QuoteRequestBody): body is NewQuoteBody {
+  return (body as NewQuoteBody).formType === "portal-quote";
+}
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default async function handler(req: NextRequest): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse("Method not allowed", 405);
@@ -60,74 +91,117 @@ export default async function handler(req: NextRequest): Promise<Response> {
     return errorResponse("Invalid request body", 400);
   }
 
-  const {
-    org_name,
-    org_type,
-    contact_name,
-    contact_email,
-    contact_phone,
-    estimated_seats,
-    estimated_monthly_meetings,
-    estimated_avg_meeting_duration_hours,
-    needs_live_streaming = false,
-    needs_public_records = false,
-    needs_document_archival = false,
-    needs_govclerk_minutes = false,
-    additional_notes,
-  } = body;
-
-  // Validate required fields
-  if (!org_name?.trim()) {
-    return errorResponse("org_name is required", 400);
-  }
-  if (!org_type || !VALID_ORG_TYPES.includes(org_type)) {
-    return errorResponse("A valid org_type is required", 400);
-  }
-  if (!contact_name?.trim()) {
-    return errorResponse("contact_name is required", 400);
-  }
-  if (!contact_email?.trim()) {
-    return errorResponse("contact_email is required", 400);
-  }
-
-  const normalizedEmail = contact_email.trim().toLowerCase();
-
-  // RFC-compliant email format check
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(normalizedEmail)) {
-    return errorResponse("contact_email must be a valid email address", 400);
-  }
-
   const conn = getPortalDbConnection();
 
-  await conn.execute(
-    `INSERT INTO gc_portal_quote_requests (
-      org_name, org_type, contact_name, contact_email, contact_phone,
-      estimated_seats, estimated_monthly_meetings, estimated_avg_meeting_duration_hours,
-      needs_live_streaming, needs_public_records, needs_document_archival, needs_govclerk_minutes,
-      additional_notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      org_name.trim(),
-      org_type,
-      contact_name.trim(),
-      normalizedEmail,
-      contact_phone?.trim() ?? null,
-      estimated_seats ?? null,
-      estimated_monthly_meetings ?? null,
-      estimated_avg_meeting_duration_hours ?? null,
-      needs_live_streaming ? 1 : 0,
-      needs_public_records ? 1 : 0,
-      needs_document_archival ? 1 : 0,
-      needs_govclerk_minutes ? 1 : 0,
-      additional_notes?.trim() ?? null,
-    ]
-  );
+  if (isNewFormat(body)) {
+    // New portal-quote format
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      organizationName,
+      websiteUrl,
+      selectedPlan,
+      estimatedSeats,
+      estimatedStreamingHours,
+      comments,
+    } = body;
 
-  // Log for now — email/Slack notifications can be wired up later
-  console.log(
-    `[portal/quote-request] New quote request from ${normalizedEmail} (${org_name.trim()}, ${org_type})`
-  );
+    if (!firstName?.trim()) return errorResponse("firstName is required", 400);
+    if (!lastName?.trim()) return errorResponse("lastName is required", 400);
+    if (!email?.trim()) return errorResponse("email is required", 400);
+    if (!phone?.trim()) return errorResponse("phone is required", 400);
+    if (!organizationName?.trim()) return errorResponse("organizationName is required", 400);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!emailRegex.test(normalizedEmail)) {
+      return errorResponse("email must be a valid email address", 400);
+    }
+
+    if (selectedPlan && !VALID_PLANS.includes(selectedPlan)) {
+      return errorResponse("Invalid selectedPlan value", 400);
+    }
+
+    await conn.execute(
+      `INSERT INTO gc_portal_quote_requests (
+        org_name, contact_name, contact_email, contact_phone,
+        estimated_seats, additional_notes, selected_plan, estimated_streaming_hours, website_url
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        organizationName.trim(),
+        `${firstName.trim()} ${lastName.trim()}`,
+        normalizedEmail,
+        phone.trim() ?? null,
+        estimatedSeats ?? null,
+        comments?.trim() ?? null,
+        selectedPlan ?? null,
+        estimatedStreamingHours ?? null,
+        websiteUrl?.trim() ?? null,
+      ]
+    );
+
+    console.log(
+      `[portal/quote-request] New portal-quote from ${normalizedEmail} (${organizationName.trim()}, plan: ${selectedPlan ?? "unspecified"})`
+    );
+  } else {
+    // Legacy format
+    const {
+      org_name,
+      org_type,
+      contact_name,
+      contact_email,
+      contact_phone,
+      estimated_seats,
+      estimated_monthly_meetings,
+      estimated_avg_meeting_duration_hours,
+      needs_live_streaming = false,
+      needs_public_records = false,
+      needs_document_archival = false,
+      needs_govclerk_minutes = false,
+      additional_notes,
+    } = body as LegacyQuoteBody;
+
+    if (!org_name?.trim()) return errorResponse("org_name is required", 400);
+    if (!org_type || !VALID_ORG_TYPES.includes(org_type)) {
+      return errorResponse("A valid org_type is required", 400);
+    }
+    if (!contact_name?.trim()) return errorResponse("contact_name is required", 400);
+    if (!contact_email?.trim()) return errorResponse("contact_email is required", 400);
+
+    const normalizedEmail = contact_email.trim().toLowerCase();
+    if (!emailRegex.test(normalizedEmail)) {
+      return errorResponse("contact_email must be a valid email address", 400);
+    }
+
+    await conn.execute(
+      `INSERT INTO gc_portal_quote_requests (
+        org_name, org_type, contact_name, contact_email, contact_phone,
+        estimated_seats, estimated_monthly_meetings, estimated_avg_meeting_duration_hours,
+        needs_live_streaming, needs_public_records, needs_document_archival, needs_govclerk_minutes,
+        additional_notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        org_name.trim(),
+        org_type,
+        contact_name.trim(),
+        normalizedEmail,
+        contact_phone?.trim() ?? null,
+        estimated_seats ?? null,
+        estimated_monthly_meetings ?? null,
+        estimated_avg_meeting_duration_hours ?? null,
+        needs_live_streaming ? 1 : 0,
+        needs_public_records ? 1 : 0,
+        needs_document_archival ? 1 : 0,
+        needs_govclerk_minutes ? 1 : 0,
+        additional_notes?.trim() ?? null,
+      ]
+    );
+
+    console.log(
+      `[portal/quote-request] New quote request from ${normalizedEmail} (${org_name.trim()}, ${org_type})`
+    );
+  }
 
   return jsonResponse({ success: true, message: "Quote request received" }, 201);
 }

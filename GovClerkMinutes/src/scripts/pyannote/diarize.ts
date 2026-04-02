@@ -347,21 +347,21 @@ async function pollJobStatus(jobId: string): Promise<PyannoteJobResponse> {
 
 function processDiarizationResults(results: PyannoteJobResponse): DiarizationOutput {
   const segments = results.output?.diarization || [];
-  const uniqueSpeakers = new Set(segments.map(s => s.speaker));
+  const uniqueSpeakers = new Set(segments.map((s) => s.speaker));
   const speakerLabels = Array.from(uniqueSpeakers);
 
   const embeddings: Record<string, number[]> = {};
-  speakerLabels.forEach(s => embeddings[s.replace("SPEAKER_", "")] = Array(10).fill(0));
+  speakerLabels.forEach((s) => (embeddings[s.replace("SPEAKER_", "")] = Array(10).fill(0)));
 
   return {
-    segments: segments.map(s => ({
+    segments: segments.map((s) => ({
       speaker: s.speaker.replace("SPEAKER_", ""),
       start: s.start.toString(),
       stop: s.end.toString(),
     })),
     speakers: {
       count: speakerLabels.length,
-      labels: speakerLabels.map(l => l.replace("SPEAKER_", "")),
+      labels: speakerLabels.map((l) => l.replace("SPEAKER_", "")),
       embeddings,
     },
   };
@@ -395,17 +395,23 @@ async function main(): Promise<void> {
 
     try {
       const original = await getOriginalDiarization(Number(transcriptId));
-      fs.writeFileSync(path.join(outputDir, "original_diarization.json"), JSON.stringify(original, null, 2));
+      fs.writeFileSync(
+        path.join(outputDir, "original_diarization.json"),
+        JSON.stringify(original, null, 2)
+      );
     } catch (e) {}
 
     s3Details = await getS3DetailsFromDatabase();
     const presignedUrl = await generatePresignedUrl(s3Details);
-    
+
     const apiResponse = await callPyannoteApi(presignedUrl);
     const jobResults = await pollJobStatus(apiResponse.jobId);
     const processedResults = processDiarizationResults(jobResults);
 
-    fs.writeFileSync(path.join(outputDir, "pyannote_processed.json"), JSON.stringify(processedResults, null, 2));
+    fs.writeFileSync(
+      path.join(outputDir, "pyannote_processed.json"),
+      JSON.stringify(processedResults, null, 2)
+    );
     log.success("Diarization complete");
 
     await trackDiarizationEvent({

@@ -499,7 +499,10 @@ export function getPayAsYouGoPackPrice(
   return 0;
 }
 
-export function getPriceId(country: string | null | undefined, plan: LegacySubscriptionPlan): string {
+export function getPriceId(
+  country: string | null | undefined,
+  plan: LegacySubscriptionPlan
+): string {
   const env: Env = isDev() ? "dev" : "prod";
   const countryCode: CountryCode = getCountryCode(country);
   return PRICE_IDS[env].Subscription[countryCode][plan];

@@ -18,10 +18,7 @@ function isActionColumnMissing(error: unknown): boolean {
   );
 }
 
-async function insertTrialTokens(
-  conn: ReturnType<typeof connect>,
-  userId: string
-): Promise<void> {
+async function insertTrialTokens(conn: ReturnType<typeof connect>, userId: string): Promise<void> {
   try {
     await conn.execute('INSERT INTO payments (user_id, credit, action) VALUES (?, 30, "add");', [
       userId,
@@ -96,15 +93,22 @@ export async function handleUserCreated(body: UserJSON, site: Site): Promise<voi
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       await insertTrialTokens(conn, userId);
-      console.info(`[handleUserCreated] Successfully granted 30 trial tokens to user ${userId} (attempt ${attempt})`);
+      console.info(
+        `[handleUserCreated] Successfully granted 30 trial tokens to user ${userId} (attempt ${attempt})`
+      );
       tokenGranted = true;
       break;
     } catch (err) {
-      console.error(`[handleUserCreated] Failed to grant 30 trial tokens to user ${userId} (attempt ${attempt}):`, err);
+      console.error(
+        `[handleUserCreated] Failed to grant 30 trial tokens to user ${userId} (attempt ${attempt}):`,
+        err
+      );
     }
   }
   if (!tokenGranted) {
-    console.error(`[handleUserCreated] Exhausted retries granting trial tokens for user ${userId}. Tokens will be auto-granted on first dashboard visit.`);
+    console.error(
+      `[handleUserCreated] Exhausted retries granting trial tokens for user ${userId}. Tokens will be auto-granted on first dashboard visit.`
+    );
   }
 
   await insertTemplateTranscript(userId);

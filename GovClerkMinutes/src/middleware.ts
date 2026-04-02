@@ -8,13 +8,7 @@ import {
   handleLandingPagePersonalization,
   isLandingPageRequest,
 } from "./utils/landing/landingPageMiddleware";
-import {
-  getSiteFromHost,
-  isGovClerk,
-  isGovClerkMinutes,
-  Site,
-  SITE_HEADER,
-} from "./utils/site";
+import { getSiteFromHost, isGovClerk, isGovClerkMinutes, Site, SITE_HEADER } from "./utils/site";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",

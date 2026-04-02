@@ -4,7 +4,14 @@ import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import type { BroadcastWithMeeting } from "@/types/broadcast";
 import { buildTree } from "@/hooks/portal/useAgenda";
-import type { StreamConfig, Motion, Vote, AttendanceRecord, SpeakerQueueEntry, PublicComment } from "@/types/liveSession";
+import type {
+  StreamConfig,
+  Motion,
+  Vote,
+  AttendanceRecord,
+  SpeakerQueueEntry,
+  PublicComment,
+} from "@/types/liveSession";
 
 export const config = {
   runtime: "edge",
@@ -212,7 +219,9 @@ async function handler(req: NextRequest): Promise<Response> {
   );
 
   const streamConfig =
-    streamConfigResult.rows.length > 0 ? rowToStreamConfig(streamConfigResult.rows[0] as any) : null;
+    streamConfigResult.rows.length > 0
+      ? rowToStreamConfig(streamConfigResult.rows[0] as any)
+      : null;
 
   if (broadcastResult.rows.length === 0) {
     return jsonResponse({
@@ -270,30 +279,36 @@ async function handler(req: NextRequest): Promise<Response> {
   segmentQuery += " ORDER BY segment_index DESC LIMIT ?";
   segmentParams.push(limit);
 
-  const [segmentsResult, motionsResult, votesResult, attendanceResult, speakerQueueResult, publicCommentsResult] =
-    await Promise.all([
-      conn.execute(segmentQuery, segmentParams),
-      conn.execute(
-        "SELECT * FROM gc_portal_motions WHERE broadcast_id = ? AND org_id = ? ORDER BY ordinal",
-        [broadcastId, orgId]
-      ),
-      conn.execute(
-        "SELECT * FROM gc_portal_votes WHERE broadcast_id = ? AND org_id = ?",
-        [broadcastId, orgId]
-      ),
-      conn.execute(
-        "SELECT * FROM gc_portal_attendance WHERE broadcast_id = ? AND org_id = ?",
-        [broadcastId, orgId]
-      ),
-      conn.execute(
-        "SELECT * FROM gc_portal_speaker_queue WHERE broadcast_id = ? AND org_id = ? AND status IN ('waiting','speaking') ORDER BY position",
-        [broadcastId, orgId]
-      ),
-      conn.execute(
-        "SELECT * FROM gc_portal_public_comments WHERE broadcast_id = ? AND org_id = ? AND status = 'approved' ORDER BY position_in_queue",
-        [broadcastId, orgId]
-      ),
-    ]);
+  const [
+    segmentsResult,
+    motionsResult,
+    votesResult,
+    attendanceResult,
+    speakerQueueResult,
+    publicCommentsResult,
+  ] = await Promise.all([
+    conn.execute(segmentQuery, segmentParams),
+    conn.execute(
+      "SELECT * FROM gc_portal_motions WHERE broadcast_id = ? AND org_id = ? ORDER BY ordinal",
+      [broadcastId, orgId]
+    ),
+    conn.execute("SELECT * FROM gc_portal_votes WHERE broadcast_id = ? AND org_id = ?", [
+      broadcastId,
+      orgId,
+    ]),
+    conn.execute("SELECT * FROM gc_portal_attendance WHERE broadcast_id = ? AND org_id = ?", [
+      broadcastId,
+      orgId,
+    ]),
+    conn.execute(
+      "SELECT * FROM gc_portal_speaker_queue WHERE broadcast_id = ? AND org_id = ? AND status IN ('waiting','speaking') ORDER BY position",
+      [broadcastId, orgId]
+    ),
+    conn.execute(
+      "SELECT * FROM gc_portal_public_comments WHERE broadcast_id = ? AND org_id = ? AND status = 'approved' ORDER BY position_in_queue",
+      [broadcastId, orgId]
+    ),
+  ]);
 
   const segments = segmentsResult.rows.map((row: any) => ({
     id: Number(row.id),

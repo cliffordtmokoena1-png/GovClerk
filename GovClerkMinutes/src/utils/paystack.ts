@@ -69,21 +69,14 @@ const PAYSTACK_PLAN_ENV_VARS: Record<string, string> = {
  * Returns the PayStack plan code for the given plan.
  * Plan codes are read from environment variables (see PAYSTACK_PLAN_ENV_VARS).
  */
-export function getPaystackPlanCode(
-  plan: string,
-  _country?: string | null | undefined
-): string {
+export function getPaystackPlanCode(plan: string, _country?: string | null | undefined): string {
   const envVarName = PAYSTACK_PLAN_ENV_VARS[plan];
   if (!envVarName) {
-    throw new Error(
-      `[paystack] Unknown plan: ${plan}. No env var mapping found.`
-    );
+    throw new Error(`[paystack] Unknown plan: ${plan}. No env var mapping found.`);
   }
   const code = process.env[envVarName];
   if (!code) {
-    throw new Error(
-      `[paystack] Plan code not configured for ${plan}. Set env var: ${envVarName}`
-    );
+    throw new Error(`[paystack] Plan code not configured for ${plan}. Set env var: ${envVarName}`);
   }
   return code;
 }
@@ -123,9 +116,7 @@ export function getTokensForPlan(plan: PaidSubscriptionPlan): number {
  * Returns `null` if the plan code is not found in the configured env vars.
  * Falls back to heuristic detection when plan codes aren't fully configured.
  */
-export function getPlanFromPlanCode(
-  planCode: string
-): PaidSubscriptionPlan | null {
+export function getPlanFromPlanCode(planCode: string): PaidSubscriptionPlan | null {
   const allPlans = Object.keys(PAYSTACK_PLAN_ENV_VARS) as PaidSubscriptionPlan[];
 
   for (const plan of allPlans) {
@@ -142,7 +133,8 @@ export function getPlanFromPlanCode(
   const isAnnual = lower.includes("annual") || lower.includes("yearly") || lower.includes("year");
   if (lower.includes("premium")) return isAnnual ? "Premium_Annual" : "Premium";
   if (lower.includes("elite")) return isAnnual ? "Elite_Annual" : "Elite";
-  if (lower.includes("professional") || lower.includes("prof")) return isAnnual ? "Professional_Annual" : "Professional";
+  if (lower.includes("professional") || lower.includes("prof"))
+    return isAnnual ? "Professional_Annual" : "Professional";
   if (lower.includes("essential")) return isAnnual ? "Essential_Annual" : "Essential";
   const isPro = lower.includes("pro");
   if (isPro) return isAnnual ? "Pro_Annual" : "Pro";
@@ -213,7 +205,9 @@ export async function initializeTransaction(
   if (params.currency) body.currency = params.currency;
   if (params.metadata) body.metadata = params.metadata;
 
-  console.log(`[paystack] Initializing transaction. Key prefix: ${secretKey.substring(0, 8)}..., Plan Code: ${params.planCode || 'none'}`);
+  console.log(
+    `[paystack] Initializing transaction. Key prefix: ${secretKey.substring(0, 8)}..., Plan Code: ${params.planCode || "none"}`
+  );
   const res = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",
     headers: {
@@ -259,15 +253,9 @@ export async function initializeTransaction(
  *
  * @see https://paystack.com/docs/payments/webhooks/#verify-event
  */
-export function verifyWebhookSignature(
-  rawBody: string | Buffer,
-  signature: string
-): boolean {
+export function verifyWebhookSignature(rawBody: string | Buffer, signature: string): boolean {
   const secretKey = getPaystackSecretKey();
-  const hash = crypto
-    .createHmac("sha512", secretKey)
-    .update(rawBody)
-    .digest("hex");
+  const hash = crypto.createHmac("sha512", secretKey).update(rawBody).digest("hex");
   return hash === signature;
 }
 

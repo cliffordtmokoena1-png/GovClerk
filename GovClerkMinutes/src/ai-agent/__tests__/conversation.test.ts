@@ -6,7 +6,13 @@
  * error handling, persona routing).
  */
 
-import { processMessage, isSalesReadyByKeywords, detectPlanChoice, extractEmail, detectPersonaFromHistory } from "../conversation";
+import {
+  processMessage,
+  isSalesReadyByKeywords,
+  detectPlanChoice,
+  extractEmail,
+  detectPersonaFromHistory,
+} from "../conversation";
 
 // Keep a reference to the original fetch so we can restore it.
 const originalFetch = globalThis.fetch;
@@ -15,7 +21,9 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-function mockFetch(responses: Array<{ ok: boolean; json: () => Promise<any>; text: () => Promise<string> }>) {
+function mockFetch(
+  responses: Array<{ ok: boolean; json: () => Promise<any>; text: () => Promise<string> }>
+) {
   let callIndex = 0;
   globalThis.fetch = jest.fn(async () => {
     const res = responses[callIndex] ?? responses[responses.length - 1];
@@ -197,7 +205,9 @@ describe("processMessage", () => {
       {
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: JSON.stringify({ intent: "payment", confidence: 0.9 }) } }],
+          choices: [
+            { message: { content: JSON.stringify({ intent: "payment", confidence: 0.9 }) } },
+          ],
         }),
         text: async () => "",
       },
@@ -214,7 +224,8 @@ describe("processMessage", () => {
       { role: "user" as const, content: "I'm ready to buy" },
       {
         role: "assistant" as const,
-        content: "Wonderful! Let me hand you over to Gray in our Sales team. 🤝 [ESCALATE_TO_SALES]",
+        content:
+          "Wonderful! Let me hand you over to Gray in our Sales team. 🤝 [ESCALATE_TO_SALES]",
       },
     ];
 

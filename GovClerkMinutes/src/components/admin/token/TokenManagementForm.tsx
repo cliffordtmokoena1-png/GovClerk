@@ -72,7 +72,9 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
       try {
         data = await res.json();
       } catch (e) {
-        throw new Error(`Server error (${res.status}): ${e instanceof Error ? e.message : "Invalid JSON"}`);
+        throw new Error(
+          `Server error (${res.status}): ${e instanceof Error ? e.message : "Invalid JSON"}`
+        );
       }
 
       if (!res.ok) {
@@ -154,7 +156,9 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
       try {
         data = await res.json();
       } catch (e) {
-        throw new Error(`Server error (${res.status}): ${e instanceof Error ? e.message : "Invalid JSON"}`);
+        throw new Error(
+          `Server error (${res.status}): ${e instanceof Error ? e.message : "Invalid JSON"}`
+        );
       }
       if (!res.ok) {
         throw new Error(data.error || "Failed to process token operation");

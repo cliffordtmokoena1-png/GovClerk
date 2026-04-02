@@ -12,7 +12,9 @@ export const config = {
 
 export async function transcribeSegments(transcriptId: number) {
   const testQueryParam = isDev() ? "&test=1" : "";
-  const targetUrl = serverUri(`/api/resume-transcribe?transcriptId=${transcriptId}${testQueryParam}`);
+  const targetUrl = serverUri(
+    `/api/resume-transcribe?transcriptId=${transcriptId}${testQueryParam}`
+  );
 
   const webhookSecret = process.env.UPLOAD_COMPLETE_WEBHOOK_SECRET;
   const headers: Record<string, string> = {

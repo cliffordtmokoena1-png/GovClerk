@@ -80,7 +80,10 @@ interface PaystackWebhookEvent {
 // ---------------------------------------------------------------------------
 
 /** Derives a human-readable plan display name from plan metadata or plan code. */
-function getPlanDisplayName(planName: string | undefined, planCode: string | null | undefined): string {
+function getPlanDisplayName(
+  planName: string | undefined,
+  planCode: string | null | undefined
+): string {
   if (planName) return planName;
   if (planCode?.toLowerCase().includes("pro")) return "Pro";
   return "Basic";
@@ -102,10 +105,9 @@ async function getUserIdForCustomer(
 ): Promise<string | null> {
   // First try to find via existing gc_customers record
   const byCode = await conn
-    .execute(
-      "SELECT user_id FROM gc_customers WHERE paystack_customer_code = ? LIMIT 1",
-      [customerCode]
-    )
+    .execute("SELECT user_id FROM gc_customers WHERE paystack_customer_code = ? LIMIT 1", [
+      customerCode,
+    ])
     .then((r) => r.rows);
 
   if (byCode.length > 0) {
@@ -179,16 +181,11 @@ async function insertPaymentCredit(
 ): Promise<boolean> {
   // Idempotency check — skip if the reference was already processed.
   const existing = await conn
-    .execute(
-      "SELECT id FROM payments WHERE checkout_session_id = ? LIMIT 1",
-      [checkoutSessionId]
-    )
+    .execute("SELECT id FROM payments WHERE checkout_session_id = ? LIMIT 1", [checkoutSessionId])
     .then((r) => r.rows);
 
   if (existing.length > 0) {
-    console.info(
-      `[paystack-webhook] Payment ${checkoutSessionId} already processed — skipping`
-    );
+    console.info(`[paystack-webhook] Payment ${checkoutSessionId} already processed — skipping`);
     return false;
   }
 
@@ -221,7 +218,8 @@ async function handleChargeSuccess(
   const metaUserId = (metadata.user_id as string | undefined)?.trim() || null;
   const metaTranscriptId = metadata.transcript_id as number | null | undefined;
   const metaTokens = metadata.tokens as number | null | undefined;
-  const metaMode = (metadata.mode as string | undefined) ?? (data.plan ? "subscription" : "payment");
+  const metaMode =
+    (metadata.mode as string | undefined) ?? (data.plan ? "subscription" : "payment");
 
   // Resolve the Clerk userId
   let userId =
@@ -293,8 +291,7 @@ async function handleChargeSuccess(
     // One-time PAYG payment
     // -----------------------------------------------------------------------
     const credit = metaTokens ?? 60; // default to smallest pack
-    const transcriptId =
-      typeof metaTranscriptId === "number" ? metaTranscriptId : null;
+    const transcriptId = typeof metaTranscriptId === "number" ? metaTranscriptId : null;
 
     await insertPaymentCredit(conn, {
       userId,
@@ -316,11 +313,7 @@ async function handleSubscriptionCreate(
   conn: ReturnType<typeof connect>,
   data: SubscriptionEventData
 ): Promise<void> {
-  let userId = await getUserIdForCustomer(
-    conn,
-    data.customer.customer_code,
-    data.customer.email
-  );
+  let userId = await getUserIdForCustomer(conn, data.customer.customer_code, data.customer.email);
 
   if (!userId) {
     console.error(
@@ -343,7 +336,10 @@ async function handleSubscriptionCreate(
     planDisplayName,
     data.customer.first_name ?? null
   ).catch((emailErr) => {
-    console.error("[paystack-webhook] Failed to send payment confirmation email (subscription.create):", emailErr);
+    console.error(
+      "[paystack-webhook] Failed to send payment confirmation email (subscription.create):",
+      emailErr
+    );
   });
 
   console.info(

@@ -81,7 +81,12 @@ export default function UsageDetails({
 
         <Flex justify="space-between" align="center" mb={2}>
           <Text fontSize="sm" fontWeight="bold">
-            {isFreeUser ? "Trial Plan" : subscriptionPaused || subscriptionCanceled ? "Previous" : "Current"} Plan
+            {isFreeUser
+              ? "Trial Plan"
+              : subscriptionPaused || subscriptionCanceled
+                ? "Previous"
+                : "Current"}{" "}
+            Plan
           </Text>
           <Text fontSize="sm">
             {isFreeUser
@@ -90,9 +95,18 @@ export default function UsageDetails({
           </Text>
         </Flex>
         {(() => {
-          const trialTokensUsedPercentage = subscriptionData.tokensPerMonth > 0
-            ? Math.max(0, Math.min(100, ((subscriptionData.tokensPerMonth - subscriptionData.remainingToken) / subscriptionData.tokensPerMonth) * 100))
-            : 0;
+          const trialTokensUsedPercentage =
+            subscriptionData.tokensPerMonth > 0
+              ? Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    ((subscriptionData.tokensPerMonth - subscriptionData.remainingToken) /
+                      subscriptionData.tokensPerMonth) *
+                      100
+                  )
+                )
+              : 0;
           return (
             <Progress
               value={isFreeUser ? trialTokensUsedPercentage : tokenUsagePercentage}

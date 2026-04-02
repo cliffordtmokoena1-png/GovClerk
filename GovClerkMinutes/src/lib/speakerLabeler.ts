@@ -144,7 +144,9 @@ export function applySpeakerLabel({
   if (triggerSpeakerLabel) {
     triggerSpeakerLabel(updatedSpeaker, selectedLabel);
   } else {
-    console.warn("[applySpeakerLabel] triggerSpeakerLabel is not defined — label update was not persisted.");
+    console.warn(
+      "[applySpeakerLabel] triggerSpeakerLabel is not defined — label update was not persisted."
+    );
   }
 }
 

@@ -304,7 +304,9 @@ export default function RecordingCard({
       w={config.container.width}
       h={config.container.height}
       minH={config.container.minHeight}
-      cursor={disabled ? "not-allowed" : !isClient ? "default" : isClickable ? "pointer" : "default"}
+      cursor={
+        disabled ? "not-allowed" : !isClient ? "default" : isClickable ? "pointer" : "default"
+      }
       opacity={disabled ? 0.5 : !isClient ? 1 : !isClickable ? 0.6 : 1}
       transition={config.container.transition}
       _hover={disabled ? {} : getHoverStyles()}

@@ -12,7 +12,12 @@ export type HubspotContactProperties =
   | "company"
   | keyof ExtraContactProperties;
 
-export type LeadSource = "gc_landing_page" | "gc_school" | "gc_whatsapp" | "test_source" | "db_migration";
+export type LeadSource =
+  | "gc_landing_page"
+  | "gc_school"
+  | "gc_whatsapp"
+  | "test_source"
+  | "db_migration";
 export type ExtraContactProperties = {
   lead_source: LeadSource;
 };

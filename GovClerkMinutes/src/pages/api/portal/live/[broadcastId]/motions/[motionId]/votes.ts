@@ -10,7 +10,14 @@ export const config = {
 };
 
 function computeTally(votes: { vote: VoteValue }[]): VoteTally {
-  const tally: VoteTally = { aye: 0, nay: 0, abstain: 0, absent: 0, total: votes.length, result: "pending" };
+  const tally: VoteTally = {
+    aye: 0,
+    nay: 0,
+    abstain: 0,
+    absent: 0,
+    total: votes.length,
+    result: "pending",
+  };
   for (const voteRecord of votes) {
     if (voteRecord.vote === "aye") tally.aye++;
     else if (voteRecord.vote === "nay") tally.nay++;
@@ -100,11 +107,17 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       tally.abstain > 0 ? `${tally.abstain} Abstain` : null,
       tally.absent > 0 ? `${tally.absent} Absent` : null,
     ].filter(Boolean);
-    const resultLabelMap: Record<string, string> = { passed: "PASSED", failed: "FAILED", tied: "TIED", pending: "PENDING" };
+    const resultLabelMap: Record<string, string> = {
+      passed: "PASSED",
+      failed: "FAILED",
+      tied: "TIED",
+      pending: "PENDING",
+    };
     const resultLabel = resultLabelMap[tally.result] ?? "PENDING";
     const voteResultSummary = `${summaryParts.join(", ")} — ${resultLabel}`;
 
-    const newStatus = tally.result === "passed" ? "passed" : tally.result === "failed" ? "failed" : undefined;
+    const newStatus =
+      tally.result === "passed" ? "passed" : tally.result === "failed" ? "failed" : undefined;
     if (newStatus) {
       await conn.execute(
         "UPDATE gc_portal_motions SET vote_result_summary = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND org_id = ?",

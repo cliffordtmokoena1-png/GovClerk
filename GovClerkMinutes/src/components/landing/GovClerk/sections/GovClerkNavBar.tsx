@@ -382,6 +382,12 @@ export default function GovClerkNavBar() {
                     </button>
                   </div>
                 ))}
+                <Link
+                  href="/portal/request-quote"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                >
+                  Pricing
+                </Link>
                 <a
                   href="https://calendly.com/cliff-govclerkminutes/30min"
                   target="_blank"

@@ -20,10 +20,9 @@ export async function triggerWhatsappIntakePipeline({
 }): Promise<void> {
   // Check if a signup_urgent email row already exists for this user
   const existing = await conn
-    .execute<{ cnt: number }>(
-      "SELECT COUNT(*) AS cnt FROM gc_emails WHERE user_id = ? AND campaign = 'signup_urgent'",
-      [userId]
-    )
+    .execute<{
+      cnt: number;
+    }>("SELECT COUNT(*) AS cnt FROM gc_emails WHERE user_id = ? AND campaign = 'signup_urgent'", [userId])
     .then((r) => Number(r.rows?.[0]?.cnt ?? 0));
 
   if (existing > 0) {
@@ -37,5 +36,7 @@ export async function triggerWhatsappIntakePipeline({
     [userId, email]
   );
 
-  console.log(`[triggerWhatsappIntakePipeline] Queued signup_urgent for userId=${userId} email=${email}`);
+  console.log(
+    `[triggerWhatsappIntakePipeline] Queued signup_urgent for userId=${userId} email=${email}`
+  );
 }

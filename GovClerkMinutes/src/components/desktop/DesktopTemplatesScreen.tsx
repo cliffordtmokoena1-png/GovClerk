@@ -377,9 +377,7 @@ export default function DesktopTemplatesScreen() {
         />
         <Box maxW="5xl" mx="auto" w="full" px={{ base: 4, md: 6 }} py={{ base: 6, md: 8 }}>
           <ContentCard icon={FaLayerGroup} title="Templates">
-            <Box p={6}>
-              {renderTemplates}
-            </Box>
+            <Box p={6}>{renderTemplates}</Box>
           </ContentCard>
         </Box>
       </Flex>

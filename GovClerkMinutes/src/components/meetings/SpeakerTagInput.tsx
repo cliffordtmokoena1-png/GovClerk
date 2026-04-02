@@ -71,7 +71,9 @@ export function SpeakerTagInput({ speakers, onChange, disabled }: Props) {
               addSpeaker(inputValue);
             }
           }}
-          placeholder={speakers.length === 0 ? "Add speaker name, press Enter..." : "Add another..."}
+          placeholder={
+            speakers.length === 0 ? "Add speaker name, press Enter..." : "Add another..."
+          }
           className="flex-1 min-w-24 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
       )}

@@ -1,4 +1,13 @@
-import { Button, Flex, Text, Tooltip, Skeleton, Alert, AlertIcon, AlertDescription } from "@chakra-ui/react";
+import {
+  Button,
+  Flex,
+  Text,
+  Tooltip,
+  Skeleton,
+  Alert,
+  AlertIcon,
+  AlertDescription,
+} from "@chakra-ui/react";
 import { BsQuestionCircle } from "react-icons/bs";
 import { LayoutKind, ModalType } from "@/pages/dashboard/[[...slug]]";
 import { ApiGetCustomerDetailsResponse } from "@/pages/api/get-customer-details";
@@ -64,10 +73,7 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
           )}
         </>
       )}
-      <Flex
-        w="full"
-        alignItems="center"
-      >
+      <Flex w="full" alignItems="center">
         {tokenData != null ? (
           <Flex flexDirection="column">
             <Flex alignItems="center" gap={1}>

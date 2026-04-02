@@ -85,7 +85,11 @@ export default function InsufficientCreditsOverlay({
         <ModalBody py={8} px={6}>
           <VStack spacing={5} align="stretch">
             <VStack spacing={2} align="center">
-              <Heading size="md" textAlign="center" color={isSmallDeficit ? "green.600" : "orange.600"}>
+              <Heading
+                size="md"
+                textAlign="center"
+                color={isSmallDeficit ? "green.600" : "orange.600"}
+              >
                 {isSmallDeficit ? "Almost There!" : "Insufficient Credits"}
               </Heading>
               <Text fontSize="sm" color="gray.600" textAlign="center">
@@ -117,9 +121,7 @@ export default function InsufficientCreditsOverlay({
                     colorScheme="green"
                     size="lg"
                     width="full"
-                    onClick={() =>
-                      openWhatsAppChat(whatsappTopUpMessage, "whatsapp_topup")
-                    }
+                    onClick={() => openWhatsAppChat(whatsappTopUpMessage, "whatsapp_topup")}
                   >
                     Request Tokens via WhatsApp
                   </Button>

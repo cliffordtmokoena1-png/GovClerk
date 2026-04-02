@@ -15,7 +15,9 @@ export async function getUserIdFromEmail({
   try {
     const keys = getClerkKeysFromEnv(env, site);
     if (!keys?.secretKey) {
-      console.error(`[getUserIdFromEmail] Configuration error: missing Clerk secret key for env=${env}, site=${site}`);
+      console.error(
+        `[getUserIdFromEmail] Configuration error: missing Clerk secret key for env=${env}, site=${site}`
+      );
       return null;
     }
 

@@ -39,11 +39,7 @@ function SpeakerTimer({ startedAt, limitSeconds }: { startedAt: string; limitSec
 
 export function PublicSpeakerQueue({ queue }: Props) {
   if (queue.length === 0) {
-    return (
-      <div className="py-8 text-center text-gray-400 text-sm">
-        No speakers in the queue
-      </div>
-    );
+    return <div className="py-8 text-center text-gray-400 text-sm">No speakers in the queue</div>;
   }
 
   return (
@@ -54,9 +50,7 @@ export function PublicSpeakerQueue({ queue }: Props) {
           <div
             key={entry.id}
             className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-              isSpeaking
-                ? "bg-green-50 border-green-300"
-                : "bg-white border-gray-200"
+              isSpeaking ? "bg-green-50 border-green-300" : "bg-white border-gray-200"
             }`}
           >
             <div
@@ -68,7 +62,9 @@ export function PublicSpeakerQueue({ queue }: Props) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${isSpeaking ? "text-green-800" : "text-gray-900"}`}>
+              <p
+                className={`text-sm font-medium truncate ${isSpeaking ? "text-green-800" : "text-gray-900"}`}
+              >
                 {entry.speakerName}
               </p>
               <p className="text-xs text-gray-500">

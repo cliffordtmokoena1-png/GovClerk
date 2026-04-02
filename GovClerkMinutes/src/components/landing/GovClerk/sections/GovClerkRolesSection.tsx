@@ -63,9 +63,7 @@ export default function GovClerkRolesSection() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
                       <IconComponent className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white md:text-2xl">
-                      {role.title}
-                    </h3>
+                    <h3 className="text-xl font-semibold text-white md:text-2xl">{role.title}</h3>
                     <p className="text-base leading-relaxed text-blue-100">{role.description}</p>
                     <p className="text-sm font-semibold text-blue-200">{role.stats}</p>
                   </div>

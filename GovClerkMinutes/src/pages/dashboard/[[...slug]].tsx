@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useState,
-  useRef,
-  useLayoutEffect,
-} from "react";
+import React, { useCallback, useState, useRef, useLayoutEffect } from "react";
 import ProductPage from "@/components/ProductPage";
 import { Flex, Box, useDisclosure } from "@chakra-ui/react";
 import MgHead from "@/components/MgHead";

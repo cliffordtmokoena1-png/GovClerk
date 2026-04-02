@@ -163,8 +163,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
     // Feature 6: Log quality metrics for the broadcast segments
     const segmentsWithSpeaker = segments.filter((s) => s.speakerLabel !== null).length;
     const segmentsWithoutSpeaker = segments.length - segmentsWithSpeaker;
-    const avgTextLength =
-      segments.reduce((sum, s) => sum + s.text.length, 0) / segments.length;
+    const avgTextLength = segments.reduce((sum, s) => sum + s.text.length, 0) / segments.length;
     const speakerLabelPct = Math.round((segmentsWithSpeaker / segments.length) * 100);
     console.info(
       `[start-minutes] Segment quality: total=${segments.length}, withSpeaker=${segmentsWithSpeaker}, withoutSpeaker=${segmentsWithoutSpeaker}, avgTextLength=${avgTextLength.toFixed(1)}, speakerLabelPct=${speakerLabelPct}%`
@@ -180,7 +179,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
 
     const transcriptText = formatSegmentsAsTranscript(segments);
 
-    const transcriptId = await createMinutesTranscript(conn, userId, orgId, title, transcriptText, language);
+    const transcriptId = await createMinutesTranscript(
+      conn,
+      userId,
+      orgId,
+      title,
+      transcriptText,
+      language
+    );
 
     // Feature 4: Store expected speakers if provided
     if (expectedSpeakers && expectedSpeakers.length > 0) {

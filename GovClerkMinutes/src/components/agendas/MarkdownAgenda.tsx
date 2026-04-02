@@ -250,7 +250,8 @@ export default function MarkdownAgenda({ content, onSave, lastSaved, isSaving }:
           text-align: justify;
           padding: 0.75rem;
           line-height: 1.6;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+          font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
             "Cantarell", sans-serif;
           color: #1a202c;
           background-color: transparent;

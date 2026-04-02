@@ -198,10 +198,7 @@ export default function AiActivities() {
       )}
 
       {metrics && (
-        <Grid
-          templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
-          gap={4}
-        >
+        <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={4}>
           {metricCards.map((card) => (
             <MetricCard
               key={card.key}

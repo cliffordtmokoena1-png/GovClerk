@@ -76,7 +76,15 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
     await conn.execute(
       `INSERT INTO gc_portal_speaker_queue (org_id, broadcast_id, speaker_name, speaker_type, agenda_item_id, position, time_limit_seconds)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [orgId, broadcastId, speakerName, resolvedType, agendaItemId ?? null, nextPos, timeLimitSeconds ?? 300]
+      [
+        orgId,
+        broadcastId,
+        speakerName,
+        resolvedType,
+        agendaItemId ?? null,
+        nextPos,
+        timeLimitSeconds ?? 300,
+      ]
     );
 
     const result = await conn.execute(
