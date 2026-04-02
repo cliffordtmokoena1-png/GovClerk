@@ -1267,7 +1267,10 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
                               <Box mt={2} p={2} bg="gray.50" rounded="md" display="inline-block"
                                 borderWidth={1} borderColor="gray.200">
                                 <Box as="img" src={appearanceForm.logoUrl} alt="Logo preview"
-                                  style={{ height: 40, width: "auto", objectFit: "contain" }} />
+                                  style={{ height: 40, width: "auto", objectFit: "contain" }}
+                                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                  }} />
                               </Box>
                             )}
                           </FormControl>

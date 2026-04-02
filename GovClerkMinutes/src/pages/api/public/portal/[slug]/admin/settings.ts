@@ -129,7 +129,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
     if (addDomain) {
       const domain = addDomain.trim().toLowerCase();
-      if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+      if (!/^[a-z0-9]+([.-][a-z0-9]+)*\.[a-z]{2,}$/i.test(domain)) {
         return errorResponse("Invalid domain format", 400);
       }
       await conn.execute(
