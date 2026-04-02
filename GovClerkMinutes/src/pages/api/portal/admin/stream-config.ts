@@ -45,6 +45,22 @@ async function handler(req: NextRequest): Promise<Response> {
   }
 
   if (req.method === "PUT") {
+    // Updating stream config requires an active subscription
+    const subCheck = await conn.execute(
+      "SELECT id FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+      [orgId]
+    );
+    if (subCheck.rows.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "This feature requires an active subscription. Please subscribe to access the Live Portal.",
+          code: "SUBSCRIPTION_REQUIRED",
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await req.json();
     const {
       youtubeChannelId,

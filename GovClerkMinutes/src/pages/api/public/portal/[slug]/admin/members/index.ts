@@ -2,14 +2,14 @@
  * Portal-session-authenticated member management endpoints.
  *
  * GET  /api/public/portal/[slug]/admin/members — List all portal members for the org
- * POST /api/public/portal/[slug]/admin/members — Create a portal member (seat-limited)
+ * POST /api/public/portal/[slug]/admin/members — Create a portal member (seat-limited, requires active subscription)
  *
  * Only portal users with role='admin' may access these endpoints.
  */
 
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
-import { getPortalSession, hashPassword } from "@/portal-auth/portalAuth";
+import { getPortalSession, hashPassword, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { isOrganizationalEmail } from "@/utils/freeEmailProviders";
 import { jsonResponse, errorResponse } from "@/utils/apiHelpers";
 import { PORTAL_PAYSTACK_PLANS } from "@/utils/portalPaystack";
@@ -98,6 +98,24 @@ export default async function handler(req: NextRequest): Promise<Response> {
   }
 
   if (req.method === "POST") {
+    // Adding members requires an active subscription (GovClerk admins bypass this)
+    if (!isGovClerkAdmin(session.email)) {
+      const subCheck = await conn.execute(
+        "SELECT id FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+        [orgId]
+      );
+      if (subCheck.rows.length === 0) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "This feature requires an active subscription. Please subscribe to access the Live Portal.",
+            code: "SUBSCRIPTION_REQUIRED",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     let body: {
       email: string;
       password: string;

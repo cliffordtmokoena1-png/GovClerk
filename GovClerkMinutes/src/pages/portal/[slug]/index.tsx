@@ -6,11 +6,12 @@ import type { PortalAnnouncement } from "@/types/publicRecords";
 import {
   PublicPortalLayout,
   PublicMeetingsList,
+  DemoPortalView,
   type MeetingsFilter,
 } from "@/components/portal/public";
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
 import { useLiveSession } from "@/hooks/portal/useLiveSession";
-import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
+import { getPortalSessionFromCookieHeader, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 
 const EMPTY_MEETINGS: PublicMeetingsListResponse = {
@@ -35,6 +36,7 @@ interface PublicPortalPageProps {
   }>;
   isAuthenticated: boolean;
   portalExists: boolean;
+  portalMode: "live" | "demo";
 }
 
 function AnnouncementsBanner({
@@ -148,6 +150,7 @@ export default function PublicPortalPage({
   latestArtifacts,
   isAuthenticated,
   portalExists,
+  portalMode,
 }: PublicPortalPageProps) {
   const [useClientData, setUseClientData] = useState(false);
   const [sidebarFilter, setSidebarFilter] = useState<MeetingsFilter>({ sortBy: "newest" });
@@ -221,7 +224,7 @@ export default function PublicPortalPage({
   return (
     <>
       <AnnouncementsBanner announcements={announcements} slug={slug} />
-      <LiveNowBanner slug={slug} />
+      {portalMode === "live" && <LiveNowBanner slug={slug} />}
       <PublicPortalLayout
         settings={settings}
         meetings={allMeetings}
@@ -276,6 +279,8 @@ export default function PublicPortalPage({
               Create Organization
             </Link>
           </div>
+        ) : portalMode === "demo" ? (
+          <DemoPortalView slug={slug} accentColor={settings.accentColor} />
         ) : (
           <>
             {/* Quick Access Links */}
@@ -458,6 +463,7 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         latestArtifacts: [],
         isAuthenticated: false,
         portalExists,
+        portalMode: "demo" as const,
       },
     };
   }
@@ -485,6 +491,26 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
     }
   }
 
+  // Determine portal mode: GovClerk admins and orgs with active/trial subscriptions get "live"
+  let portalMode: "live" | "demo" = "demo";
+  if (isGovClerkAdmin(session.email)) {
+    portalMode = "live";
+  } else {
+    try {
+      const { getPortalDbConnection } = await import("@/utils/portalDb");
+      const conn = getPortalDbConnection();
+      const subResult = await conn.execute(
+        "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+        [session.orgId]
+      );
+      if (subResult.rows.length > 0) {
+        portalMode = "live";
+      }
+    } catch {
+      // DB error — default to demo to be safe
+    }
+  }
+
   // Authenticated but portal not set up — return shell with org-not-found state
   if (!portalExists) {
     return {
@@ -497,6 +523,24 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         latestArtifacts: [],
         isAuthenticated: true,
         portalExists: false,
+        portalMode,
+      },
+    };
+  }
+
+  // Demo mode: return minimal props (no live content needed)
+  if (portalMode === "demo") {
+    return {
+      props: {
+        settings: settingsData.settings,
+        initialMeetings: EMPTY_MEETINGS,
+        slug,
+        announcements: [],
+        upcomingMeetings: [],
+        latestArtifacts: [],
+        isAuthenticated: true,
+        portalExists: true,
+        portalMode,
       },
     };
   }
@@ -552,6 +596,7 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         latestArtifacts,
         isAuthenticated: true,
         portalExists: true,
+        portalMode,
       },
     };
   } catch (error) {
@@ -566,6 +611,7 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         latestArtifacts: [],
         isAuthenticated: true,
         portalExists: true,
+        portalMode,
       },
     };
   }

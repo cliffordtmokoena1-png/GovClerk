@@ -261,3 +261,13 @@ export async function getPortalSessionFromCookieHeader(
 export function isEmailDomainAllowed(_orgId: string, email: string): boolean {
   return isOrganizationalEmail(email);
 }
+
+/**
+ * Check if the given email belongs to a GovClerk admin.
+ * GovClerk admin emails end with @govclerkminutes.com (case-insensitive).
+ * These users bypass subscription checks and always access the Live Portal.
+ */
+export function isGovClerkAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return email.toLowerCase().endsWith("@govclerkminutes.com");
+}

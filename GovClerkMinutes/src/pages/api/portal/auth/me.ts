@@ -5,7 +5,7 @@
 
 import { NextRequest } from "next/server";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
-import { getPortalSession } from "@/portal-auth/portalAuth";
+import { getPortalSession, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import type { PortalSessionResponse } from "@/types/portal";
 
@@ -24,9 +24,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
     return jsonResponse(response, 401);
   }
 
+  const conn = getPortalDbConnection();
+
   let role: string | undefined;
   if (session.authType === "email" && session.portalUserId) {
-    const conn = getPortalDbConnection();
     const result = await conn.execute(
       "SELECT role FROM gc_portal_users WHERE id = ? AND is_active = 1",
       [session.portalUserId]
@@ -36,6 +37,23 @@ export default async function handler(req: NextRequest): Promise<Response> {
     }
   }
 
+  // Check GovClerk admin status
+  const govClerkAdmin = isGovClerkAdmin(session.email);
+
+  // Check for active subscription
+  const subResult = await conn.execute(
+    "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+    [session.orgId]
+  );
+
+  const hasActiveSubscription = subResult.rows.length > 0;
+  const subscriptionTier = hasActiveSubscription
+    ? ((subResult.rows[0] as any).tier as string)
+    : undefined;
+
+  const portalMode: "live" | "demo" =
+    govClerkAdmin || hasActiveSubscription ? "live" : "demo";
+
   const response: PortalSessionResponse = {
     isAuthenticated: true,
     authType: session.authType,
@@ -43,6 +61,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
     role: role as PortalSessionResponse["role"],
     orgId: session.orgId,
     expiresAt: session.expiresAt,
+    hasActiveSubscription,
+    subscriptionTier,
+    isGovClerkAdmin: govClerkAdmin,
+    portalMode,
   };
 
   return jsonResponse(response);

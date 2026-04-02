@@ -6,3 +6,4 @@ export { PublicMeetingRow } from "./PublicMeetingRow";
 export { PublicMeetingCard } from "./PublicMeetingCard";
 export { PublicMeetingDetail } from "./PublicMeetingDetail";
 export { PublicSearchFilter } from "./PublicSearchFilter";
+export { DemoPortalView } from "./DemoPortalView";
