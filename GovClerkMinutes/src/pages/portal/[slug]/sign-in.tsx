@@ -218,6 +218,14 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
                     />
                   </FormControl>
 
+                  <Box width="full" textAlign="right">
+                    <Link href={`/portal/${slug}/forgot-password`}>
+                      <Text fontSize="sm" color={accentColor} fontWeight="medium">
+                        Forgot Password?
+                      </Text>
+                    </Link>
+                  </Box>
+
                   <Button
                     type="submit"
                     width="full"

@@ -187,3 +187,93 @@ GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
     MessageStream: "signup_and_purchase",
   });
 }
+
+/**
+ * Send a branded GovClerk Portal password reset email.
+ *
+ * @param email       Recipient email address
+ * @param resetToken  Secure random hex token to include in the reset link
+ * @param slug        Portal slug used to construct the reset URL
+ * @param orgName     Optional organisation name to personalise the body
+ */
+export async function sendPortalPasswordResetEmail(
+  email: string,
+  resetToken: string,
+  slug: string,
+  orgName?: string
+): Promise<void> {
+  const host = "govclerkminutes.com";
+  const resetUrl = `https://${host}/portal/${slug}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+  const orgLabel = orgName ? `your ${orgName} portal account` : "your portal account";
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color:${PORTAL_GREEN};padding:28px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;letter-spacing:0.5px;">GovClerk Portal</h1>
+        </td>
+      </tr>
+      <!-- Body -->
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <p style="margin:0 0 16px;font-size:16px;color:#2d3748;">Hello,</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#4a5568;line-height:1.7;">We received a request to reset the password for ${orgLabel}. Click the button below to choose a new password:</p>
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="padding:24px 0;">
+                <a href="${resetUrl}" style="display:inline-block;padding:14px 32px;background-color:${PORTAL_GREEN};color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.3px;">Reset Password &rarr;</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:0 0 12px;font-size:14px;color:#718096;text-align:center;">This link expires in <strong>1 hour</strong>.</p>
+          <p style="margin:0 0 12px;font-size:14px;color:#718096;">If the button above doesn't work, copy and paste the following link into your browser:</p>
+          <p style="margin:0 0 32px;font-size:13px;color:#4a5568;word-break:break-all;"><a href="${resetUrl}" style="color:${PORTAL_GREEN};">${resetUrl}</a></p>
+          <p style="margin:0 0 32px;font-size:14px;color:#a0aec0;text-align:center;">If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+          <p style="margin:24px 0 0;font-size:15px;color:#2d3748;">Yours in public service,<br/><strong>The GovClerk Portal Team</strong></p>
+        </td>
+      </tr>
+      <!-- Footer -->
+      <tr>
+        <td style="background-color:#f8f9fb;padding:20px 40px;border-top:1px solid #e8ecf0;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#8a94a6;">GovClerk Portal &middot; Powered by GovClerk Minutes &middot; <a href="https://govclerkminutes.com" style="color:${PORTAL_GREEN};text-decoration:none;">govclerkminutes.com</a></p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+  const textBody = `Hello,
+
+We received a request to reset the password for ${orgLabel}.
+
+Click the link below to choose a new password:
+
+  ${resetUrl}
+
+This link expires in 1 hour.
+
+If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+
+Yours in public service,
+The GovClerk Portal Team
+
+GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
+
+  await sendEmail({
+    From: FROM_PORTAL,
+    To: email,
+    Subject: "Reset Your GovClerk Portal Password",
+    HtmlBody: htmlBody,
+    TextBody: textBody,
+    MessageStream: "signup_and_purchase",
+  });
+}
