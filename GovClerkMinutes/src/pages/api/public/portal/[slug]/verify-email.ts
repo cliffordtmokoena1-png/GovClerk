@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import { getPortalSession } from "@/portal-auth/portalAuth";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
-import { sendEmail } from "@/utils/postmark";
+import { sendPortalVerificationEmail, sendPortalWelcomeEmail } from "@/utils/portalEmails";
 
 export const config = {
   runtime: "edge",
@@ -87,21 +87,21 @@ export default async function handler(req: NextRequest): Promise<Response> {
       [orgId, email, code, expiresAtStr]
     );
 
-    // Send the code via Postmark
-    await sendEmail({
-      From: '"GovClerk Portal" <admin@govclerkminutes.com>',
-      To: email,
-      Subject: "Your verification code",
-      HtmlBody: `
-        <p>Hello,</p>
-        <p>Your verification code for the portal is:</p>
-        <h2 style="letter-spacing:0.3em;font-size:2rem;">${code}</h2>
-        <p>This code expires in 15 minutes.</p>
-        <p>If you did not request this, you can safely ignore this email.</p>
-      `,
-      TextBody: `Your verification code is: ${code}\n\nThis code expires in 15 minutes.`,
-      MessageStream: "signup_and_purchase",
-    });
+    // Send the code via the GovClerk Portal branded email template
+    let orgName: string | undefined;
+    try {
+      const orgResult = await conn.execute(
+        "SELECT page_title FROM gc_portal_settings WHERE org_id = ? LIMIT 1",
+        [orgId]
+      );
+      if (orgResult.rows.length > 0) {
+        orgName = (orgResult.rows[0] as any).page_title as string | undefined;
+      }
+    } catch {
+      // Non-critical
+    }
+
+    await sendPortalVerificationEmail(email, code, orgName);
 
     return jsonResponse({ sent: true });
   }
@@ -150,6 +150,21 @@ export default async function handler(req: NextRequest): Promise<Response> {
         session.portalUserId,
         orgId,
       ]);
+
+      // Send the branded GovClerk Portal welcome email (non-blocking on failure)
+      try {
+        // Fetch user details for personalisation
+        const userResult = await conn.execute(
+          "SELECT first_name FROM gc_portal_users WHERE id = ? LIMIT 1",
+          [session.portalUserId]
+        );
+        const firstName = userResult.rows.length > 0
+          ? ((userResult.rows[0] as any)?.first_name ?? undefined)
+          : undefined;
+        await sendPortalWelcomeEmail(email, firstName, slug);
+      } catch (err) {
+        console.error("[verify-email] Failed to send portal welcome email:", err);
+      }
     }
 
     // Check if the email domain matches an existing organisation in gc_portal_settings

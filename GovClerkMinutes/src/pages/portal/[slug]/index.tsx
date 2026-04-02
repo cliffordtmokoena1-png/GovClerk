@@ -462,6 +462,29 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
     };
   }
 
+  // Gate access: if the authenticated user has not verified their email (is_active=0),
+  // redirect them to the verification page.
+  if (session.portalUserId != null) {
+    try {
+      const { getPortalDbConnection } = await import("@/utils/portalDb");
+      const conn = getPortalDbConnection();
+      const userResult = await conn.execute(
+        "SELECT is_active FROM gc_portal_users WHERE id = ? AND org_id = ? LIMIT 1",
+        [session.portalUserId, session.orgId]
+      );
+      if (userResult.rows.length > 0 && ((userResult.rows[0] as any).is_active === 0 || (userResult.rows[0] as any).is_active === false)) {
+        return {
+          redirect: {
+            destination: `/portal/${slug}/verify`,
+            permanent: false,
+          },
+        };
+      }
+    } catch {
+      // DB error — do not block access, let the user through
+    }
+  }
+
   // Authenticated but portal not set up — return shell with org-not-found state
   if (!portalExists) {
     return {
