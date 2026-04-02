@@ -104,7 +104,7 @@ export async function upsertOrganizationFromWebhook(org: OrganizationJSON): Prom
           DEFAULT_HEADER_BG_COLOR,
           DEFAULT_HEADER_TEXT_COLOR,
           DEFAULT_ACCENT_COLOR,
-          false, // internal/private visibility by default
+          true, // enabled by default so new organisations can use their portal immediately
         ]
       );
       console.info(
