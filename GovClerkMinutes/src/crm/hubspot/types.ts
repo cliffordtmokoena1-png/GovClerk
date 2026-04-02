@@ -17,7 +17,10 @@ export type LeadSource =
   | "gc_school"
   | "gc_whatsapp"
   | "test_source"
-  | "db_migration";
+  | "db_migration"
+  | "demo_request"
+  | "paid_ad"
+  | "organic_signup";
 export type ExtraContactProperties = {
   lead_source: LeadSource;
 };

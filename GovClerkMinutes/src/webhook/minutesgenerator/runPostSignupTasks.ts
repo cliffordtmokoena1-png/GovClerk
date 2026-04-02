@@ -2,7 +2,7 @@ import { connect } from "@planetscale/database";
 import { addSignupLead } from "./addSignupLead";
 import { capture, GC_WEBHOOK_ANONYMOUS_ID } from "@/utils/posthog";
 import { sendCompleteRegistrationConversionEvent } from "@/meta/sendCompleteRegistrationConversionEvent";
-import { assertString } from "@/utils/assert";
+import { sendLeadWelcome } from "@/ai-agent/sendLeadWelcome";
 
 export type PostSignupLead = {
   id: number;
@@ -68,16 +68,20 @@ export async function runPostSignupTasks(): Promise<void> {
       await addSignupLead(lead, conn);
 
       // If the lead didn't message us on WhatsApp, message them
-      if (lead.has_whatsapp_inbound === 0 && lead.phone) {
+      if (lead.has_whatsapp_inbound === 0 && lead.phone && lead.first_name) {
         const whatsappId = lead.phone.replace(/\D/g, "");
-        const name = assertString(lead.first_name);
+        const name = lead.first_name;
 
-        // TODO: uncomment and replace this with whatsapp.sendTemplateMessage() when it ships
-        // await wati.sendTemplateMessage({
-        //   whatsappNumber: whatsappId,
-        //   templateName: "signup_greeting2",
-        //   parameters: [{ name: "name", value: name }],
-        // });
+        void sendLeadWelcome({
+          phone: whatsappId,
+          firstName: name,
+          templateName: "samantha_organic_welcome",
+          templateBody:
+            "Hi {{first_name}}! 👋 I'm Samantha, your GovClerk Minutes assistant.\n\nI noticed you signed up — welcome! I'm here to help you get started. To make sure we set things up right for your organisation, mind if I ask a few quick questions?",
+          parameters: { first_name: name },
+          leadSource: "organic_signup",
+          userId: lead.user_id,
+        });
       }
     } catch (error) {
       console.error(`Post signup task failed for ${lead.email}:`, error);

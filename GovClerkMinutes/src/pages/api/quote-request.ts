@@ -12,6 +12,7 @@ import {
 } from "@/meta/utils";
 import { sendConversionEvent } from "@/meta/sendConversionEvent";
 import { getSiteFromHeaders } from "@/utils/site";
+import { sendLeadWelcome } from "@/ai-agent/sendLeadWelcome";
 
 export const config = {
   runtime: "edge",
@@ -201,6 +202,24 @@ async function handler(req: NextRequest) {
     } catch (slackError) {
       console.error("Failed to send Slack notification:", slackError);
       // Don't fail the request if Slack fails
+    }
+
+    // Send Samantha's WhatsApp welcome message for demo requests (fire-and-forget)
+    if (isDemo && trimmedPhone) {
+      void sendLeadWelcome({
+        phone: trimmedPhone,
+        firstName: trimmedFirstName,
+        templateName: "samantha_demo_welcome",
+        templateBody:
+          "Hi {{first_name}}! 👋 I'm Samantha from GovClerk Minutes.\n\nThank you for requesting a demo for {{organization_name}}! I'd love to help you see how we can streamline your meeting minutes process.\n\nBefore we schedule your demo, I have a few quick questions to make sure we tailor it perfectly for your needs. Ready to chat?",
+        parameters: {
+          first_name: trimmedFirstName,
+          organization_name: trimmedOrganizationName,
+        },
+        leadSource: "demo_request",
+        organizationName: trimmedOrganizationName,
+        userId,
+      });
     }
 
     await capture(
