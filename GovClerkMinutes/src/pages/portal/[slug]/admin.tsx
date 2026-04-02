@@ -1,24 +1,30 @@
 /**
- * Portal Admin Page — Members & Plan Management
+ * Portal Admin Page — Tabbed Admin Hub
  *
  * Accessible only to portal-authenticated admins.
- * Shows:
- * - Current subscription plan overview (tier, seats, streaming hours)
- * - Member list with add/edit/deactivate actions
+ * Tabs:
+ *   - Overview: Subscription plan card (tier, seats, streaming hours, price, status)
+ *   - Streaming: Platform connections, preferred platform selector, streaming hours
+ *   - Members: Member list with add/edit/deactivate actions
+ *   - Appearance: Portal branding (title, description, logo, colors, nav links)
+ *   - Settings: Allowed email domains, portal visibility, portal URL
  *
- * URL: /portal/[slug]/admin
+ * URL: /portal/[slug]/admin?tab=overview|streaming|members|appearance|settings
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import {
   Box,
   Button,
   FormControl,
   FormLabel,
+  FormHelperText,
   Input,
+  Textarea,
   Select,
   Text,
   VStack,
@@ -46,12 +52,38 @@ import {
   Divider,
   Tooltip,
   IconButton,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  Switch,
+  SimpleGrid,
+  Tag,
+  TagLabel,
+  TagCloseButton,
 } from "@chakra-ui/react";
-import { LuUserPlus, LuPencil, LuUserX, LuArrowLeft, LuRefreshCw } from "react-icons/lu";
+import {
+  LuUserPlus,
+  LuPencil,
+  LuUserX,
+  LuArrowLeft,
+  LuRefreshCw,
+  LuBarChart2,
+  LuRadio,
+  LuUsers,
+  LuPalette,
+  LuSettings,
+  LuPlus,
+  LuTrash2,
+} from "react-icons/lu";
 import type { PublicPortalResponse } from "@/types/portal";
+import type { StreamPlatform } from "@/types/liveSession";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 import { getPortalDbConnection } from "@/utils/portalDb";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PlanData {
   tier: string;
@@ -76,10 +108,55 @@ interface MemberData {
   createdAt: string;
 }
 
+interface StreamForm {
+  preferredPlatform: StreamPlatform;
+  youtubeChannelId: string;
+  youtubeLiveUrl: string;
+  zoomWebinarId: string;
+  zoomJoinUrl: string;
+  googleMeetUrl: string;
+  facebookPageId: string;
+  facebookLiveUrl: string;
+  tiktokLiveUrl: string;
+  rtmpHlsUrl: string;
+  customEmbedUrl: string;
+  isActive: boolean;
+}
+
+interface AppearanceForm {
+  pageTitle: string;
+  pageDescription: string;
+  logoUrl: string;
+  headerBgColor: string;
+  headerTextColor: string;
+  accentColor: string;
+  navLinks: Array<{ label: string; url: string }>;
+  isEnabled: boolean;
+}
+
+interface OrgDomain {
+  id: number;
+  domain: string;
+  isActive: boolean;
+}
+
+interface SharedPassword {
+  id: number;
+  label: string;
+  expiresAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
 interface AdminPageProps {
   settings: PublicPortalResponse["settings"];
   slug: string;
 }
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TAB_KEYS = ["overview", "streaming", "members", "appearance", "settings"] as const;
+type TabKey = (typeof TAB_KEYS)[number];
 
 const TIER_LABELS: Record<string, string> = {
   starter: "Starter",
@@ -101,6 +178,44 @@ const ROLE_LABELS: Record<string, string> = {
   readonly: "Read-Only",
 };
 
+const PLATFORM_OPTIONS: { value: StreamPlatform; label: string; description: string }[] = [
+  { value: "youtube", label: "YouTube Live", description: "Embed a YouTube Live stream" },
+  { value: "zoom", label: "Zoom Webinar", description: "Link to a Zoom meeting or webinar" },
+  { value: "google_meet", label: "Google Meet", description: "Link to a Google Meet session" },
+  { value: "facebook", label: "Facebook Live", description: "Embed a Facebook Live video" },
+  { value: "tiktok", label: "TikTok Live", description: "Link to a TikTok Live stream" },
+  { value: "rtmp", label: "RTMP / HLS", description: "Self-hosted stream via HLS playback URL" },
+  { value: "custom", label: "Custom Embed", description: "Any iframe-embeddable URL" },
+];
+
+const DEFAULT_STREAM_FORM: StreamForm = {
+  preferredPlatform: "youtube",
+  youtubeChannelId: "",
+  youtubeLiveUrl: "",
+  zoomWebinarId: "",
+  zoomJoinUrl: "",
+  googleMeetUrl: "",
+  facebookPageId: "",
+  facebookLiveUrl: "",
+  tiktokLiveUrl: "",
+  rtmpHlsUrl: "",
+  customEmbedUrl: "",
+  isActive: true,
+};
+
+const DEFAULT_APPEARANCE_FORM: AppearanceForm = {
+  pageTitle: "",
+  pageDescription: "",
+  logoUrl: "",
+  headerBgColor: "#1e3a5f",
+  headerTextColor: "#ffffff",
+  accentColor: "#1e3a5f",
+  navLinks: [],
+  isEnabled: true,
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) { return "Never"; }
   try {
@@ -114,18 +229,59 @@ function formatDate(dateStr: string | null): string {
   }
 }
 
+// ─── Page Component ───────────────────────────────────────────────────────────
+
 export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
   const accentColor = settings.accentColor || "#1e3a5f";
   const headerBg = settings.headerBgColor || "#1e3a5f";
   const headerText = settings.headerTextColor || "#ffffff";
 
-  const [plan, setPlan] = useState<PlanData | null>(null);
-  const [members, setMembers] = useState<MemberData[]>([]);
-  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
-  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
-  const [pageError, setPageError] = useState<string | null>(null);
+  const router = useRouter();
+  const [tabIndex, setTabIndex] = useState(0);
 
-  // Add member modal
+  // Sync tab index from URL query on mount/change
+  useEffect(() => {
+    const tabKey = router.query.tab as string;
+    const idx = TAB_KEYS.indexOf(tabKey as TabKey);
+    setTabIndex(idx >= 0 ? idx : 0);
+  }, [router.query.tab]);
+
+  function handleTabChange(index: number) {
+    setTabIndex(index);
+    void router.push(
+      { query: { ...router.query, tab: TAB_KEYS[index] } },
+      undefined,
+      { shallow: true }
+    );
+  }
+
+  // ── Overview / Plan State ────────────────────────────────────────────────
+  const [plan, setPlan] = useState<PlanData | null>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  const fetchPlan = useCallback(async () => {
+    setIsLoadingPlan(true);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/plan`);
+      if (res.ok) {
+        setPlan(await res.json());
+      } else {
+        const data = await res.json();
+        setPlanError(data.error || "Failed to load plan details");
+      }
+    } catch {
+      setPlanError("Failed to load plan details");
+    } finally {
+      setIsLoadingPlan(false);
+    }
+  }, [slug]);
+
+  // ── Members State ────────────────────────────────────────────────────────
+  const [members, setMembers] = useState<MemberData[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  const [membersError, setMembersError] = useState<string | null>(null);
+
   const addModal = useDisclosure();
   const [addEmail, setAddEmail] = useState("");
   const [addPassword, setAddPassword] = useState("");
@@ -136,7 +292,6 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
-  // Edit member modal
   const editModal = useDisclosure();
   const [editUser, setEditUser] = useState<MemberData | null>(null);
   const [editRole, setEditRole] = useState("member");
@@ -147,24 +302,6 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
 
   const [deactivatingId, setDeactivatingId] = useState<number | null>(null);
 
-  const fetchPlan = useCallback(async () => {
-    setIsLoadingPlan(true);
-    try {
-      const res = await fetch(`/api/public/portal/${slug}/admin/plan`);
-      if (res.ok) {
-        const data = await res.json();
-        setPlan(data);
-      } else {
-        const data = await res.json();
-        setPageError(data.error || "Failed to load plan details");
-      }
-    } catch {
-      setPageError("Failed to load plan details");
-    } finally {
-      setIsLoadingPlan(false);
-    }
-  }, [slug]);
-
   const fetchMembers = useCallback(async () => {
     setIsLoadingMembers(true);
     try {
@@ -174,19 +311,154 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
         setMembers(data.users ?? []);
       } else {
         const data = await res.json();
-        setPageError(data.error || "Failed to load members");
+        setMembersError(data.error || "Failed to load members");
       }
     } catch {
-      setPageError("Failed to load members");
+      setMembersError("Failed to load members");
     } finally {
       setIsLoadingMembers(false);
     }
   }, [slug]);
 
+  // ── Streaming State ──────────────────────────────────────────────────────
+  const [streamForm, setStreamForm] = useState<StreamForm>(DEFAULT_STREAM_FORM);
+  const [isLoadingStream, setIsLoadingStream] = useState(false);
+  const [isSavingStream, setIsSavingStream] = useState(false);
+  const [streamSaved, setStreamSaved] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
+  const hasLoadedStream = useRef(false);
+
+  const fetchStreamConfig = useCallback(async () => {
+    setIsLoadingStream(true);
+    setStreamError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/stream-config`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.streamConfig) {
+          const sc = data.streamConfig;
+          setStreamForm({
+            preferredPlatform: sc.preferredPlatform ?? "youtube",
+            youtubeChannelId: sc.youtubeChannelId ?? "",
+            youtubeLiveUrl: sc.youtubeLiveUrl ?? "",
+            zoomWebinarId: sc.zoomWebinarId ?? "",
+            zoomJoinUrl: sc.zoomJoinUrl ?? "",
+            googleMeetUrl: sc.googleMeetUrl ?? "",
+            facebookPageId: sc.facebookPageId ?? "",
+            facebookLiveUrl: sc.facebookLiveUrl ?? "",
+            tiktokLiveUrl: sc.tiktokLiveUrl ?? "",
+            rtmpHlsUrl: sc.rtmpHlsUrl ?? "",
+            customEmbedUrl: sc.customEmbedUrl ?? "",
+            isActive: sc.isActive ?? true,
+          });
+        }
+      } else {
+        const data = await res.json();
+        setStreamError(data.error || "Failed to load stream configuration");
+      }
+    } catch {
+      setStreamError("Failed to load stream configuration");
+    } finally {
+      setIsLoadingStream(false);
+    }
+  }, [slug]);
+
+  // ── Appearance State ─────────────────────────────────────────────────────
+  const [appearanceForm, setAppearanceForm] = useState<AppearanceForm>(DEFAULT_APPEARANCE_FORM);
+  const [isLoadingAppearance, setIsLoadingAppearance] = useState(false);
+  const [isSavingAppearance, setIsSavingAppearance] = useState(false);
+  const [appearanceSaved, setAppearanceSaved] = useState(false);
+  const [appearanceError, setAppearanceError] = useState<string | null>(null);
+  const hasLoadedAppearance = useRef(false);
+  const [newNavLabel, setNewNavLabel] = useState("");
+  const [newNavUrl, setNewNavUrl] = useState("");
+
+  const fetchAppearance = useCallback(async () => {
+    setIsLoadingAppearance(true);
+    setAppearanceError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/appearance`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.appearance) {
+          const a = data.appearance;
+          setAppearanceForm({
+            pageTitle: a.pageTitle ?? "",
+            pageDescription: a.pageDescription ?? "",
+            logoUrl: a.logoUrl ?? "",
+            headerBgColor: a.headerBgColor ?? "#1e3a5f",
+            headerTextColor: a.headerTextColor ?? "#ffffff",
+            accentColor: a.accentColor ?? "#1e3a5f",
+            navLinks: a.navLinks ?? [],
+            isEnabled: a.isEnabled ?? true,
+          });
+        }
+      } else {
+        const data = await res.json();
+        setAppearanceError(data.error || "Failed to load appearance settings");
+      }
+    } catch {
+      setAppearanceError("Failed to load appearance settings");
+    } finally {
+      setIsLoadingAppearance(false);
+    }
+  }, [slug]);
+
+  // ── Settings State ───────────────────────────────────────────────────────
+  const [domains, setDomains] = useState<OrgDomain[]>([]);
+  const [sharedPasswords, setSharedPasswords] = useState<SharedPassword[]>([]);
+  const [portalEnabled, setPortalEnabled] = useState(true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const hasLoadedSettings = useRef(false);
+  const [newDomain, setNewDomain] = useState("");
+
+  const fetchSettings = useCallback(async () => {
+    setIsLoadingSettings(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/settings`);
+      if (res.ok) {
+        const data = await res.json();
+        setDomains(data.domains ?? []);
+        setSharedPasswords(data.sharedPasswords ?? []);
+        setPortalEnabled(data.isEnabled ?? true);
+      } else {
+        const data = await res.json();
+        setSettingsError(data.error || "Failed to load settings");
+      }
+    } catch {
+      setSettingsError("Failed to load settings");
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }, [slug]);
+
+  // ── Effects ──────────────────────────────────────────────────────────────
+
   useEffect(() => {
     fetchPlan();
     fetchMembers();
   }, [fetchPlan, fetchMembers]);
+
+  // Lazy-load tab-specific data on first visit
+  useEffect(() => {
+    const key = TAB_KEYS[tabIndex];
+    if (key === "streaming" && !hasLoadedStream.current) {
+      hasLoadedStream.current = true;
+      fetchStreamConfig();
+    } else if (key === "appearance" && !hasLoadedAppearance.current) {
+      hasLoadedAppearance.current = true;
+      fetchAppearance();
+    } else if (key === "settings" && !hasLoadedSettings.current) {
+      hasLoadedSettings.current = true;
+      fetchSettings();
+    }
+  }, [tabIndex, fetchStreamConfig, fetchAppearance, fetchSettings]);
+
+  // ── Members Handlers ─────────────────────────────────────────────────────
 
   async function handleAddMember(e: React.FormEvent) {
     e.preventDefault();
@@ -282,7 +554,175 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
     }
   }
 
+  // ── Streaming Handlers ───────────────────────────────────────────────────
+
+  async function handleSaveStream(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSavingStream(true);
+    setStreamError(null);
+    setStreamSaved(false);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/stream-config`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...streamForm,
+          youtubeChannelId: streamForm.youtubeChannelId || undefined,
+          youtubeLiveUrl: streamForm.youtubeLiveUrl || undefined,
+          zoomWebinarId: streamForm.zoomWebinarId || undefined,
+          zoomJoinUrl: streamForm.zoomJoinUrl || undefined,
+          googleMeetUrl: streamForm.googleMeetUrl || undefined,
+          facebookPageId: streamForm.facebookPageId || undefined,
+          facebookLiveUrl: streamForm.facebookLiveUrl || undefined,
+          tiktokLiveUrl: streamForm.tiktokLiveUrl || undefined,
+          rtmpHlsUrl: streamForm.rtmpHlsUrl || undefined,
+          customEmbedUrl: streamForm.customEmbedUrl || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Save failed");
+      }
+      setStreamSaved(true);
+      setTimeout(() => setStreamSaved(false), 3000);
+    } catch (err: any) {
+      setStreamError(err.message ?? "Save failed");
+    } finally {
+      setIsSavingStream(false);
+    }
+  }
+
+  function handleStreamFieldChange(field: keyof StreamForm, value: string | boolean) {
+    setStreamForm((prev) => ({ ...prev, [field]: value }));
+    setStreamSaved(false);
+  }
+
+  // ── Appearance Handlers ──────────────────────────────────────────────────
+
+  async function handleSaveAppearance(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSavingAppearance(true);
+    setAppearanceError(null);
+    setAppearanceSaved(false);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/appearance`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pageTitle: appearanceForm.pageTitle || undefined,
+          pageDescription: appearanceForm.pageDescription || undefined,
+          logoUrl: appearanceForm.logoUrl || undefined,
+          headerBgColor: appearanceForm.headerBgColor,
+          headerTextColor: appearanceForm.headerTextColor,
+          accentColor: appearanceForm.accentColor,
+          navLinks: appearanceForm.navLinks,
+          isEnabled: appearanceForm.isEnabled,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Save failed");
+      }
+      setAppearanceSaved(true);
+      setTimeout(() => setAppearanceSaved(false), 3000);
+    } catch (err: any) {
+      setAppearanceError(err.message ?? "Save failed");
+    } finally {
+      setIsSavingAppearance(false);
+    }
+  }
+
+  function addNavLink() {
+    if (!newNavLabel.trim() || !newNavUrl.trim()) { return; }
+    setAppearanceForm((prev) => ({
+      ...prev,
+      navLinks: [...prev.navLinks, { label: newNavLabel.trim(), url: newNavUrl.trim() }],
+    }));
+    setNewNavLabel("");
+    setNewNavUrl("");
+  }
+
+  function removeNavLink(index: number) {
+    setAppearanceForm((prev) => ({
+      ...prev,
+      navLinks: prev.navLinks.filter((_, i) => i !== index),
+    }));
+  }
+
+  // ── Settings Handlers ────────────────────────────────────────────────────
+
+  async function handleTogglePortalVisibility(enabled: boolean) {
+    setIsSavingSettings(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isEnabled: enabled }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPortalEnabled(data.isEnabled);
+        setSettingsSaved(true);
+        setTimeout(() => setSettingsSaved(false), 2000);
+      }
+    } catch {
+      setSettingsError("Failed to update portal visibility");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  }
+
+  async function handleAddDomain() {
+    if (!newDomain.trim()) { return; }
+    setIsSavingSettings(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addDomain: newDomain.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSettingsError(data.error || "Failed to add domain");
+        return;
+      }
+      setDomains(data.domains ?? []);
+      setNewDomain("");
+    } catch {
+      setSettingsError("Failed to add domain");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  }
+
+  async function handleRemoveDomain(domainId: number) {
+    setIsSavingSettings(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ removeDomainId: domainId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDomains(data.domains ?? []);
+      }
+    } catch {
+      setSettingsError("Failed to remove domain");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  }
+
+  // ── Derived State ────────────────────────────────────────────────────────
+
   const atSeatLimit = plan ? plan.seatsUsed >= plan.seatsIncluded : false;
+  const streamHoursExhausted = plan ? plan.streamHoursUsed >= plan.streamHoursIncluded : false;
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -308,7 +748,7 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
       </Box>
 
       <Box minH="100vh" bg="gray.50" py={8} px={4}>
-        <Box maxW="900px" mx="auto">
+        <Box maxW="1000px" mx="auto">
           {/* Back link */}
           <Box mb={6}>
             <Link href={`/portal/${slug}`}>
@@ -323,272 +763,767 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
             Portal Administration
           </Text>
 
-          {pageError && (
-            <Alert status="error" rounded="md" mb={6}>
-              <AlertIcon />
-              {pageError}
-            </Alert>
-          )}
+          <Tabs
+            index={tabIndex}
+            onChange={handleTabChange}
+            isLazy
+            colorScheme="blue"
+            variant="enclosed"
+          >
+            <TabList mb={4} flexWrap="wrap" gap={1}>
+              <Tab fontSize="sm" fontWeight="medium" gap={2}>
+                <LuBarChart2 size={15} />
+                Overview
+              </Tab>
+              <Tab fontSize="sm" fontWeight="medium" gap={2}>
+                <LuRadio size={15} />
+                Streaming
+              </Tab>
+              <Tab fontSize="sm" fontWeight="medium" gap={2}>
+                <LuUsers size={15} />
+                Members
+              </Tab>
+              <Tab fontSize="sm" fontWeight="medium" gap={2}>
+                <LuPalette size={15} />
+                Appearance
+              </Tab>
+              <Tab fontSize="sm" fontWeight="medium" gap={2}>
+                <LuSettings size={15} />
+                Settings
+              </Tab>
+            </TabList>
 
-          {/* ── Plan Overview ───────────────────────────────────────── */}
-          <Box bg="white" rounded="xl" shadow="sm" p={6} mb={6} borderWidth={1} borderColor="gray.200">
-            <HStack justify="space-between" mb={4}>
-              <Text fontSize="lg" fontWeight="semibold" color="gray.800">
-                Subscription Plan
-              </Text>
-              {plan && (
-                <Badge colorScheme={STATUS_COLORS[plan.status] ?? "gray"} px={3} py={1} rounded="full" textTransform="capitalize">
-                  {plan.status}
-                </Badge>
-              )}
-            </HStack>
-
-            {isLoadingPlan ? (
-              <Center py={8}>
-                <Spinner size="md" color={accentColor} />
-              </Center>
-            ) : plan ? (
-              <VStack gap={5} align="stretch">
-                <HStack gap={6} flexWrap="wrap">
-                  <Box>
-                    <Text fontSize="sm" color="gray.500">Plan</Text>
-                    <Text fontSize="xl" fontWeight="bold" color="gray.900">
-                      {TIER_LABELS[plan.tier] ?? plan.tier}
+            <TabPanels>
+              {/* ── OVERVIEW TAB ─────────────────────────────────────────────── */}
+              <TabPanel p={0}>
+                <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                  <HStack justify="space-between" mb={4}>
+                    <Text fontSize="lg" fontWeight="semibold" color="gray.800">
+                      Subscription Plan
                     </Text>
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.500">Monthly Price</Text>
-                    <Text fontSize="xl" fontWeight="bold" color="gray.900">
-                      R{plan.monthlyPriceZar.toLocaleString("en-ZA")}/mo
-                    </Text>
-                  </Box>
-                  {plan.currentPeriodEnd && (
-                    <Box>
-                      <Text fontSize="sm" color="gray.500">Renews</Text>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                        {formatDate(plan.currentPeriodEnd)}
-                      </Text>
-                    </Box>
-                  )}
-                  {plan.status === "trial" && plan.trialEndsAt && (
-                    <Box>
-                      <Text fontSize="sm" color="gray.500">Trial Ends</Text>
-                      <Text fontSize="sm" fontWeight="medium" color="blue.600">
-                        {formatDate(plan.trialEndsAt)}
-                      </Text>
-                    </Box>
-                  )}
-                </HStack>
-
-                <Divider />
-
-                {/* Seats progress */}
-                <Box>
-                  <HStack justify="space-between" mb={1}>
-                    <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                      Admin Seats
-                    </Text>
-                    <Text fontSize="sm" color={atSeatLimit ? "red.600" : "gray.600"}>
-                      {plan.seatsUsed} / {plan.seatsIncluded} used
-                    </Text>
+                    {plan && (
+                      <Badge
+                        colorScheme={STATUS_COLORS[plan.status] ?? "gray"}
+                        px={3}
+                        py={1}
+                        rounded="full"
+                        textTransform="capitalize"
+                      >
+                        {plan.status}
+                      </Badge>
+                    )}
                   </HStack>
-                  <Progress
-                    value={(plan.seatsUsed / Math.max(plan.seatsIncluded, 1)) * 100}
-                    colorScheme={atSeatLimit ? "red" : "blue"}
-                    size="sm"
-                    rounded="full"
-                  />
-                  {atSeatLimit && (
-                    <Text fontSize="xs" color="red.600" mt={1}>
-                      You&apos;ve reached your seat limit.{" "}
-                      <Link href="/portal/request-quote">
-                        <Text as="span" textDecoration="underline">
-                          Upgrade your plan
-                        </Text>
-                      </Link>{" "}
-                      to add more members.
-                    </Text>
-                  )}
-                </Box>
 
-                {/* Streaming hours progress */}
-                <Box>
-                  <HStack justify="space-between" mb={1}>
-                    <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                      Streaming Hours
-                    </Text>
-                    <Text fontSize="sm" color="gray.600">
-                      {plan.streamHoursUsed} / {plan.streamHoursIncluded} hrs used
-                    </Text>
-                  </HStack>
-                  <Progress
-                    value={
-                      (plan.streamHoursUsed / Math.max(plan.streamHoursIncluded, 1)) * 100
-                    }
-                    colorScheme={
-                      plan.streamHoursUsed >= plan.streamHoursIncluded ? "red" : "green"
-                    }
-                    size="sm"
-                    rounded="full"
-                  />
-                </Box>
+                  {isLoadingPlan ? (
+                    <Center py={8}><Spinner size="md" color={accentColor} /></Center>
+                  ) : planError ? (
+                    <Alert status="error" rounded="md"><AlertIcon />{planError}</Alert>
+                  ) : plan ? (
+                    <VStack gap={5} align="stretch">
+                      <HStack gap={6} flexWrap="wrap">
+                        <Box>
+                          <Text fontSize="sm" color="gray.500">Plan</Text>
+                          <Text fontSize="xl" fontWeight="bold" color="gray.900">
+                            {TIER_LABELS[plan.tier] ?? plan.tier}
+                          </Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="sm" color="gray.500">Monthly Price</Text>
+                          <Text fontSize="xl" fontWeight="bold" color="gray.900">
+                            R{plan.monthlyPriceZar.toLocaleString("en-ZA")}/mo
+                          </Text>
+                        </Box>
+                        {plan.currentPeriodEnd && (
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">Renews</Text>
+                            <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                              {formatDate(plan.currentPeriodEnd)}
+                            </Text>
+                          </Box>
+                        )}
+                        {plan.status === "trial" && plan.trialEndsAt && (
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">Trial Ends</Text>
+                            <Text fontSize="sm" fontWeight="medium" color="blue.600">
+                              {formatDate(plan.trialEndsAt)}
+                            </Text>
+                          </Box>
+                        )}
+                      </HStack>
 
-                <HStack>
-                  <Link href="/portal/request-quote">
-                    <Button
+                      <Divider />
+
+                      <Box>
+                        <HStack justify="space-between" mb={1}>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Admin Seats</Text>
+                          <Text fontSize="sm" color={atSeatLimit ? "red.600" : "gray.600"}>
+                            {plan.seatsUsed} / {plan.seatsIncluded} used
+                          </Text>
+                        </HStack>
+                        <Progress
+                          value={(plan.seatsUsed / Math.max(plan.seatsIncluded, 1)) * 100}
+                          colorScheme={atSeatLimit ? "red" : "blue"}
+                          size="sm"
+                          rounded="full"
+                        />
+                        {atSeatLimit && (
+                          <Text fontSize="xs" color="red.600" mt={1}>
+                            You&apos;ve reached your seat limit.{" "}
+                            <Link href="/portal/request-quote">
+                              <Text as="span" textDecoration="underline">Upgrade your plan</Text>
+                            </Link>{" "}
+                            to add more members.
+                          </Text>
+                        )}
+                      </Box>
+
+                      <Box>
+                        <HStack justify="space-between" mb={1}>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700">Streaming Hours</Text>
+                          <Text fontSize="sm" color={streamHoursExhausted ? "red.600" : "gray.600"}>
+                            {plan.streamHoursUsed} / {plan.streamHoursIncluded} hrs used
+                          </Text>
+                        </HStack>
+                        <Progress
+                          value={(plan.streamHoursUsed / Math.max(plan.streamHoursIncluded, 1)) * 100}
+                          colorScheme={streamHoursExhausted ? "red" : "green"}
+                          size="sm"
+                          rounded="full"
+                        />
+                        {streamHoursExhausted && (
+                          <Text fontSize="xs" color="red.600" mt={1}>
+                            Streaming hours exhausted.{" "}
+                            <Link href="/portal/request-quote">
+                              <Text as="span" textDecoration="underline">Upgrade your plan</Text>
+                            </Link>{" "}
+                            to continue streaming.
+                          </Text>
+                        )}
+                      </Box>
+
+                      <HStack>
+                        <Link href="/portal/request-quote">
+                          <Button size="sm" style={{ backgroundColor: accentColor, color: "#fff" }}>
+                            Upgrade / Request Quote
+                          </Button>
+                        </Link>
+                      </HStack>
+                    </VStack>
+                  ) : null}
+                </Box>
+              </TabPanel>
+
+              {/* ── STREAMING TAB ─────────────────────────────────────────────── */}
+              <TabPanel p={0}>
+                <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="lg" fontWeight="semibold" color="gray.800">
+                      Live Streaming Configuration
+                    </Text>
+                    <IconButton
+                      aria-label="Refresh stream config"
+                      icon={<LuRefreshCw size={14} />}
                       size="sm"
-                      style={{ backgroundColor: accentColor, color: "#fff" }}
-                    >
-                      Upgrade / Request Quote
-                    </Button>
-                  </Link>
-                </HStack>
-              </VStack>
-            ) : null}
-          </Box>
-
-          {/* ── Members Management ───────────────────────────────────── */}
-          <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
-            <HStack justify="space-between" mb={4}>
-              <VStack align="start" gap={0}>
-                <Text fontSize="lg" fontWeight="semibold" color="gray.800">
-                  Members
-                </Text>
-                {plan && (
-                  <Text fontSize="sm" color="gray.500">
-                    {plan.seatsUsed} of {plan.seatsIncluded} seats used
+                      variant="ghost"
+                      onClick={() => { hasLoadedStream.current = false; fetchStreamConfig(); }}
+                    />
+                  </HStack>
+                  <Text fontSize="sm" color="gray.500" mb={5}>
+                    Configure how your live council meetings are streamed to the public.
                   </Text>
-                )}
-              </VStack>
 
-              <HStack gap={2}>
-                <IconButton
-                  aria-label="Refresh members"
-                  icon={<LuRefreshCw size={14} />}
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => { fetchMembers(); fetchPlan(); }}
-                />
-                <Tooltip
-                  label={
-                    atSeatLimit
-                      ? `Seat limit reached (${plan?.seatsIncluded ?? 0} seats). Upgrade to add more.`
-                      : "Add a new member"
-                  }
-                  isDisabled={!atSeatLimit}
-                >
-                  <Button
-                    size="sm"
-                    leftIcon={<LuUserPlus size={14} />}
-                    style={
-                      atSeatLimit
-                        ? { cursor: "not-allowed", opacity: 0.5 }
-                        : { backgroundColor: accentColor, color: "#fff" }
-                    }
-                    onClick={atSeatLimit ? undefined : addModal.onOpen}
-                    isDisabled={atSeatLimit}
-                  >
-                    Add Member
-                  </Button>
-                </Tooltip>
-              </HStack>
-            </HStack>
-
-            {isLoadingMembers ? (
-              <Center py={8}>
-                <Spinner size="md" color={accentColor} />
-              </Center>
-            ) : members.length === 0 ? (
-              <Box py={8} textAlign="center">
-                <Text color="gray.500">No members found.</Text>
-              </Box>
-            ) : (
-              <Box overflowX="auto">
-                <Table variant="simple" size="sm">
-                  <Thead>
-                    <Tr>
-                      <Th>Name</Th>
-                      <Th>Email</Th>
-                      <Th>Role</Th>
-                      <Th>Status</Th>
-                      <Th>Last Login</Th>
-                      <Th>Actions</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {members.map((member) => (
-                      <Tr key={member.id} opacity={member.isActive ? 1 : 0.5}>
-                        <Td>
-                          <Text fontWeight="medium" fontSize="sm">
-                            {[member.firstName, member.lastName].filter(Boolean).join(" ") || "—"}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Text fontSize="sm" color="gray.700">
-                            {member.email}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Badge
-                            colorScheme={
-                              member.role === "admin"
-                                ? "purple"
-                                : member.role === "readonly"
-                                ? "gray"
-                                : "blue"
+                  {isLoadingStream ? (
+                    <Center py={8}><Spinner size="md" color={accentColor} /></Center>
+                  ) : (
+                    <form onSubmit={handleSaveStream}>
+                      <VStack gap={5} align="stretch">
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="medium">Streaming Platform</FormLabel>
+                          <Select
+                            size="sm"
+                            value={streamForm.preferredPlatform}
+                            onChange={(e) =>
+                              handleStreamFieldChange("preferredPlatform", e.target.value as StreamPlatform)
                             }
-                            fontSize="xs"
                           >
-                            {ROLE_LABELS[member.role] ?? member.role}
-                          </Badge>
-                        </Td>
-                        <Td>
-                          <Badge colorScheme={member.isActive ? "green" : "red"} fontSize="xs">
-                            {member.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </Td>
-                        <Td>
-                          <Text fontSize="xs" color="gray.500">
-                            {formatDate(member.lastLoginAt)}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <HStack gap={1}>
-                            <Tooltip label="Edit member">
-                              <IconButton
-                                aria-label="Edit member"
-                                icon={<LuPencil size={13} />}
-                                size="xs"
-                                variant="ghost"
-                                onClick={() => openEditModal(member)}
-                              />
-                            </Tooltip>
-                            {member.isActive && (
-                              <Tooltip label="Deactivate member">
-                                <IconButton
-                                  aria-label="Deactivate member"
-                                  icon={<LuUserX size={13} />}
-                                  size="xs"
-                                  variant="ghost"
-                                  colorScheme="red"
-                                  isLoading={deactivatingId === member.id}
-                                  onClick={() => handleDeactivate(member.id)}
-                                />
-                              </Tooltip>
+                            {PLATFORM_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </Select>
+                          <FormHelperText fontSize="xs">
+                            {PLATFORM_OPTIONS.find((o) => o.value === streamForm.preferredPlatform)?.description}
+                          </FormHelperText>
+                        </FormControl>
+
+                        {streamForm.preferredPlatform === "youtube" && (
+                          <Box p={4} bg="red.50" borderWidth={1} borderColor="red.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="red.800" mb={3}>YouTube Live</Text>
+                            <VStack gap={3}>
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="medium">Channel ID</FormLabel>
+                                <Input size="sm" value={streamForm.youtubeChannelId}
+                                  onChange={(e) => handleStreamFieldChange("youtubeChannelId", e.target.value)}
+                                  placeholder="UCxxxxxxxxxxxxxx" />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="medium">Live URL</FormLabel>
+                                <Input size="sm" type="url" value={streamForm.youtubeLiveUrl}
+                                  onChange={(e) => handleStreamFieldChange("youtubeLiveUrl", e.target.value)}
+                                  placeholder="https://www.youtube.com/watch?v=..." />
+                              </FormControl>
+                            </VStack>
+                          </Box>
+                        )}
+
+                        {streamForm.preferredPlatform === "zoom" && (
+                          <Box p={4} bg="blue.50" borderWidth={1} borderColor="blue.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="blue.800" mb={3}>Zoom Webinar</Text>
+                            <VStack gap={3}>
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="medium">Webinar ID</FormLabel>
+                                <Input size="sm" value={streamForm.zoomWebinarId}
+                                  onChange={(e) => handleStreamFieldChange("zoomWebinarId", e.target.value)}
+                                  placeholder="123 456 7890" />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="medium">Join URL</FormLabel>
+                                <Input size="sm" type="url" value={streamForm.zoomJoinUrl}
+                                  onChange={(e) => handleStreamFieldChange("zoomJoinUrl", e.target.value)}
+                                  placeholder="https://zoom.us/j/..." />
+                              </FormControl>
+                            </VStack>
+                          </Box>
+                        )}
+
+                        {streamForm.preferredPlatform === "google_meet" && (
+                          <Box p={4} bg="green.50" borderWidth={1} borderColor="green.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="green.800" mb={3}>Google Meet</Text>
+                            <FormControl>
+                              <FormLabel fontSize="xs" fontWeight="medium">Meet URL</FormLabel>
+                              <Input size="sm" type="url" value={streamForm.googleMeetUrl}
+                                onChange={(e) => handleStreamFieldChange("googleMeetUrl", e.target.value)}
+                                placeholder="https://meet.google.com/xxx-xxxx-xxx" />
+                            </FormControl>
+                          </Box>
+                        )}
+
+                        {streamForm.preferredPlatform === "facebook" && (
+                          <Box p={4} bg="blue.50" borderWidth={1} borderColor="blue.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="blue.800" mb={3}>Facebook Live</Text>
+                            <VStack gap={3}>
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="medium">Page ID</FormLabel>
+                                <Input size="sm" value={streamForm.facebookPageId}
+                                  onChange={(e) => handleStreamFieldChange("facebookPageId", e.target.value)}
+                                  placeholder="123456789" />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="medium">Live URL</FormLabel>
+                                <Input size="sm" type="url" value={streamForm.facebookLiveUrl}
+                                  onChange={(e) => handleStreamFieldChange("facebookLiveUrl", e.target.value)}
+                                  placeholder="https://www.facebook.com/.../videos/..." />
+                              </FormControl>
+                            </VStack>
+                          </Box>
+                        )}
+
+                        {streamForm.preferredPlatform === "tiktok" && (
+                          <Box p={4} bg="pink.50" borderWidth={1} borderColor="pink.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="pink.800" mb={3}>TikTok Live</Text>
+                            <FormControl>
+                              <FormLabel fontSize="xs" fontWeight="medium">TikTok Live URL</FormLabel>
+                              <Input size="sm" type="url" value={streamForm.tiktokLiveUrl}
+                                onChange={(e) => handleStreamFieldChange("tiktokLiveUrl", e.target.value)}
+                                placeholder="https://www.tiktok.com/@username/live" />
+                            </FormControl>
+                          </Box>
+                        )}
+
+                        {streamForm.preferredPlatform === "rtmp" && (
+                          <Box p={4} bg="orange.50" borderWidth={1} borderColor="orange.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="orange.800" mb={1}>RTMP / HLS Stream</Text>
+                            <Text fontSize="xs" color="orange.700" mb={3}>
+                              Provide the HLS playback URL (what viewers use — NOT the ingest stream key).
+                            </Text>
+                            <FormControl>
+                              <FormLabel fontSize="xs" fontWeight="medium">HLS Playback URL</FormLabel>
+                              <Input size="sm" type="url" value={streamForm.rtmpHlsUrl}
+                                onChange={(e) => handleStreamFieldChange("rtmpHlsUrl", e.target.value)}
+                                placeholder="https://your-server.com/stream/playlist.m3u8" />
+                            </FormControl>
+                          </Box>
+                        )}
+
+                        {streamForm.preferredPlatform === "custom" && (
+                          <Box p={4} bg="gray.50" borderWidth={1} borderColor="gray.200" rounded="lg">
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.800" mb={3}>Custom Embed</Text>
+                            <FormControl>
+                              <FormLabel fontSize="xs" fontWeight="medium">Embed URL</FormLabel>
+                              <Input size="sm" type="url" value={streamForm.customEmbedUrl}
+                                onChange={(e) => handleStreamFieldChange("customEmbedUrl", e.target.value)}
+                                placeholder="https://your-stream-provider.com/embed/..." />
+                            </FormControl>
+                          </Box>
+                        )}
+
+                        {plan && (
+                          <Box p={4} bg="gray.50" borderWidth={1} borderColor="gray.200" rounded="lg">
+                            <HStack justify="space-between" mb={2}>
+                              <Text fontSize="sm" fontWeight="medium" color="gray.700">Streaming Hours Usage</Text>
+                              <Text fontSize="sm" color={streamHoursExhausted ? "red.600" : "gray.600"}>
+                                {plan.streamHoursUsed} / {plan.streamHoursIncluded} hrs
+                              </Text>
+                            </HStack>
+                            <Progress
+                              value={(plan.streamHoursUsed / Math.max(plan.streamHoursIncluded, 1)) * 100}
+                              colorScheme={streamHoursExhausted ? "red" : "green"}
+                              size="sm"
+                              rounded="full"
+                            />
+                            {streamHoursExhausted && (
+                              <Alert status="warning" mt={2} rounded="md" py={2}>
+                                <AlertIcon />
+                                <Text fontSize="xs">
+                                  Streaming hours exhausted. Going live will be blocked until you upgrade your plan.
+                                </Text>
+                              </Alert>
                             )}
+                          </Box>
+                        )}
+
+                        {streamError && (
+                          <Alert status="error" rounded="md" fontSize="sm">
+                            <AlertIcon />{streamError}
+                          </Alert>
+                        )}
+                        {streamSaved && (
+                          <Alert status="success" rounded="md" fontSize="sm">
+                            <AlertIcon />Stream configuration saved!
+                          </Alert>
+                        )}
+
+                        <Button
+                          type="submit"
+                          isLoading={isSavingStream}
+                          style={{ backgroundColor: accentColor, color: "#fff" }}
+                          size="sm"
+                          alignSelf="flex-start"
+                        >
+                          Save Stream Configuration
+                        </Button>
+                      </VStack>
+                    </form>
+                  )}
+                </Box>
+              </TabPanel>
+
+              {/* ── MEMBERS TAB ───────────────────────────────────────────────── */}
+              <TabPanel p={0}>
+                <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                  <HStack justify="space-between" mb={4}>
+                    <VStack align="start" gap={0}>
+                      <Text fontSize="lg" fontWeight="semibold" color="gray.800">Members</Text>
+                      {plan && (
+                        <Text fontSize="sm" color="gray.500">
+                          {plan.seatsUsed} of {plan.seatsIncluded} seats used
+                        </Text>
+                      )}
+                    </VStack>
+                    <HStack gap={2}>
+                      <IconButton
+                        aria-label="Refresh members"
+                        icon={<LuRefreshCw size={14} />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { fetchMembers(); fetchPlan(); }}
+                      />
+                      <Tooltip
+                        label={atSeatLimit ? `Seat limit reached (${plan?.seatsIncluded ?? 0} seats). Upgrade to add more.` : "Add a new member"}
+                        isDisabled={!atSeatLimit}
+                      >
+                        <Button
+                          size="sm"
+                          leftIcon={<LuUserPlus size={14} />}
+                          style={atSeatLimit ? { cursor: "not-allowed", opacity: 0.5 } : { backgroundColor: accentColor, color: "#fff" }}
+                          onClick={atSeatLimit ? undefined : addModal.onOpen}
+                          isDisabled={atSeatLimit}
+                        >
+                          Add Member
+                        </Button>
+                      </Tooltip>
+                    </HStack>
+                  </HStack>
+
+                  {membersError && (
+                    <Alert status="error" rounded="md" mb={4} fontSize="sm">
+                      <AlertIcon />{membersError}
+                    </Alert>
+                  )}
+
+                  {isLoadingMembers ? (
+                    <Center py={8}><Spinner size="md" color={accentColor} /></Center>
+                  ) : members.length === 0 ? (
+                    <Box py={8} textAlign="center"><Text color="gray.500">No members found.</Text></Box>
+                  ) : (
+                    <Box overflowX="auto">
+                      <Table variant="simple" size="sm">
+                        <Thead>
+                          <Tr>
+                            <Th>Name</Th><Th>Email</Th><Th>Role</Th>
+                            <Th>Status</Th><Th>Last Login</Th><Th>Actions</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {members.map((member) => (
+                            <Tr key={member.id} opacity={member.isActive ? 1 : 0.5}>
+                              <Td>
+                                <Text fontWeight="medium" fontSize="sm">
+                                  {[member.firstName, member.lastName].filter(Boolean).join(" ") || "—"}
+                                </Text>
+                              </Td>
+                              <Td><Text fontSize="sm" color="gray.700">{member.email}</Text></Td>
+                              <Td>
+                                <Badge
+                                  colorScheme={member.role === "admin" ? "purple" : member.role === "readonly" ? "gray" : "blue"}
+                                  fontSize="xs"
+                                >
+                                  {ROLE_LABELS[member.role] ?? member.role}
+                                </Badge>
+                              </Td>
+                              <Td>
+                                <Badge colorScheme={member.isActive ? "green" : "red"} fontSize="xs">
+                                  {member.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </Td>
+                              <Td><Text fontSize="xs" color="gray.500">{formatDate(member.lastLoginAt)}</Text></Td>
+                              <Td>
+                                <HStack gap={1}>
+                                  <Tooltip label="Edit member">
+                                    <IconButton
+                                      aria-label="Edit member"
+                                      icon={<LuPencil size={13} />}
+                                      size="xs"
+                                      variant="ghost"
+                                      onClick={() => openEditModal(member)}
+                                    />
+                                  </Tooltip>
+                                  {member.isActive && (
+                                    <Tooltip label="Deactivate member">
+                                      <IconButton
+                                        aria-label="Deactivate member"
+                                        icon={<LuUserX size={13} />}
+                                        size="xs"
+                                        variant="ghost"
+                                        colorScheme="red"
+                                        isLoading={deactivatingId === member.id}
+                                        onClick={() => handleDeactivate(member.id)}
+                                      />
+                                    </Tooltip>
+                                  )}
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </Box>
+                  )}
+                </Box>
+              </TabPanel>
+
+              {/* ── APPEARANCE TAB ────────────────────────────────────────────── */}
+              <TabPanel p={0}>
+                <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="lg" fontWeight="semibold" color="gray.800">Portal Branding</Text>
+                    <IconButton
+                      aria-label="Refresh appearance"
+                      icon={<LuRefreshCw size={14} />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { hasLoadedAppearance.current = false; fetchAppearance(); }}
+                    />
+                  </HStack>
+                  <Text fontSize="sm" color="gray.500" mb={5}>Customise how your portal looks to the public.</Text>
+
+                  {isLoadingAppearance ? (
+                    <Center py={8}><Spinner size="md" color={accentColor} /></Center>
+                  ) : (
+                    <form onSubmit={handleSaveAppearance}>
+                      <VStack gap={5} align="stretch">
+                        <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Page Title</FormLabel>
+                            <Input size="sm" value={appearanceForm.pageTitle}
+                              onChange={(e) => setAppearanceForm((p) => ({ ...p, pageTitle: e.target.value }))}
+                              placeholder="City Council — Public Records Portal" />
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Logo URL</FormLabel>
+                            <Input size="sm" type="url" value={appearanceForm.logoUrl}
+                              onChange={(e) => setAppearanceForm((p) => ({ ...p, logoUrl: e.target.value }))}
+                              placeholder="https://example.com/logo.png" />
+                            {appearanceForm.logoUrl && (
+                              <Box mt={2} p={2} bg="gray.50" rounded="md" display="inline-block"
+                                borderWidth={1} borderColor="gray.200">
+                                <Box as="img" src={appearanceForm.logoUrl} alt="Logo preview"
+                                  style={{ height: 40, width: "auto", objectFit: "contain" }}
+                                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                  }} />
+                              </Box>
+                            )}
+                          </FormControl>
+                        </SimpleGrid>
+
+                        <FormControl>
+                          <FormLabel fontSize="sm">Page Description</FormLabel>
+                          <Textarea size="sm" value={appearanceForm.pageDescription}
+                            onChange={(e) => setAppearanceForm((p) => ({ ...p, pageDescription: e.target.value }))}
+                            placeholder="Access public records, meeting minutes, and council information."
+                            rows={2} />
+                        </FormControl>
+
+                        <Divider />
+
+                        <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Header Background</FormLabel>
+                            <HStack gap={2}>
+                              <Input size="sm" type="color" value={appearanceForm.headerBgColor}
+                                onChange={(e) => setAppearanceForm((p) => ({ ...p, headerBgColor: e.target.value }))}
+                                w="12" p={0} border="none" />
+                              <Input size="sm" value={appearanceForm.headerBgColor}
+                                onChange={(e) => setAppearanceForm((p) => ({ ...p, headerBgColor: e.target.value }))}
+                                placeholder="#1e3a5f" fontFamily="mono" flex={1} />
+                            </HStack>
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Header Text</FormLabel>
+                            <HStack gap={2}>
+                              <Input size="sm" type="color" value={appearanceForm.headerTextColor}
+                                onChange={(e) => setAppearanceForm((p) => ({ ...p, headerTextColor: e.target.value }))}
+                                w="12" p={0} border="none" />
+                              <Input size="sm" value={appearanceForm.headerTextColor}
+                                onChange={(e) => setAppearanceForm((p) => ({ ...p, headerTextColor: e.target.value }))}
+                                placeholder="#ffffff" fontFamily="mono" flex={1} />
+                            </HStack>
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel fontSize="sm">Accent Colour</FormLabel>
+                            <HStack gap={2}>
+                              <Input size="sm" type="color" value={appearanceForm.accentColor}
+                                onChange={(e) => setAppearanceForm((p) => ({ ...p, accentColor: e.target.value }))}
+                                w="12" p={0} border="none" />
+                              <Input size="sm" value={appearanceForm.accentColor}
+                                onChange={(e) => setAppearanceForm((p) => ({ ...p, accentColor: e.target.value }))}
+                                placeholder="#1e3a5f" fontFamily="mono" flex={1} />
+                            </HStack>
+                          </FormControl>
+                        </SimpleGrid>
+
+                        {/* Live preview */}
+                        <Box>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={2}>Header Preview</Text>
+                          <Box rounded="lg" overflow="hidden" borderWidth={1} borderColor="gray.200">
+                            <Box p={4} style={{ backgroundColor: appearanceForm.headerBgColor, color: appearanceForm.headerTextColor }}>
+                              <HStack gap={3}>
+                                {appearanceForm.logoUrl && (
+                                  <Box as="img" src={appearanceForm.logoUrl} alt=""
+                                    style={{ height: 36, width: "auto", objectFit: "contain" }} />
+                                )}
+                                <Text fontWeight="bold" fontSize="md">
+                                  {appearanceForm.pageTitle || "Your Organization Name"}
+                                </Text>
+                              </HStack>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        <Divider />
+
+                        <Box>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={3}>Custom Navigation Links</Text>
+                          {appearanceForm.navLinks.length > 0 && (
+                            <VStack align="stretch" gap={2} mb={3}>
+                              {appearanceForm.navLinks.map((link, index) => (
+                                <HStack key={index} gap={2}>
+                                  <Tag size="sm" variant="solid" colorScheme="blue" flex={1}>
+                                    <TagLabel>{link.label} → {link.url}</TagLabel>
+                                    <TagCloseButton onClick={() => removeNavLink(index)} />
+                                  </Tag>
+                                </HStack>
+                              ))}
+                            </VStack>
+                          )}
+                          <HStack gap={2}>
+                            <Input size="sm" value={newNavLabel}
+                              onChange={(e) => setNewNavLabel(e.target.value)}
+                              placeholder="Link label" flex={1} />
+                            <Input size="sm" value={newNavUrl}
+                              onChange={(e) => setNewNavUrl(e.target.value)}
+                              placeholder="https://..." flex={2} />
+                            <IconButton aria-label="Add nav link" icon={<LuPlus size={14} />}
+                              size="sm" onClick={addNavLink}
+                              isDisabled={!newNavLabel.trim() || !newNavUrl.trim()} />
                           </HStack>
-                        </Td>
-                      </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
-              </Box>
-            )}
-          </Box>
+                        </Box>
+
+                        {appearanceError && (
+                          <Alert status="error" rounded="md" fontSize="sm">
+                            <AlertIcon />{appearanceError}
+                          </Alert>
+                        )}
+                        {appearanceSaved && (
+                          <Alert status="success" rounded="md" fontSize="sm">
+                            <AlertIcon />Appearance settings saved!
+                          </Alert>
+                        )}
+
+                        <Button type="submit" isLoading={isSavingAppearance}
+                          style={{ backgroundColor: accentColor, color: "#fff" }}
+                          size="sm" alignSelf="flex-start">
+                          Save Appearance
+                        </Button>
+                      </VStack>
+                    </form>
+                  )}
+                </Box>
+              </TabPanel>
+
+              {/* ── SETTINGS TAB ──────────────────────────────────────────────── */}
+              <TabPanel p={0}>
+                <VStack gap={5} align="stretch">
+                  <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                    <Text fontSize="lg" fontWeight="semibold" color="gray.800" mb={1}>Portal Visibility</Text>
+                    <Text fontSize="sm" color="gray.500" mb={4}>Enable or disable public access to this portal.</Text>
+                    {isLoadingSettings ? (
+                      <Center py={4}><Spinner size="sm" color={accentColor} /></Center>
+                    ) : (
+                      <HStack gap={3} align="center">
+                        <Switch
+                          isChecked={portalEnabled}
+                          onChange={(e) => handleTogglePortalVisibility(e.target.checked)}
+                          isDisabled={isSavingSettings}
+                          colorScheme="green"
+                          size="md"
+                        />
+                        <Text fontSize="sm" color={portalEnabled ? "green.600" : "red.500"} fontWeight="medium">
+                          {portalEnabled ? "Portal is enabled (public can access)" : "Portal is disabled (access blocked)"}
+                        </Text>
+                        {isSavingSettings && <Spinner size="xs" />}
+                      </HStack>
+                    )}
+                  </Box>
+
+                  <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                    <Text fontSize="lg" fontWeight="semibold" color="gray.800" mb={1}>Portal URL</Text>
+                    <Text fontSize="sm" color="gray.500" mb={3}>Share this link so the public can access your portal.</Text>
+                    <Box p={3} bg="gray.50" rounded="md" borderWidth={1} borderColor="gray.200"
+                      fontFamily="mono" fontSize="sm" color="blue.600">
+                      {typeof window !== "undefined" ? `${window.location.origin}/portal/${slug}` : `/portal/${slug}`}
+                    </Box>
+                  </Box>
+
+                  <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                    <HStack justify="space-between" mb={1}>
+                      <Text fontSize="lg" fontWeight="semibold" color="gray.800">Allowed Email Domains</Text>
+                      <IconButton
+                        aria-label="Refresh settings"
+                        icon={<LuRefreshCw size={14} />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { hasLoadedSettings.current = false; fetchSettings(); }}
+                      />
+                    </HStack>
+                    <Text fontSize="sm" color="gray.500" mb={4}>
+                      Only users with email addresses from these domains can register and sign in.
+                    </Text>
+
+                    {settingsError && (
+                      <Alert status="error" rounded="md" mb={3} fontSize="sm">
+                        <AlertIcon />{settingsError}
+                      </Alert>
+                    )}
+                    {settingsSaved && (
+                      <Alert status="success" rounded="md" mb={3} fontSize="sm">
+                        <AlertIcon />Settings updated!
+                      </Alert>
+                    )}
+
+                    {isLoadingSettings ? (
+                      <Center py={4}><Spinner size="sm" color={accentColor} /></Center>
+                    ) : (
+                      <VStack align="stretch" gap={3}>
+                        {domains.filter((d) => d.isActive).length === 0 ? (
+                          <Text fontSize="sm" color="gray.400" fontStyle="italic">
+                            No allowed domains configured. All email addresses are currently accepted.
+                          </Text>
+                        ) : (
+                          <VStack align="stretch" gap={2}>
+                            {domains.filter((d) => d.isActive).map((domain) => (
+                              <HStack key={domain.id} justify="space-between" p={2}
+                                bg="gray.50" rounded="md" borderWidth={1} borderColor="gray.200">
+                                <Text fontSize="sm" fontFamily="mono">@{domain.domain}</Text>
+                                <IconButton
+                                  aria-label={`Remove domain ${domain.domain}`}
+                                  icon={<LuTrash2 size={13} />}
+                                  size="xs" variant="ghost" colorScheme="red"
+                                  isLoading={isSavingSettings}
+                                  onClick={() => handleRemoveDomain(domain.id)}
+                                />
+                              </HStack>
+                            ))}
+                          </VStack>
+                        )}
+                        <HStack gap={2} mt={2}>
+                          <Input size="sm" value={newDomain}
+                            onChange={(e) => setNewDomain(e.target.value)}
+                            placeholder="capetown.gov.za" fontFamily="mono"
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void handleAddDomain(); } }} />
+                          <Button size="sm" leftIcon={<LuPlus size={13} />}
+                            onClick={() => void handleAddDomain()}
+                            isLoading={isSavingSettings} isDisabled={!newDomain.trim()}
+                            style={{ backgroundColor: accentColor, color: "#fff" }}>
+                            Add Domain
+                          </Button>
+                        </HStack>
+                      </VStack>
+                    )}
+                  </Box>
+
+                  {sharedPasswords.length > 0 && (
+                    <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                      <Text fontSize="lg" fontWeight="semibold" color="gray.800" mb={1}>Shared Access Passwords</Text>
+                      <Text fontSize="sm" color="gray.500" mb={4}>
+                        Shared passwords allow groups (e.g. public gallery) to sign in without individual accounts.
+                      </Text>
+                      <VStack align="stretch" gap={2}>
+                        {sharedPasswords.map((pw) => (
+                          <HStack key={pw.id} p={3} bg="gray.50" rounded="md"
+                            borderWidth={1} borderColor="gray.200" justify="space-between">
+                            <VStack align="start" gap={0}>
+                              <Text fontSize="sm" fontWeight="medium">{pw.label}</Text>
+                              {pw.expiresAt && (
+                                <Text fontSize="xs" color="gray.500">Expires: {formatDate(pw.expiresAt)}</Text>
+                              )}
+                            </VStack>
+                            <Badge colorScheme={pw.isActive ? "green" : "red"} fontSize="xs">
+                              {pw.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </HStack>
+                        ))}
+                      </VStack>
+                    </Box>
+                  )}
+                </VStack>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
         </Box>
       </Box>
 
-      {/* ── Add Member Modal ─────────────────────────────────────────── */}
+      {/* ── Add Member Modal ─────────────────────────────────────────────────── */}
       <Modal isOpen={addModal.isOpen} onClose={addModal.onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
@@ -597,59 +1532,31 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
           <form onSubmit={handleAddMember}>
             <ModalBody>
               <VStack gap={4}>
-                {addError && (
-                  <Alert status="error" rounded="md" fontSize="sm">
-                    <AlertIcon />
-                    {addError}
-                  </Alert>
-                )}
-                {addSuccess && (
-                  <Alert status="success" rounded="md" fontSize="sm">
-                    <AlertIcon />
-                    {addSuccess}
-                  </Alert>
-                )}
+                {addError && <Alert status="error" rounded="md" fontSize="sm"><AlertIcon />{addError}</Alert>}
+                {addSuccess && <Alert status="success" rounded="md" fontSize="sm"><AlertIcon />{addSuccess}</Alert>}
                 <HStack gap={3} width="full">
                   <FormControl>
                     <FormLabel fontSize="sm">First Name</FormLabel>
-                    <Input
-                      size="sm"
-                      value={addFirstName}
-                      onChange={(e) => setAddFirstName(e.target.value)}
-                      placeholder="Jane"
-                    />
+                    <Input size="sm" value={addFirstName}
+                      onChange={(e) => setAddFirstName(e.target.value)} placeholder="Jane" />
                   </FormControl>
                   <FormControl>
                     <FormLabel fontSize="sm">Last Name</FormLabel>
-                    <Input
-                      size="sm"
-                      value={addLastName}
-                      onChange={(e) => setAddLastName(e.target.value)}
-                      placeholder="Smith"
-                    />
+                    <Input size="sm" value={addLastName}
+                      onChange={(e) => setAddLastName(e.target.value)} placeholder="Smith" />
                   </FormControl>
                 </HStack>
                 <FormControl isRequired>
                   <FormLabel fontSize="sm">Work Email</FormLabel>
-                  <Input
-                    size="sm"
-                    type="email"
-                    value={addEmail}
+                  <Input size="sm" type="email" value={addEmail}
                     onChange={(e) => setAddEmail(e.target.value)}
-                    placeholder="jane@organisation.gov"
-                    autoComplete="off"
-                  />
+                    placeholder="jane@organisation.gov" autoComplete="off" />
                 </FormControl>
                 <FormControl isRequired>
                   <FormLabel fontSize="sm">Password</FormLabel>
-                  <Input
-                    size="sm"
-                    type="password"
-                    value={addPassword}
+                  <Input size="sm" type="password" value={addPassword}
                     onChange={(e) => setAddPassword(e.target.value)}
-                    placeholder="Minimum 8 characters"
-                    autoComplete="new-password"
-                  />
+                    placeholder="Minimum 8 characters" autoComplete="new-password" />
                 </FormControl>
                 <FormControl>
                   <FormLabel fontSize="sm">Role</FormLabel>
@@ -662,15 +1569,9 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
               </VStack>
             </ModalBody>
             <ModalFooter gap={2}>
-              <Button size="sm" variant="ghost" onClick={addModal.onClose}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                type="submit"
-                isLoading={isAdding}
-                style={{ backgroundColor: accentColor, color: "#fff" }}
-              >
+              <Button size="sm" variant="ghost" onClick={addModal.onClose}>Cancel</Button>
+              <Button size="sm" type="submit" isLoading={isAdding}
+                style={{ backgroundColor: accentColor, color: "#fff" }}>
                 Add Member
               </Button>
             </ModalFooter>
@@ -678,7 +1579,7 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
         </ModalContent>
       </Modal>
 
-      {/* ── Edit Member Modal ─────────────────────────────────────────── */}
+      {/* ── Edit Member Modal ─────────────────────────────────────────────────── */}
       <Modal isOpen={editModal.isOpen} onClose={editModal.onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
@@ -687,46 +1588,27 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
           <form onSubmit={handleEditMember}>
             <ModalBody>
               <VStack gap={4}>
-                {editError && (
-                  <Alert status="error" rounded="md" fontSize="sm">
-                    <AlertIcon />
-                    {editError}
-                  </Alert>
-                )}
+                {editError && <Alert status="error" rounded="md" fontSize="sm"><AlertIcon />{editError}</Alert>}
                 {editUser && (
                   <Box width="full" p={3} bg="gray.50" rounded="md">
-                    <Text fontSize="sm" color="gray.600">
-                      {editUser.email}
-                    </Text>
+                    <Text fontSize="sm" color="gray.600">{editUser.email}</Text>
                   </Box>
                 )}
                 <HStack gap={3} width="full">
                   <FormControl>
                     <FormLabel fontSize="sm">First Name</FormLabel>
-                    <Input
-                      size="sm"
-                      value={editFirstName}
-                      onChange={(e) => setEditFirstName(e.target.value)}
-                      placeholder="Jane"
-                    />
+                    <Input size="sm" value={editFirstName}
+                      onChange={(e) => setEditFirstName(e.target.value)} placeholder="Jane" />
                   </FormControl>
                   <FormControl>
                     <FormLabel fontSize="sm">Last Name</FormLabel>
-                    <Input
-                      size="sm"
-                      value={editLastName}
-                      onChange={(e) => setEditLastName(e.target.value)}
-                      placeholder="Smith"
-                    />
+                    <Input size="sm" value={editLastName}
+                      onChange={(e) => setEditLastName(e.target.value)} placeholder="Smith" />
                   </FormControl>
                 </HStack>
                 <FormControl>
                   <FormLabel fontSize="sm">Role</FormLabel>
-                  <Select
-                    size="sm"
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
-                  >
+                  <Select size="sm" value={editRole} onChange={(e) => setEditRole(e.target.value)}>
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                     <option value="readonly">Read-Only</option>
@@ -735,15 +1617,9 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
               </VStack>
             </ModalBody>
             <ModalFooter gap={2}>
-              <Button size="sm" variant="ghost" onClick={editModal.onClose}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                type="submit"
-                isLoading={isEditing}
-                style={{ backgroundColor: accentColor, color: "#fff" }}
-              >
+              <Button size="sm" variant="ghost" onClick={editModal.onClose}>Cancel</Button>
+              <Button size="sm" type="submit" isLoading={isEditing}
+                style={{ backgroundColor: accentColor, color: "#fff" }}>
                 Save Changes
               </Button>
             </ModalFooter>
@@ -754,11 +1630,12 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
   );
 }
 
+// ─── Server-Side Props ────────────────────────────────────────────────────────
+
 export const getServerSideProps: GetServerSideProps<AdminPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
   const cookieHeader = context.req.headers.cookie;
 
-  // Check portal session server-side — redirect to sign-in if not authenticated
   const session = await getPortalSessionFromCookieHeader(cookieHeader);
   if (!session) {
     return {
@@ -769,7 +1646,6 @@ export const getServerSideProps: GetServerSideProps<AdminPageProps> = async (con
     };
   }
 
-  // Check that the user is an admin
   if (session.portalUserId) {
     const conn = getPortalDbConnection();
     const userResult = await conn.execute(
@@ -777,21 +1653,10 @@ export const getServerSideProps: GetServerSideProps<AdminPageProps> = async (con
       [session.portalUserId, session.orgId]
     );
     if (userResult.rows.length === 0 || (userResult.rows[0] as any).role !== "admin") {
-      return {
-        redirect: {
-          destination: `/portal/${slug}`,
-          permanent: false,
-        },
-      };
+      return { redirect: { destination: `/portal/${slug}`, permanent: false } };
     }
   } else {
-    // Shared-password sessions don't have admin access
-    return {
-      redirect: {
-        destination: `/portal/${slug}`,
-        permanent: false,
-      },
-    };
+    return { redirect: { destination: `/portal/${slug}`, permanent: false } };
   }
 
   const host = context.req.headers.host || "localhost:3000";
