@@ -4,7 +4,7 @@ import FadeContent from "../../../reactbits/FadeContent";
 type ComparisonRow = {
   feature: string;
   govclerk: string | boolean;
-  granicus: string | boolean;
+  idms: string | boolean;
   civicplus: string | boolean;
 };
 
@@ -12,15 +12,15 @@ const rows: ComparisonRow[] = [
   {
     feature: "Starting Price",
     govclerk: "R2,500/month",
-    granicus: "$4,000+/year",
+    idms: "R5,000+/month",
     civicplus: "$8,000+/year",
   },
-  { feature: "AI-Generated Minutes", govclerk: true, granicus: false, civicplus: false },
-  { feature: "Live Streaming", govclerk: true, granicus: true, civicplus: true },
-  { feature: "Real-Time Transcription", govclerk: true, granicus: false, civicplus: false },
-  { feature: "Setup Time", govclerk: "< 1 day", granicus: "6–12 weeks", civicplus: "8–16 weeks" },
-  { feature: "Built for Africa", govclerk: true, granicus: false, civicplus: false },
-  { feature: "Pay in ZAR", govclerk: true, granicus: false, civicplus: false },
+  { feature: "AI-Generated Minutes", govclerk: true, idms: false, civicplus: false },
+  { feature: "Live Streaming", govclerk: true, idms: false, civicplus: true },
+  { feature: "Real-Time Transcription", govclerk: true, idms: false, civicplus: false },
+  { feature: "Setup Time", govclerk: "< 1 day", idms: "4–8 weeks", civicplus: "8–16 weeks" },
+  { feature: "Built for Africa", govclerk: true, idms: true, civicplus: false },
+  { feature: "Pay in ZAR", govclerk: true, idms: true, civicplus: false },
 ];
 
 function CellValue({ value }: { value: string | boolean }) {
@@ -62,7 +62,7 @@ export default function PortalComparisonSection() {
                     GovClerk Portal ✨
                   </th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
-                    Granicus
+                    IDMS
                   </th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
                     CivicPlus
@@ -77,10 +77,10 @@ export default function PortalComparisonSection() {
                       <CellValue value={row.govclerk} />
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {typeof row.granicus === "boolean" ? (
-                        <CellValue value={row.granicus} />
+                      {typeof row.idms === "boolean" ? (
+                        <CellValue value={row.idms} />
                       ) : (
-                        <span className="text-sm text-gray-500">{row.granicus}</span>
+                        <span className="text-sm text-gray-500">{row.idms}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
