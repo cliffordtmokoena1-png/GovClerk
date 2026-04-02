@@ -66,7 +66,6 @@ export function DemoPortalView({ slug, accentColor = "#2563eb" }: DemoPortalView
             🔍
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold mb-1">Demo Mode</h2>
             <p className="text-blue-100 text-sm leading-relaxed">
               You&apos;re viewing a preview of the GovClerk Portal. Subscribe to unlock the full
               portal experience and give your community live access to government proceedings.

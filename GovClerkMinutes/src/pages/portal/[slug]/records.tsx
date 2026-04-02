@@ -262,7 +262,7 @@ export default function PublicRecordsPage({ settings, slug, initialResults }: Pr
             { href: `/portal/${slug}/calendar`, icon: "📅", label: "Meeting Calendar" },
             { href: `/portal/${slug}`, icon: "📋", label: "Agendas" },
             { href: `/portal/${slug}`, icon: "📝", label: "Minutes" },
-            { href: `/portal/${slug}/live`, icon: "🎥", label: "Recordings" },
+            { href: `/portal/${slug}/broadcast`, icon: "🎥", label: "Recordings" },
             { href: `/portal/${slug}/notices`, icon: "📢", label: "Notices" },
             { href: `/portal/${slug}/request-records`, icon: "📄", label: "Request Records" },
           ].map((link) => (

@@ -70,8 +70,8 @@ export default function PortalVerifyPage({ settings, slug }: VerifyPageProps) {
         setError(data.error || "Verification failed. Please try again.");
         return;
       }
-      // Verification successful — redirect to portal
-      router.push(`/portal/${slug}`);
+      // Verification successful — redirect to demo portal (new registration = unsubscribed)
+      router.push(`/portal/${slug}/demo`);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -110,17 +110,15 @@ export default function PortalVerifyPage({ settings, slug }: VerifyPageProps) {
 
       {/* Header */}
       <Box style={{ backgroundColor: headerBg }} py={4} px={6}>
-        <HStack gap={4}>
-          {settings.logoUrl && (
-            <Box
-              as="img"
-              src={settings.logoUrl}
-              alt=""
-              style={{ height: 48, width: "auto", objectFit: "contain" }}
-            />
-          )}
+        <HStack gap={3}>
+          <Box
+            as="img"
+            src="/govclerk-logo.svg"
+            alt="GovClerk"
+            style={{ height: 36, width: "auto", objectFit: "contain" }}
+          />
           <Text fontWeight="bold" fontSize="xl" style={{ color: headerText }}>
-            {settings.pageTitle ?? "Public Records Portal"}
+            Portal
           </Text>
         </HStack>
       </Box>

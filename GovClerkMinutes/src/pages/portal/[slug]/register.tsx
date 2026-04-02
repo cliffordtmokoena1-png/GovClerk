@@ -99,17 +99,15 @@ export default function PortalRegisterPage({ settings, slug }: RegisterPageProps
 
       {/* Header */}
       <Box style={{ backgroundColor: headerBg }} py={4} px={6}>
-        <HStack gap={4}>
-          {settings.logoUrl && (
-            <Box
-              as="img"
-              src={settings.logoUrl}
-              alt=""
-              style={{ height: 48, width: "auto", objectFit: "contain" }}
-            />
-          )}
+        <HStack gap={3}>
+          <Box
+            as="img"
+            src="/govclerk-logo.svg"
+            alt="GovClerk"
+            style={{ height: 36, width: "auto", objectFit: "contain" }}
+          />
           <Text fontWeight="bold" fontSize="xl" style={{ color: headerText }}>
-            {settings.pageTitle ?? "Public Records Portal"}
+            Portal
           </Text>
         </HStack>
       </Box>
