@@ -27,6 +27,7 @@ import {
 } from "@chakra-ui/react";
 import type { PublicPortalResponse } from "@/types/portal";
 import { isFreeEmailProvider } from "@/utils/freeEmailProviders";
+import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 
 interface RegisterPageProps {
   settings: PublicPortalResponse["settings"];
@@ -235,14 +236,17 @@ export const getServerSideProps: GetServerSideProps<RegisterPageProps> = async (
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
+  let settings = makeDefaultPortalSettings(slug);
   try {
     const res = await fetch(`${baseUrl}/api/public/portal/${slug}`);
-    if (!res.ok) {
-      return { notFound: true };
+    if (res.ok) {
+      const data: PublicPortalResponse = await res.json();
+      settings = data.settings;
     }
-    const data: PublicPortalResponse = await res.json();
-    return { props: { settings: data.settings, slug } };
+    // If not ok (including 404), fall through with default settings
   } catch {
-    return { notFound: true };
+    // Network error — use default settings
   }
+
+  return { props: { settings, slug } };
 };

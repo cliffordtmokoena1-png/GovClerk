@@ -51,7 +51,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
     [slug]
   );
   if (settingsResult.rows.length === 0) {
-    return errorResponse("Portal not found", 404);
+    return errorResponse(
+      "This organisation hasn't been set up yet. Please register first or contact your administrator.",
+      400
+    );
   }
   const orgId = (settingsResult.rows[0] as any).org_id as string;
 
