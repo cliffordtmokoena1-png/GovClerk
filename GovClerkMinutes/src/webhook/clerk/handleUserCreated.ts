@@ -19,6 +19,31 @@ function isActionColumnMissing(error: unknown): boolean {
 }
 
 async function insertTrialTokens(conn: ReturnType<typeof connect>, userId: string): Promise<void> {
+  // Idempotency: check if trial tokens were already granted before inserting.
+  try {
+    const existing = await conn
+      .execute("SELECT id FROM payments WHERE user_id = ? AND credit = 30 AND action = 'add' LIMIT 1", [userId])
+      .then((res) => res.rows);
+    if (existing.length > 0) {
+      console.info(`[handleUserCreated] Trial tokens already granted for user ${userId}, skipping`);
+      return;
+    }
+  } catch (selectErr) {
+    if (isActionColumnMissing(selectErr)) {
+      // action column missing — try without it
+      const fallback = await conn
+        .execute("SELECT id FROM payments WHERE user_id = ? AND credit = 30 LIMIT 1", [userId])
+        .then((res) => res.rows);
+      if (fallback.length > 0) {
+        console.info(`[handleUserCreated] Trial tokens already granted for user ${userId}, skipping`);
+        return;
+      }
+    } else {
+      throw selectErr;
+    }
+  }
+
+  // No existing grant found — insert.
   try {
     await conn.execute('INSERT INTO payments (user_id, credit, action) VALUES (?, 30, "add");', [
       userId,

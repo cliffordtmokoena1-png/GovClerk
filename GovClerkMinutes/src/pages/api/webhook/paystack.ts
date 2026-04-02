@@ -16,7 +16,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connect } from "@planetscale/database";
 import withErrorReporting from "@/error/withErrorReporting";
-import { verifyWebhookSignature, getTokensForPlan } from "@/utils/paystack";
+import { verifyWebhookSignature, getTokensForPlan, getPlanFromPlanCode } from "@/utils/paystack";
 import type { PaidSubscriptionPlan } from "@/utils/price";
 import { sendPaymentConfirmationEmail } from "@/utils/postmark";
 
@@ -245,12 +245,10 @@ async function handleChargeSuccess(
     if (metaPlan) {
       credit = getTokensForPlan(metaPlan);
     } else if (planCode) {
-      // Heuristic fallback: use plan code naming to infer tier.
-      // This only applies when the transaction was not initiated via createCheckoutSession
-      // (e.g. when initialized by the WhatsApp AI agent without plan metadata).
-      const inferredPlan: PaidSubscriptionPlan = planCode.toLowerCase().includes("pro")
-        ? "Pro"
-        : "Basic";
+      // Use the existing getPlanFromPlanCode() utility which handles all plan tiers
+      // (Essential, Professional, Elite, Pro, Premium). Falls back to "Basic" if
+      // the plan code is unrecognized.
+      const inferredPlan: PaidSubscriptionPlan = getPlanFromPlanCode(planCode) ?? "Basic";
       const inferredCredit = getTokensForPlan(inferredPlan);
       console.warn(
         `[paystack-webhook] charge.success: No plan metadata for ref=${data.reference}. ` +

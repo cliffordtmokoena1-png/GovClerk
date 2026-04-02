@@ -29,6 +29,10 @@ async function autoGrantTrialTokens(
       if (!isActionColumnMissing(selectErr)) {
         throw selectErr;
       }
+      // 'action' column missing — fallback: check without action filter
+      existingRows = await conn
+        .execute("SELECT id FROM payments WHERE user_id = ? AND credit = 30 LIMIT 1", [userId])
+        .then((res) => res.rows);
     }
 
     if (existingRows.length > 0) {
