@@ -14,8 +14,10 @@ function getS3Client(region: string): S3Client {
 }
 
 /**
- * Generates a 1-hour presigned URL for an S3 object.
+ * Generates a 6-hour presigned URL for an S3 object.
  * Used to give AssemblyAI temporary access to the audio file.
+ * 6 hours (21600 s) is used so that large files (2+ hour recordings)
+ * are still accessible even if AssemblyAI queues before downloading.
  */
 export async function getSignedAudioUrl(s3Key: string, region: string): Promise<string> {
   const client = getS3Client(region);
@@ -23,5 +25,5 @@ export async function getSignedAudioUrl(s3Key: string, region: string): Promise<
     Bucket: DEFAULT_BUCKET,
     Key: s3Key,
   });
-  return getSignedUrl(client, command, { expiresIn: 3600 });
+  return getSignedUrl(client, command, { expiresIn: 21600 });
 }

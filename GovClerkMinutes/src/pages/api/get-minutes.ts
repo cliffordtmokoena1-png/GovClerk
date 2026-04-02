@@ -46,7 +46,7 @@ async function handler(req: NextRequest) {
   const orgId = accessResult.orgId;
 
   const [transcribeRow] = await conn
-    .execute("SELECT transcribe_finished, userId, org_id FROM transcripts WHERE id = ?;", [
+    .execute("SELECT transcribe_finished, transcribe_failed, userId, org_id FROM transcripts WHERE id = ?;", [
       transcriptId,
     ])
     .then((res) => res.rows);
@@ -54,6 +54,7 @@ async function handler(req: NextRequest) {
     return new Response(null, { status: 404 });
   }
   const transcribeFinished = transcribeRow["transcribe_finished"] === 1;
+  const transcribeFailed = (transcribeRow["transcribe_failed"] as number) > 0;
   const transcriptUserId = transcribeRow["userId"] as string;
   const transcriptOrgId = transcribeRow["org_id"] as string | null;
 
@@ -136,9 +137,10 @@ async function handler(req: NextRequest) {
   const allMinutes = rows.filter((row) => row["fast_mode"] === 0).map((row) => row["minutes"]);
 
   if (allMinutes.length === 0) {
-    const res: ApiGetMinutesResponseResult = {
+    const res: ApiGetMinutesResponseResult & { transcribeFailed?: boolean } = {
       status: "NOT_STARTED",
       steps,
+      ...(transcribeFailed ? { transcribeFailed: true } : {}),
     };
     return new Response(JSON.stringify(res), {
       status: 200,
