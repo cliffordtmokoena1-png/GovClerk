@@ -28,8 +28,7 @@ export default function SignInPage({ isFbIg }: Props) {
 
   // Support a ?redirect= query param so users coming from "Public Portal" links
   // are sent to the correct destination after signing in.
-  const redirectParam =
-    typeof router.query.redirect === "string" ? router.query.redirect : null;
+  const redirectParam = typeof router.query.redirect === "string" ? router.query.redirect : null;
   const redirectUrl =
     redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
       ? redirectParam

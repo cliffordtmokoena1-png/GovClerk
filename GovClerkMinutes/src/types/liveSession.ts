@@ -16,8 +16,21 @@ export interface StreamConfig {
   isActive: boolean;
 }
 
-export type MotionType = "motion" | "resolution" | "ordinance" | "bylaw" | "amendment" | "procedural";
-export type MotionStatus = "pending" | "open" | "passed" | "failed" | "tabled" | "withdrawn" | "amended";
+export type MotionType =
+  | "motion"
+  | "resolution"
+  | "ordinance"
+  | "bylaw"
+  | "amendment"
+  | "procedural";
+export type MotionStatus =
+  | "pending"
+  | "open"
+  | "passed"
+  | "failed"
+  | "tabled"
+  | "withdrawn"
+  | "amended";
 
 export interface Motion {
   id: number;

@@ -5,7 +5,9 @@ export default async function getPrimaryEmail(userId: string, site?: Site): Prom
   try {
     const keys = getClerkKeys(site);
     if (!keys?.secretKey) {
-      console.error(`[getPrimaryEmail] Missing Clerk secret key for site "${site ?? "GovClerkMinutes"}"`);
+      console.error(
+        `[getPrimaryEmail] Missing Clerk secret key for site "${site ?? "GovClerkMinutes"}"`
+      );
       return null;
     }
 
@@ -35,7 +37,10 @@ export default async function getPrimaryEmail(userId: string, site?: Site): Prom
     });
 
     if (!emailRes.ok) {
-      console.error(`Failed to fetch email address from Clerk (emailId=${primaryEmailId}):`, emailRes.status);
+      console.error(
+        `Failed to fetch email address from Clerk (emailId=${primaryEmailId}):`,
+        emailRes.status
+      );
       return null;
     }
 

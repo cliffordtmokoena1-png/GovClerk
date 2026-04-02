@@ -39,11 +39,11 @@ export const META_CONVERSIONS_DATASET = 1419987195621259;
  */
 async function hash(s: string | null | undefined): Promise<string | undefined> {
   if (!s) return undefined;
-  
+
   const msgUint8 = new TextEncoder().encode(s.toLowerCase().trim().replace(/\s/g, ""));
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function sendConversionEvent(
@@ -70,7 +70,7 @@ export async function sendConversionEvent(
 
   if (!isDev()) {
     // We must await the hashes now because crypto.subtle is asynchronous
-    const [hashedEmail, hashedFN, hashedLN, hashedPh, hashedSt, hashedZp, hashedCountry, hashedCt] = 
+    const [hashedEmail, hashedFN, hashedLN, hashedPh, hashedSt, hashedZp, hashedCountry, hashedCt] =
       await Promise.all([
         hash(email),
         hash(firstName),
@@ -79,7 +79,7 @@ export async function sendConversionEvent(
         hash(st),
         hash(zp),
         hash(country),
-        hash(ct)
+        hash(ct),
       ]);
 
     await fetch(

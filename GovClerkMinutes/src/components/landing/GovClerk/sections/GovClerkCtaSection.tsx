@@ -13,8 +13,8 @@ export default function GovClerkCtaSection() {
               Ready to Transform How Your Organization Runs Meetings?
             </h2>
             <p className="max-w-xl text-base leading-relaxed text-white/80 md:text-lg">
-              Join government bodies, school boards, and nonprofit organizations that trust
-              GovClerk to automate their meeting workflows.
+              Join government bodies, school boards, and nonprofit organizations that trust GovClerk
+              to automate their meeting workflows.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-4">
               <a

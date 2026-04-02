@@ -71,7 +71,9 @@ async function startPaywallAbandonmentEmailSequence(
   if (variables.signInToken == null) {
     const signInToken = await createSignInToken(lead.userId);
     if (!signInToken) {
-      throw new Error(`[handlePaywallAbandoners] Failed to create Clerk sign-in token for userId=${lead.userId}`);
+      throw new Error(
+        `[handlePaywallAbandoners] Failed to create Clerk sign-in token for userId=${lead.userId}`
+      );
     }
     variables.signInToken = signInToken;
   }

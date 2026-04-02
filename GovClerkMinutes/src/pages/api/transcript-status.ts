@@ -184,7 +184,11 @@ export async function getTranscriptStatus(
     audioSrc,
     diarizationReady: diarization_ready !== 0,
     uploadComplete: upload_complete !== 0,
-    insufficientToken: tokens_required !== null && tokens_required > 0 && currentBalance !== null && currentBalance < tokens_required,
+    insufficientToken:
+      tokens_required !== null &&
+      tokens_required > 0 &&
+      currentBalance !== null &&
+      currentBalance < tokens_required,
     ...(tokens_required == null ? {} : { tokensRequired: tokens_required }),
     ...(currentBalance == null ? {} : { currentBalance }),
     transcribeFailed: transcribe_failed !== 0,

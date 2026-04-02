@@ -19,10 +19,7 @@ const PLANETSCALE_CONFIG = {
 
 // Fetch custom user/org templates from the database.
 // Built-in templates are served from the TypeScript library directly.
-async function fetchCustomTemplates(
-  userId: string,
-  orgId: string | null
-): Promise<Template[]> {
+async function fetchCustomTemplates(userId: string, orgId: string | null): Promise<Template[]> {
   const conn = connect(PLANETSCALE_CONFIG);
 
   let query: string;

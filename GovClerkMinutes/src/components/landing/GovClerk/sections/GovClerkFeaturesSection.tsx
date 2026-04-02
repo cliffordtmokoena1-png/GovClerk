@@ -67,8 +67,8 @@ export default function GovClerkFeaturesSection() {
               Everything You Need to Run Better Meetings
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-blue-100 md:text-lg">
-              From agenda creation to public records, GovClerk streamlines every step of the
-              meeting lifecycle.
+              From agenda creation to public records, GovClerk streamlines every step of the meeting
+              lifecycle.
             </p>
           </div>
         </FadeContent>

@@ -118,10 +118,10 @@ async function handlePost(req: NextRequest, userId: string, orgId: string | null
     }
   }
 
-  return new Response(
-    JSON.stringify({ id: insertId, seriesId, status: "pending" }),
-    { status: 201, headers: { "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ id: insertId, seriesId, status: "pending" }), {
+    status: 201,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 async function handleGet(req: NextRequest, userId: string, orgId: string | null) {

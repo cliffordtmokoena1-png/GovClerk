@@ -178,9 +178,7 @@ export function TranscriptPanel({
                 onSpeakerClick={onSpeakerClick}
                 isEditing={editable}
                 editedText={editedTexts[actualIndex]}
-                onTextChange={
-                  onTextChange ? (text) => onTextChange(actualIndex, text) : undefined
-                }
+                onTextChange={onTextChange ? (text) => onTextChange(actualIndex, text) : undefined}
               />
             </div>
           );

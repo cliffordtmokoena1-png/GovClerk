@@ -48,9 +48,7 @@ export function detectPlanChoice(message: string): PlanType | null {
   if (/\bannual\b|\byearly\b|\bper year\b/.test(lower)) {
     return "annual";
   }
-  if (
-    /\bmonth-to-month\b|\bmonth to month\b|\bmonthly\b|\bper month\b|\bmonth\b/.test(lower)
-  ) {
+  if (/\bmonth-to-month\b|\bmonth to month\b|\bmonthly\b|\bper month\b|\bmonth\b/.test(lower)) {
     return "month-to-month";
   }
   return null;
@@ -119,7 +117,9 @@ async function callChatModel(messages: AgentMessage[]): Promise<string> {
  * Simple intent classifier that runs a lightweight LLM call to categorise the
  * user's message.  Falls back to "general" on failure.
  */
-async function classifyIntent(userMessage: string): Promise<{ intent: AgentIntent; confidence: number }> {
+async function classifyIntent(
+  userMessage: string
+): Promise<{ intent: AgentIntent; confidence: number }> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return { intent: "general", confidence: 0 };
@@ -233,7 +233,10 @@ async function processGrayMessage(
   // If we have both a plan and an email, proceed with PayStack + email
   if (plan && emailFromHistory) {
     try {
-      const { authorizationUrl, reference } = await initializePaystackPayment(emailFromHistory, plan);
+      const { authorizationUrl, reference } = await initializePaystackPayment(
+        emailFromHistory,
+        plan
+      );
       const planLabel = plan === "annual" ? "Annual Plan" : "Month-to-Month Plan";
       const safeUrl = escapeHtml(authorizationUrl);
       const safeRef = escapeHtml(reference);

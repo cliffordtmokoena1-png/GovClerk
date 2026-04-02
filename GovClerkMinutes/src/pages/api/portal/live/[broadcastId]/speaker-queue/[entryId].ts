@@ -45,18 +45,17 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       status === "speaking"
         ? ", started_speaking_at = CURRENT_TIMESTAMP"
         : status === "done" || status === "removed"
-        ? ", finished_speaking_at = CURRENT_TIMESTAMP"
-        : "";
+          ? ", finished_speaking_at = CURRENT_TIMESTAMP"
+          : "";
 
     await conn.execute(
       `UPDATE gc_portal_speaker_queue SET status = ?${timestampClause} WHERE id = ? AND broadcast_id = ? AND org_id = ?`,
       [status, entryId, broadcastId, orgId]
     );
 
-    const updatedResult = await conn.execute(
-      "SELECT * FROM gc_portal_speaker_queue WHERE id = ?",
-      [entryId]
-    );
+    const updatedResult = await conn.execute("SELECT * FROM gc_portal_speaker_queue WHERE id = ?", [
+      entryId,
+    ]);
     return jsonResponse({ entry: updatedResult.rows[0] });
   }
 

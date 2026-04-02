@@ -52,7 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [orgId, pageSizeNum, offset]
     );
 
-    return res.status(200).json({ notices: result.rows, total, page: pageNum, pageSize: pageSizeNum });
+    return res
+      .status(200)
+      .json({ notices: result.rows, total, page: pageNum, pageSize: pageSizeNum });
   }
 
   if (req.method === "POST") {
@@ -78,7 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const meetingDate = new Date((meetingRes.rows[0] as any).meeting_date);
     const postedAtDate = new Date(postedAt);
-    const hoursNoticeGiven = Math.floor((meetingDate.getTime() - postedAtDate.getTime()) / (1000 * 60 * 60));
+    const hoursNoticeGiven = Math.floor(
+      (meetingDate.getTime() - postedAtDate.getTime()) / (1000 * 60 * 60)
+    );
     const minHours = NOTICE_HOURS[noticeType] ?? 24;
     const isCompliant = hoursNoticeGiven >= minHours ? 1 : 0;
 
@@ -86,10 +90,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `INSERT INTO gc_meeting_notices
        (org_id, meeting_id, notice_type, posted_at, notice_text, posting_location, hours_notice_given, is_compliant)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [orgId, meetingId, noticeType, postedAt, noticeText || null, postingLocation || null, hoursNoticeGiven, isCompliant]
+      [
+        orgId,
+        meetingId,
+        noticeType,
+        postedAt,
+        noticeText || null,
+        postingLocation || null,
+        hoursNoticeGiven,
+        isCompliant,
+      ]
     );
 
-    return res.status(201).json({ success: true, id: (insertRes as any).insertId, hoursNoticeGiven, isCompliant: Boolean(isCompliant) });
+    return res
+      .status(201)
+      .json({
+        success: true,
+        id: (insertRes as any).insertId,
+        hoursNoticeGiven,
+        isCompliant: Boolean(isCompliant),
+      });
   }
 
   return res.status(405).json({ error: "Method not allowed" });

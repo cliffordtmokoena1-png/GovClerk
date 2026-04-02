@@ -326,8 +326,7 @@ const TranscriptController = ({
             const segments = transcriptData?.transcript?.segments ?? [];
             const labelsToSpeaker = transcriptData?.labelsToSpeaker ?? {};
             const lines = segments.map(
-              (seg) =>
-                `${labelsToSpeaker[seg.speaker]?.name ?? "Speaker"}: ${seg.transcript}`
+              (seg) => `${labelsToSpeaker[seg.speaker]?.name ?? "Speaker"}: ${seg.transcript}`
             );
             const blob = new Blob([lines.join("\n\n")], { type: "text/plain;charset=utf-8" });
             const title = transcriptionStatus?.title ?? "transcript";
@@ -365,7 +364,14 @@ const TranscriptController = ({
         selectedTabIndex={getMinutesData?.selectedTabIndex}
         getMinutesData={getMinutesData}
       />
-      <Flex px={4} py={2} borderBottom="1px solid" borderColor="gray.200" bg="white" justify="center">
+      <Flex
+        px={4}
+        py={2}
+        borderBottom="1px solid"
+        borderColor="gray.200"
+        bg="white"
+        justify="center"
+      >
         <ButtonGroup size="sm" isAttached variant="outline">
           <Button
             onClick={() => setViewMode("transcript")}
@@ -452,7 +458,14 @@ const TranscriptController = ({
           </VStack>
         )}
         {(viewMode === "both" || viewMode === "minutes") && (
-          <Flex w={{ base: "full", lg: viewMode === "both" ? "50%" : "full" }} h="full" border="1px solid" borderColor="gray.200" borderTopRadius="lg" bg="white">
+          <Flex
+            w={{ base: "full", lg: viewMode === "both" ? "50%" : "full" }}
+            h="full"
+            border="1px solid"
+            borderColor="gray.200"
+            borderTopRadius="lg"
+            bg="white"
+          >
             <Minutes
               transcriptId={transcriptId}
               minutesData={getMinutesData}

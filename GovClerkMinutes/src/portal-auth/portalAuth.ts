@@ -114,9 +114,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 }
 
 /** Extract the portal session from a request's cookies. Returns null if not present or expired. */
-export async function getPortalSession(
-  req: Request
-): Promise<PortalSessionPayload | null> {
+export async function getPortalSession(req: Request): Promise<PortalSessionPayload | null> {
   const cookieHeader = req.headers.get("cookie") ?? "";
   const cookies = Object.fromEntries(
     cookieHeader.split(";").map((part) => {

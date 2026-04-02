@@ -27,7 +27,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
   }
 
   const now = new Date();
-  const month = Math.min(12, Math.max(1, parseInt(url.searchParams.get("month") || String(now.getMonth() + 1), 10)));
+  const month = Math.min(
+    12,
+    Math.max(1, parseInt(url.searchParams.get("month") || String(now.getMonth() + 1), 10))
+  );
   const year = parseInt(url.searchParams.get("year") || String(now.getFullYear()), 10);
 
   if (isNaN(month) || isNaN(year)) {

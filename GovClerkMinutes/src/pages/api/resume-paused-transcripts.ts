@@ -65,10 +65,15 @@ async function handler(req: NextRequest) {
 
     // Reset paused state so the transcript can be processed.
     try {
-      await conn.execute("UPDATE transcripts SET transcribe_paused = 0 WHERE id = ?", [transcript.id]);
+      await conn.execute("UPDATE transcripts SET transcribe_paused = 0 WHERE id = ?", [
+        transcript.id,
+      ]);
       updateSuccess = true;
     } catch (err) {
-      console.error(`[resume-paused-transcripts] Failed to reset paused for ${transcript.id}:`, err);
+      console.error(
+        `[resume-paused-transcripts] Failed to reset paused for ${transcript.id}:`,
+        err
+      );
     }
 
     if (!updateSuccess) {

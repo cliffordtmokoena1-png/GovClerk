@@ -74,9 +74,9 @@ export async function capture(event: PostHogEvent, properties: any, distinctId: 
   // We use 'fetch' here because it works on Vercel Edge (Middleware)
   try {
     await fetch(`${host}/capture/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         api_key: apiKey,
@@ -84,7 +84,7 @@ export async function capture(event: PostHogEvent, properties: any, distinctId: 
         properties: {
           ...properties,
           distinct_id: distinctId,
-          $lib: 'web-fetch-edge',
+          $lib: "web-fetch-edge",
         },
         timestamp: new Date().toISOString(),
       }),

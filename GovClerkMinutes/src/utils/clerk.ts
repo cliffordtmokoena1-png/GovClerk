@@ -43,13 +43,15 @@ function validateClerkKeys(keys: ClerkKeys, site: Site): void {
   const missing = !keys.publishableKey || (isServer && !keys.secretKey);
   if (!missing) return;
 
-  console.error(`[clerk] Missing Clerk keys for site "${site}". Check your Vercel Environment Variables.`);
+  console.error(
+    `[clerk] Missing Clerk keys for site "${site}". Check your Vercel Environment Variables.`
+  );
 }
 
 // --- The "Key Switcher" Logic ---
 export function getClerkKeys(site?: Site): ClerkKeys {
   const s = site ?? "GovClerkMinutes";
-  
+
   if (s === "GovClerk") {
     const keys = isDevOrPreview() ? GC_DEV_KEYS : GC_PROD_KEYS;
     validateClerkKeys(keys, s);

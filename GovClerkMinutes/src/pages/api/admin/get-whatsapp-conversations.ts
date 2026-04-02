@@ -36,7 +36,9 @@ async function handler(req: NextRequest) {
     const startDateFilter = filters.find((f) => f.type === "startDate")?.value as Date | undefined;
     const endDateFilter = filters.find((f) => f.type === "endDate")?.value as Date | undefined;
     const needsFollowupFilter = filters.find((f) => f.type === "needsFollowup")?.value === true;
-    const minutesDueFilter = filters.find((f) => f.type === "minutesDue")?.value as Date | undefined;
+    const minutesDueFilter = filters.find((f) => f.type === "minutesDue")?.value as
+      | Date
+      | undefined;
     const recurringDueOnFilter = filters.find((f) => f.type === "recurringDueOn")?.value as
       | Date
       | undefined;
@@ -129,11 +131,16 @@ async function handler(req: NextRequest) {
     const message = error instanceof Error ? error.message : "Internal server error";
     // If the table doesn't exist yet (errno 1146), return an empty result set instead of 500
     if (isMissingTableError(error)) {
-      console.warn("[admin/get-whatsapp-conversations] WhatsApp table(s) not yet created — returning empty result");
-      return new Response(JSON.stringify({ conversations: [], nextCursor: null, limit: 30, total: 0 }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      console.warn(
+        "[admin/get-whatsapp-conversations] WhatsApp table(s) not yet created — returning empty result"
+      );
+      return new Response(
+        JSON.stringify({ conversations: [], nextCursor: null, limit: 30, total: 0 }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
     return new Response(JSON.stringify({ error: message }), {
       status: 500,

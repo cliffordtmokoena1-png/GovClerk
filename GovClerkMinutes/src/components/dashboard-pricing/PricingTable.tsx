@@ -16,11 +16,17 @@ interface Props {
 
 export default function PricingTable({ country, transcriptId, customerDetails }: Props) {
   const { user } = useUser();
-  const { billingPeriod, setBillingPeriod, essentialInfo, professionalInfo, eliteInfo, premiumInfo } =
-    usePricingToggle({
-      country,
-      initialBillingPeriod: BillingPeriod.Yearly,
-    });
+  const {
+    billingPeriod,
+    setBillingPeriod,
+    essentialInfo,
+    professionalInfo,
+    eliteInfo,
+    premiumInfo,
+  } = usePricingToggle({
+    country,
+    initialBillingPeriod: BillingPeriod.Yearly,
+  });
 
   const isAnnual = billingPeriod === BillingPeriod.Yearly;
   const toggleBilling = () =>
@@ -38,7 +44,12 @@ export default function PricingTable({ country, transcriptId, customerDetails }:
         className="mb-8"
       />
 
-      <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(4, 1fr)" }} gap={6} maxW="7xl" mx="auto">
+      <Grid
+        templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(4, 1fr)" }}
+        gap={6}
+        maxW="7xl"
+        mx="auto"
+      >
         <PricingCard
           title="Essential"
           subtitle="Perfect for getting started"

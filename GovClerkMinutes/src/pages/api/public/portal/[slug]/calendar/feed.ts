@@ -13,11 +13,7 @@ export const config = {
 };
 
 function escapeIcal(str: string): string {
-  return str
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
+  return str.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
 function formatIcalDate(dateStr: string): string {

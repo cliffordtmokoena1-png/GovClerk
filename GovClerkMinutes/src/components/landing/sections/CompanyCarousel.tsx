@@ -13,7 +13,9 @@ const GradientOverlay = ({ direction }: { direction: "left" | "right" }) => (
     zIndex={2}
     pointerEvents="none"
     bgGradient={
-      direction === "left" ? "linear(to-r, #152a4e, transparent)" : "linear(to-l, #152a4e, transparent)"
+      direction === "left"
+        ? "linear(to-r, #152a4e, transparent)"
+        : "linear(to-l, #152a4e, transparent)"
     }
   />
 );

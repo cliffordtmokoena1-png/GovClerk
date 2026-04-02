@@ -59,7 +59,8 @@ export default function PaymentInfo({
           Payment Method
         </Heading>
         <Text fontSize="sm" color="gray.600" mb={2}>
-          Manage your payment method and billing settings by contacting our support team via WhatsApp.
+          Manage your payment method and billing settings by contacting our support team via
+          WhatsApp.
         </Text>
         <ManagePaymentButton variant="outline" />
       </Box>

@@ -47,7 +47,11 @@ function NoticeTypeBadge({ type }: { type: string }) {
   const label = NOTICE_TYPE_LABELS[type] || type;
   const cls = NOTICE_TYPE_CLASSES[type] || "bg-gray-100 text-gray-700";
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>\n      {label}\n    </span>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}
+    >
+      \n {label}\n{" "}
+    </span>
   );
 }
 
@@ -134,7 +138,10 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
     <>
       <Head>
         <title>Public Notices — {settings.pageTitle || "Public Portal"}</title>
-        <meta name="description" content="View public meeting notices and Open Meetings Act compliance status." />
+        <meta
+          name="description"
+          content="View public meeting notices and Open Meetings Act compliance status."
+        />
       </Head>
 
       <a
@@ -150,19 +157,26 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
         <nav aria-label="Breadcrumb" className="mb-4 text-sm text-gray-500">
           <ol className="flex items-center gap-2">
             <li>
-              <Link href={`/portal/${slug}`} className="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
+              <Link
+                href={`/portal/${slug}`}
+                className="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
                 Portal Home
               </Link>
             </li>
             <li aria-hidden="true">/</li>
-            <li aria-current="page" className="text-gray-800 font-medium">Public Notices</li>
+            <li aria-current="page" className="text-gray-800 font-medium">
+              Public Notices
+            </li>
           </ol>
         </nav>
 
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Public Notices</h1>
-            <p className="text-gray-600 mt-1">Meeting notices and Open Meetings Act compliance records.</p>
+            <p className="text-gray-600 mt-1">
+              Meeting notices and Open Meetings Act compliance records.
+            </p>
           </div>
 
           <div className="flex gap-2" role="group" aria-label="Filter notices">
@@ -171,7 +185,9 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
               onClick={() => handleUpcomingToggle(false)}
               aria-pressed={!upcomingOnly}
               className={`px-4 py-2 text-sm font-medium rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                !upcomingOnly ? "bg-blue-600 text-white border-blue-600" : "bg-white border-gray-300 hover:bg-gray-50"
+                !upcomingOnly
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white border-gray-300 hover:bg-gray-50"
               }`}
             >
               All Notices
@@ -181,7 +197,9 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
               onClick={() => handleUpcomingToggle(true)}
               aria-pressed={upcomingOnly}
               className={`px-4 py-2 text-sm font-medium rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                upcomingOnly ? "bg-blue-600 text-white border-blue-600" : "bg-white border-gray-300 hover:bg-gray-50"
+                upcomingOnly
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white border-gray-300 hover:bg-gray-50"
               }`}
             >
               Upcoming Only
@@ -191,7 +209,10 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
 
         {isLoading ? (
           <div className="flex justify-center py-16" role="status" aria-label="Loading notices">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" aria-hidden="true" />
+            <div
+              className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+              aria-hidden="true"
+            />
           </div>
         ) : notices.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
@@ -221,7 +242,10 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
                 });
 
                 return (
-                  <li key={notice.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <li
+                    key={notice.id}
+                    className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+                  >
                     <div className="p-4">
                       <div className="flex flex-wrap items-start gap-3 mb-2">
                         <NoticeTypeBadge type={notice.noticeType} />
@@ -244,7 +268,9 @@ export default function NoticesPage({ settings, slug, initialNotices }: Props) {
                         {notice.hoursNoticeGiven !== null && (
                           <div>
                             <dt className="text-gray-400 text-xs">Hours of Advance Notice</dt>
-                            <dd className="font-medium text-gray-700">{notice.hoursNoticeGiven} hours</dd>
+                            <dd className="font-medium text-gray-700">
+                              {notice.hoursNoticeGiven} hours
+                            </dd>
                           </div>
                         )}
                         {notice.postingLocation && (
@@ -330,7 +356,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     const settingsData: PublicPortalResponse = await settingsRes.json();
 
     // Require authentication to view notices
-    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+    const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
+      () => null
+    );
     if (!session) {
       return {
         redirect: {

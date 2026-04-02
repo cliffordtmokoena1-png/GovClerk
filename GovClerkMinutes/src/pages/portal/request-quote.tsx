@@ -1,78 +1,63 @@
 /**
- * GovClerk Public Portal — Quote Request Page
+ * GovClerk Public Portal — Request a Quote
  *
- * Collects organisation details and feature requirements, then POSTs to
- * /api/portal/quote-request for storage and notification.
+ * Shows the full pricing section at the top, then a quote request form below.
+ * Clicking "Select [Plan]" scrolls down and pre-fills the selected plan in the form.
  */
 
-import { useState } from "react";
-import Head from "next/head";
-import Link from "next/link";
+import { useRef, useState } from "react";
+import GovClerkHead from "@/components/landing/GovClerk/GovClerkHead";
+import GovClerkNavBar from "@/components/landing/GovClerk/sections/GovClerkNavBar";
+import GovClerkFooter from "@/components/landing/GovClerk/sections/GovClerkFooter";
+import GovClerkAnnouncementBar from "@/components/landing/GovClerk/sections/GovClerkAnnouncementBar";
+import PortalPricingSection, {
+  type PlanTier,
+} from "@/components/landing/GovClerk/sections/PortalPricingSection";
 
-type OrgType =
-  | "municipality"
-  | "school_board"
-  | "hoa"
-  | "county"
-  | "state_agency"
-  | "other";
-
-const ORG_TYPE_OPTIONS: { value: OrgType; label: string }[] = [
-  { value: "municipality", label: "Municipality" },
-  { value: "school_board", label: "School Board" },
-  { value: "hoa", label: "Home Owners Association (HOA)" },
-  { value: "county", label: "County / District" },
-  { value: "state_agency", label: "State / Provincial Agency" },
-  { value: "other", label: "Other" },
-];
+const PLAN_OPTIONS: PlanTier[] = ["Starter", "Professional", "Enterprise"];
 
 interface FormState {
-  org_name: string;
-  org_type: OrgType;
-  contact_name: string;
-  contact_email: string;
-  contact_phone: string;
-  estimated_seats: string;
-  estimated_monthly_meetings: string;
-  estimated_avg_meeting_duration_hours: string;
-  needs_live_streaming: boolean;
-  needs_public_records: boolean;
-  needs_document_archival: boolean;
-  needs_govclerk_minutes: boolean;
-  additional_notes: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  organizationName: string;
+  websiteUrl: string;
+  selectedPlan: PlanTier | "";
+  estimatedSeats: string;
+  estimatedStreamingHours: string;
+  comments: string;
 }
 
 const INITIAL_FORM: FormState = {
-  org_name: "",
-  org_type: "municipality",
-  contact_name: "",
-  contact_email: "",
-  contact_phone: "",
-  estimated_seats: "",
-  estimated_monthly_meetings: "",
-  estimated_avg_meeting_duration_hours: "",
-  needs_live_streaming: false,
-  needs_public_records: false,
-  needs_document_archival: false,
-  needs_govclerk_minutes: false,
-  additional_notes: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  organizationName: "",
+  websiteUrl: "",
+  selectedPlan: "",
+  estimatedSeats: "",
+  estimatedStreamingHours: "",
+  comments: "",
 };
 
 export default function RequestQuotePage() {
+  const formRef = useRef<HTMLElement>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  function handleSelectPlan(tier: PlanTier) {
+    setForm((prev) => ({ ...prev, selectedPlan: tier }));
+  }
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) {
-    const target = e.target;
-    const value =
-      target instanceof HTMLInputElement && target.type === "checkbox"
-        ? target.checked
-        : target.value;
-    setForm((prev) => ({ ...prev, [target.name]: value }));
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,23 +67,19 @@ export default function RequestQuotePage() {
 
     try {
       const body = {
-        org_name: form.org_name.trim(),
-        org_type: form.org_type,
-        contact_name: form.contact_name.trim(),
-        contact_email: form.contact_email.trim().toLowerCase(),
-        contact_phone: form.contact_phone.trim() || undefined,
-        estimated_seats: form.estimated_seats ? parseInt(form.estimated_seats, 10) : undefined,
-        estimated_monthly_meetings: form.estimated_monthly_meetings
-          ? parseInt(form.estimated_monthly_meetings, 10)
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        organizationName: form.organizationName.trim(),
+        websiteUrl: form.websiteUrl.trim() || undefined,
+        selectedPlan: form.selectedPlan || undefined,
+        estimatedSeats: form.estimatedSeats ? parseInt(form.estimatedSeats, 10) : undefined,
+        estimatedStreamingHours: form.estimatedStreamingHours
+          ? parseFloat(form.estimatedStreamingHours)
           : undefined,
-        estimated_avg_meeting_duration_hours: form.estimated_avg_meeting_duration_hours
-          ? parseFloat(form.estimated_avg_meeting_duration_hours)
-          : undefined,
-        needs_live_streaming: form.needs_live_streaming,
-        needs_public_records: form.needs_public_records,
-        needs_document_archival: form.needs_document_archival,
-        needs_govclerk_minutes: form.needs_govclerk_minutes,
-        additional_notes: form.additional_notes.trim() || undefined,
+        comments: form.comments.trim() || undefined,
+        formType: "portal-quote",
       };
 
       const res = await fetch("/api/portal/quote-request", {
@@ -109,7 +90,7 @@ export default function RequestQuotePage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as any).error || "Failed to submit quote request");
+        throw new Error((data as { error?: string }).error || "Failed to submit quote request");
       }
 
       setSuccess(true);
@@ -121,268 +102,251 @@ export default function RequestQuotePage() {
   }
 
   return (
-    <>
-      <Head>
-        <title>Request a Quote — GovClerk Public Portal</title>
-        <meta
-          name="description"
-          content="Tell us about your organisation and we'll send you a custom GovClerk Portal quote within 24 hours."
-        />
-      </Head>
+    <div className="relative min-h-screen pt-10">
+      <GovClerkHead
+        title="Request a Quote — GovClerk Portal"
+        description="Choose a plan and request a custom quote for GovClerk Portal. We'll get back to you within 24 hours."
+      />
+      <GovClerkAnnouncementBar />
+      <GovClerkNavBar />
 
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/govclerk-logo.svg" alt="GovClerk" className="h-8 w-auto" />
-            </Link>
-            <nav className="flex items-center gap-6 text-sm">
-              <Link href="/portal/pricing" className="text-gray-600 hover:text-gray-900">
-                Pricing
-              </Link>
-              <Link href="/portal" className="text-gray-600 hover:text-gray-900">
-                Portal Home
-              </Link>
-            </nav>
-          </div>
-        </header>
+      {/* Pricing section at the top — clicking a plan scrolls to form */}
+      <PortalPricingSection onSelectPlan={handleSelectPlan} formRef={formRef} />
 
-        <main className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Request a Quote</h1>
-            <p className="text-gray-500">
-              Tell us about your organisation and we&apos;ll get back to you within 24 hours with a
+      {/* Quote Request Form */}
+      <section ref={formRef} className="bg-gray-50 py-16 md:py-24" id="quote-form">
+        <div className="mx-auto max-w-2xl px-6">
+          <div className="mb-10 text-center">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-cd-blue">
+              Get Your Custom Quote
+            </p>
+            <h2 className="font-serif text-3xl font-normal text-gray-800 md:text-4xl leading-[1.1]">
+              Tell Us About Your Organization
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-gray-600">
+              Fill out the form below and our team will get back to you within 24 hours with a
               tailored quote.
             </p>
           </div>
 
           {success ? (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-10 text-center">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="text-3xl" aria-hidden="true">✅</span>
-                <span className="sr-only">Success</span>
+            <div className="rounded-2xl border border-green-200 bg-green-50 p-10 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                <span className="text-3xl" aria-hidden="true">
+                  ✅
+                </span>
               </div>
-              <h2 className="text-xl font-bold text-green-800 mb-2">Request received!</h2>
-              <p className="text-green-700 mb-6">
-                Thank you! We&apos;ll review your requirements and get back to you within 24 hours
-                with a custom quote.
+              <h3 className="mb-2 text-xl font-bold text-green-800">Request received!</h3>
+              <p className="text-green-700">
+                Thank you! Our team will review your requirements and send you a custom quote within
+                24 hours.
               </p>
-              <Link
-                href="/portal/pricing"
-                className="text-sm text-green-700 underline underline-offset-2 hover:text-green-900"
-              >
-                ← Back to pricing
-              </Link>
             </div>
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm space-y-6"
+              className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm"
             >
-              {/* Organisation details */}
-              <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-4">
-                  Organisation details
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="org_name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Organisation name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="org_name"
-                      name="org_name"
-                      type="text"
-                      required
-                      value={form.org_name}
-                      onChange={handleChange}
-                      placeholder="e.g. City of Cape Town"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="org_type" className="block text-sm font-medium text-gray-700 mb-1">
-                      Organisation type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="org_type"
-                      name="org_type"
-                      required
-                      value={form.org_type}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                    >
-                      {ORG_TYPE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              {/* Name */}
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="firstName"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    value={form.firstName}
+                    onChange={handleChange}
+                    placeholder="Jane"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
                 </div>
-              </section>
-
-              {/* Contact details */}
-              <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-4">Contact details</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="contact_name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact person name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="contact_name"
-                      name="contact_name"
-                      type="text"
-                      required
-                      value={form.contact_name}
-                      onChange={handleChange}
-                      placeholder="Full name"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="contact_email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="contact_email"
-                      name="contact_email"
-                      type="email"
-                      required
-                      value={form.contact_email}
-                      onChange={handleChange}
-                      placeholder="you@organisation.gov.za"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact phone
-                    </label>
-                    <input
-                      id="contact_phone"
-                      name="contact_phone"
-                      type="tel"
-                      value={form.contact_phone}
-                      onChange={handleChange}
-                      placeholder="+27 21 000 0000"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="lastName"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    value={form.lastName}
+                    onChange={handleChange}
+                    placeholder="Smith"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
                 </div>
-              </section>
+              </div>
 
-              {/* Usage estimate */}
-              <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-4">Usage estimate</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="estimated_seats" className="block text-sm font-medium text-gray-700 mb-1">
-                      Admin users / seats
-                    </label>
-                    <input
-                      id="estimated_seats"
-                      name="estimated_seats"
-                      type="number"
-                      min="1"
-                      value={form.estimated_seats}
-                      onChange={handleChange}
-                      placeholder="e.g. 10"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="estimated_monthly_meetings" className="block text-sm font-medium text-gray-700 mb-1">
-                      Meetings per month
-                    </label>
-                    <input
-                      id="estimated_monthly_meetings"
-                      name="estimated_monthly_meetings"
-                      type="number"
-                      min="1"
-                      value={form.estimated_monthly_meetings}
-                      onChange={handleChange}
-                      placeholder="e.g. 4"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="estimated_avg_meeting_duration_hours" className="block text-sm font-medium text-gray-700 mb-1">
-                      Avg meeting length (hrs)
-                    </label>
-                    <input
-                      id="estimated_avg_meeting_duration_hours"
-                      name="estimated_avg_meeting_duration_hours"
-                      type="number"
-                      min="0.5"
-                      step="0.5"
-                      value={form.estimated_avg_meeting_duration_hours}
-                      onChange={handleChange}
-                      placeholder="e.g. 2"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
+              {/* Contact */}
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Work Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="jane@capetown.gov.za"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
                 </div>
-              </section>
+                <div>
+                  <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-gray-700">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="+27 21 000 0000"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
+                </div>
+              </div>
 
-              {/* Features needed */}
-              <section>
-                <h2 className="text-base font-semibold text-gray-900 mb-4">Features needed</h2>
-                <div className="space-y-3">
-                  {[
-                    { name: "needs_live_streaming" as const, label: "Live Streaming" },
-                    { name: "needs_public_records" as const, label: "Public Records Portal" },
-                    { name: "needs_document_archival" as const, label: "Document Archival" },
-                    {
-                      name: "needs_govclerk_minutes" as const,
-                      label: "GovClerkMinutes (AI Meeting Minutes)",
-                    },
-                  ].map((feature) => (
-                    <label
-                      key={feature.name}
-                      className="flex items-center gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="checkbox"
-                        name={feature.name}
-                        checked={form[feature.name]}
-                        onChange={handleChange}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                        {feature.label}
-                      </span>
-                    </label>
+              {/* Organization */}
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="organizationName"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Organization Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="organizationName"
+                    name="organizationName"
+                    type="text"
+                    required
+                    value={form.organizationName}
+                    onChange={handleChange}
+                    placeholder="City of Cape Town"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="websiteUrl"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Organization Website <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    id="websiteUrl"
+                    name="websiteUrl"
+                    type="url"
+                    value={form.websiteUrl}
+                    onChange={handleChange}
+                    placeholder="https://capetown.gov.za"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
+                </div>
+              </div>
+
+              {/* Plan selection */}
+              <div className="mb-6">
+                <label
+                  htmlFor="selectedPlan"
+                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                >
+                  Selected Plan
+                </label>
+                <select
+                  id="selectedPlan"
+                  name="selectedPlan"
+                  value={form.selectedPlan}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                >
+                  <option value="">I&apos;m not sure yet</option>
+                  {PLAN_OPTIONS.map((plan) => (
+                    <option key={plan} value={plan}>
+                      {plan}
+                    </option>
                   ))}
-                </div>
-              </section>
+                </select>
+              </div>
 
-              {/* Additional notes */}
-              <section>
-                <label htmlFor="additional_notes" className="block text-sm font-medium text-gray-700 mb-1">
-                  Additional notes / requirements
+              {/* Usage estimates */}
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="estimatedSeats"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Number of Admin Seats <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    id="estimatedSeats"
+                    name="estimatedSeats"
+                    type="number"
+                    min="1"
+                    value={form.estimatedSeats}
+                    onChange={handleChange}
+                    placeholder="e.g. 10"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="estimatedStreamingHours"
+                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                  >
+                    Est. Monthly Streaming Hours <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    id="estimatedStreamingHours"
+                    name="estimatedStreamingHours"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={form.estimatedStreamingHours}
+                    onChange={handleChange}
+                    placeholder="e.g. 8"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                  />
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div className="mb-8">
+                <label
+                  htmlFor="comments"
+                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                >
+                  Comments / Additional Requirements{" "}
+                  <span className="text-gray-400">(optional)</span>
                 </label>
                 <textarea
-                  id="additional_notes"
-                  name="additional_notes"
+                  id="comments"
+                  name="comments"
                   rows={4}
-                  value={form.additional_notes}
+                  value={form.comments}
                   onChange={handleChange}
                   placeholder="Any specific requirements, integrations, or questions…"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+                  className="w-full resize-y rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
                 />
-              </section>
+              </div>
 
               {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {error}
                 </div>
               )}
@@ -390,39 +354,27 @@ export default function RequestQuotePage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full rounded-lg bg-cd-blue px-6 py-3.5 text-base font-semibold text-white transition-all hover:bg-cd-blue-dark hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-cd-blue focus:ring-offset-2"
               >
-                {isSubmitting ? "Submitting…" : "Submit Quote Request"}
+                {isSubmitting ? "Submitting…" : "Request Your Quote"}
               </button>
 
-              <p className="text-xs text-gray-400 text-center">
-                We typically respond within 24 hours.{" "}
-                <Link href="/portal/pricing" className="underline underline-offset-2 hover:text-gray-700">
-                  View pricing →
-                </Link>
+              <p className="mt-4 text-center text-xs text-gray-400">
+                We typically respond within 24 hours. View our{" "}
+                <a
+                  href="/privacy-policy.html"
+                  className="underline underline-offset-2 hover:text-gray-700"
+                >
+                  Privacy Policy
+                </a>
+                .
               </p>
             </form>
           )}
-        </main>
+        </div>
+      </section>
 
-        {/* Footer */}
-        <footer className="border-t border-gray-200 bg-white mt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-            <p>© {new Date().getFullYear()} GovClerk. All rights reserved.</p>
-            <div className="flex items-center gap-6">
-              <Link href="/portal/pricing" className="hover:text-gray-900">
-                Pricing
-              </Link>
-              <Link href="/portal" className="hover:text-gray-900">
-                Portal Home
-              </Link>
-              <Link href="/" className="hover:text-gray-900">
-                GovClerk
-              </Link>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </>
+      <GovClerkFooter />
+    </div>
   );
 }

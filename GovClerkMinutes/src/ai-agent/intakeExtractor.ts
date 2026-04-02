@@ -45,10 +45,6 @@ export function extractIntakeFields(reply: string): {
  */
 export function isIntakeComplete(fields: ExtractedIntakeFields): boolean {
   return Boolean(
-    fields.email &&
-    fields.firstName &&
-    fields.occupation &&
-    fields.minutesFreq &&
-    fields.minutesDue
+    fields.email && fields.firstName && fields.occupation && fields.minutesFreq && fields.minutesDue
   );
 }

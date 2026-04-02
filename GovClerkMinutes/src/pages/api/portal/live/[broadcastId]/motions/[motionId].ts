@@ -43,7 +43,15 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       motionType?: string;
     };
 
-    const validStatuses: MotionStatus[] = ["pending", "open", "passed", "failed", "tabled", "withdrawn", "amended"];
+    const validStatuses: MotionStatus[] = [
+      "pending",
+      "open",
+      "passed",
+      "failed",
+      "tabled",
+      "withdrawn",
+      "amended",
+    ];
     if (status && !validStatuses.includes(status)) {
       return errorResponse("Invalid status value", 400);
     }
@@ -52,12 +60,30 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
     const fields: string[] = [];
     const values: (string | number | null)[] = [];
 
-    if (status !== undefined) { fields.push("status = ?"); values.push(status); }
-    if (title !== undefined) { fields.push("title = ?"); values.push(title); }
-    if (description !== undefined) { fields.push("description = ?"); values.push(description); }
-    if (movedBy !== undefined) { fields.push("moved_by = ?"); values.push(movedBy); }
-    if (secondedBy !== undefined) { fields.push("seconded_by = ?"); values.push(secondedBy); }
-    if (motionType !== undefined) { fields.push("motion_type = ?"); values.push(motionType); }
+    if (status !== undefined) {
+      fields.push("status = ?");
+      values.push(status);
+    }
+    if (title !== undefined) {
+      fields.push("title = ?");
+      values.push(title);
+    }
+    if (description !== undefined) {
+      fields.push("description = ?");
+      values.push(description);
+    }
+    if (movedBy !== undefined) {
+      fields.push("moved_by = ?");
+      values.push(movedBy);
+    }
+    if (secondedBy !== undefined) {
+      fields.push("seconded_by = ?");
+      values.push(secondedBy);
+    }
+    if (motionType !== undefined) {
+      fields.push("motion_type = ?");
+      values.push(motionType);
+    }
 
     if (fields.length === 0) {
       return errorResponse("No fields to update", 400);
@@ -71,10 +97,9 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       values
     );
 
-    const updatedResult = await conn.execute(
-      "SELECT * FROM gc_portal_motions WHERE id = ?",
-      [motionId]
-    );
+    const updatedResult = await conn.execute("SELECT * FROM gc_portal_motions WHERE id = ?", [
+      motionId,
+    ]);
     return jsonResponse({ motion: updatedResult.rows[0] });
   }
 

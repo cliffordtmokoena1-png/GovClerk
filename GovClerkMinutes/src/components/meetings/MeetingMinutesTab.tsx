@@ -428,10 +428,21 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
     if (!file) return;
 
     const allowedTypes = [
-      "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav",
-      "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/webm",
-      "audio/ogg", "audio/flac", "audio/x-flac",
-      "video/mp4", "video/webm", "video/ogg", "video/quicktime",
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/wav",
+      "audio/x-wav",
+      "audio/mp4",
+      "audio/m4a",
+      "audio/x-m4a",
+      "audio/webm",
+      "audio/ogg",
+      "audio/flac",
+      "audio/x-flac",
+      "video/mp4",
+      "video/webm",
+      "video/ogg",
+      "video/quicktime",
     ];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Unsupported file type. Please upload mp3, wav, m4a, mp4, webm, ogg, or flac.");
@@ -648,10 +659,10 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
       quality === "good"
         ? { label: "Good quality", className: "bg-green-100 text-green-700" }
         : quality === "fair"
-        ? { label: "Fair quality", className: "bg-yellow-100 text-yellow-700" }
-        : quality === "basic"
-        ? { label: "Basic quality", className: "bg-orange-100 text-orange-700" }
-        : null;
+          ? { label: "Fair quality", className: "bg-yellow-100 text-yellow-700" }
+          : quality === "basic"
+            ? { label: "Basic quality", className: "bg-orange-100 text-orange-700" }
+            : null;
 
     return (
       <div className="p-4 md:p-6">
@@ -691,7 +702,9 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
 
             {/* Feature 3: Language selector */}
             <div className="text-left space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Transcription Language</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Transcription Language
+              </label>
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -808,15 +821,9 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
                 )}
 
                 <div className="flex items-center gap-2">
-                  {!noSegments && (
-                    <div className="flex-1 border-t border-border" />
-                  )}
-                  {!noSegments && (
-                    <span className="text-xs text-muted-foreground px-1">or</span>
-                  )}
-                  {!noSegments && (
-                    <div className="flex-1 border-t border-border" />
-                  )}
+                  {!noSegments && <div className="flex-1 border-t border-border" />}
+                  {!noSegments && <span className="text-xs text-muted-foreground px-1">or</span>}
+                  {!noSegments && <div className="flex-1 border-t border-border" />}
                 </div>
 
                 <Button

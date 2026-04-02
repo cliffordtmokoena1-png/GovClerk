@@ -54,7 +54,11 @@ async function fetchTranscriptFromS3(transcriptId: number, region: string): Prom
   return response.text();
 }
 
-async function uploadTranscriptToS3(transcriptId: number, text: string, region: string): Promise<void> {
+async function uploadTranscriptToS3(
+  transcriptId: number,
+  text: string,
+  region: string
+): Promise<void> {
   const bucket = getTranscriptBucketNameByRegion(region);
   const bucketHost = `${bucket}.s3.${region}.amazonaws.com`;
   const s3Key = getUploadKey(transcriptId, { env: isDev() ? "dev" : "prod" });
@@ -157,8 +161,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
     return;
   }
 
-  const region =
-    (transcriptResult.rows[0] as { aws_region: string }).aws_region || DEFAULT_REGION;
+  const region = (transcriptResult.rows[0] as { aws_region: string }).aws_region || DEFAULT_REGION;
 
   // Fetch current transcript text from S3
   const transcriptText = await fetchTranscriptFromS3(transcriptId, region);
@@ -174,8 +177,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
     const currentLine = lines[edit.index];
     // Determine the speaker prefix for this line
     const colonIdx = currentLine.indexOf(": ");
-    const currentSpeaker =
-      colonIdx !== -1 ? currentLine.substring(0, colonIdx) : null;
+    const currentSpeaker = colonIdx !== -1 ? currentLine.substring(0, colonIdx) : null;
     const speaker = edit.speaker ?? currentSpeaker ?? "Speaker";
     lines[edit.index] = `${speaker}: ${edit.text}`;
   }

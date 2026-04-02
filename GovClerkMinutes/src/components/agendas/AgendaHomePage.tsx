@@ -101,13 +101,7 @@ export default function AgendaHomePage() {
   const isOverLimit = charCount > MAX_CHARS;
 
   return (
-    <Flex
-      direction="column"
-      w="full"
-      minH="100dvh"
-      bg="gray.50"
-      overflowY="auto"
-    >
+    <Flex direction="column" w="full" minH="100dvh" bg="gray.50" overflowY="auto">
       {/* Navy header banner */}
       <Box
         w="full"
@@ -165,13 +159,7 @@ export default function AgendaHomePage() {
           overflow="hidden"
         >
           {/* Card header */}
-          <Box
-            px={6}
-            py={4}
-            borderBottom="1px solid"
-            borderColor="gray.100"
-            bg="gray.50"
-          >
+          <Box px={6} py={4} borderBottom="1px solid" borderColor="gray.100" bg="gray.50">
             <Flex align="center" gap={2}>
               <Icon as={FaCalendarAlt} color="#1e40af" boxSize={4} />
               <Text fontWeight="semibold" color="gray.700" fontSize="sm">
@@ -249,7 +237,12 @@ export default function AgendaHomePage() {
                 boxShadow: "0 4px 16px rgba(30,64,175,0.35)",
               }}
               _active={{ transform: "translateY(0)" }}
-              _disabled={{ opacity: 0.5, cursor: "not-allowed", transform: "none", boxShadow: "none" }}
+              _disabled={{
+                opacity: 0.5,
+                cursor: "not-allowed",
+                transform: "none",
+                boxShadow: "none",
+              }}
               transition="all 0.2s"
             >
               Generate Agenda
@@ -268,16 +261,16 @@ export default function AgendaHomePage() {
               borderColor="gray.100"
               overflow="hidden"
             >
-              <Box
-                px={4}
-                py={3}
-                bg="linear-gradient(135deg, #152a4e 0%, #1a3260 100%)"
-              >
+              <Box px={4} py={3} bg="linear-gradient(135deg, #152a4e 0%, #1a3260 100%)">
                 <Text fontSize="sm" fontWeight="semibold" color="white">
                   Tips for better agendas
                 </Text>
               </Box>
-              <VStack spacing={0} align="stretch" divider={<Box borderBottom="1px solid" borderColor="gray.50" />}>
+              <VStack
+                spacing={0}
+                align="stretch"
+                divider={<Box borderBottom="1px solid" borderColor="gray.50" />}
+              >
                 {TIPS.map((tip, i) => (
                   <Flex key={i} px={4} py={3} gap={3} align="flex-start">
                     <Icon as={tip.icon} color="#1e40af" boxSize={3.5} mt={0.5} flexShrink={0} />
@@ -289,13 +282,7 @@ export default function AgendaHomePage() {
               </VStack>
             </Box>
 
-            <Box
-              bg="blue.50"
-              border="1px solid"
-              borderColor="blue.100"
-              borderRadius="xl"
-              p={4}
-            >
+            <Box bg="blue.50" border="1px solid" borderColor="blue.100" borderRadius="xl" p={4}>
               <Text fontSize="xs" color="blue.700" fontWeight="medium" mb={1}>
                 How it works
               </Text>

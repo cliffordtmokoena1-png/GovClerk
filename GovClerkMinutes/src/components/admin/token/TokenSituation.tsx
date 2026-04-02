@@ -121,11 +121,7 @@ export default function TokenSituation({ userId, tokens, onModifyToken }: Props)
                   <Td isNumeric>{r.tokensRequired.toLocaleString()}</Td>
                   <Td>
                     {canAdd ? (
-                      <Button
-                        size="sm"
-                        colorScheme="green"
-                        onClick={() => onModifyToken(deficit)}
-                      >
+                      <Button size="sm" colorScheme="green" onClick={() => onModifyToken(deficit)}>
                         Add {deficit} tokens
                       </Button>
                     ) : (

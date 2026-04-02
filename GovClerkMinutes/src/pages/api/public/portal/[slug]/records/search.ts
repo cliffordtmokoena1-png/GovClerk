@@ -12,7 +12,10 @@ export const config = {
   runtime: "edge",
 };
 
-async function getOrgId(conn: ReturnType<typeof getPortalDbConnection>, slug: string): Promise<string | null> {
+async function getOrgId(
+  conn: ReturnType<typeof getPortalDbConnection>,
+  slug: string
+): Promise<string | null> {
   const result = await conn.execute(
     "SELECT org_id FROM gc_portal_settings WHERE slug = ? AND is_enabled = 1",
     [slug]
@@ -43,7 +46,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   const q = url.searchParams.get("q") || "";
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") || "20", 10)));
+  const pageSize = Math.min(
+    100,
+    Math.max(1, parseInt(url.searchParams.get("pageSize") || "20", 10))
+  );
   const offset = (page - 1) * pageSize;
   const typeFilter = url.searchParams.get("type"); // "meeting" | "artifact"
   const startDate = url.searchParams.get("startDate");

@@ -51,15 +51,9 @@ function VoteTallyBar({ motion }: { motion: Motion }) {
         {abstain > 0 && <span className="font-medium text-gray-500">Abstain: {abstain}</span>}
       </div>
       <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
-        {ayePct > 0 && (
-          <div className="bg-green-500" style={{ width: `${ayePct}%` }} />
-        )}
-        {nayPct > 0 && (
-          <div className="bg-red-500" style={{ width: `${nayPct}%` }} />
-        )}
-        {abstainPct > 0 && (
-          <div className="bg-gray-300" style={{ width: `${abstainPct}%` }} />
-        )}
+        {ayePct > 0 && <div className="bg-green-500" style={{ width: `${ayePct}%` }} />}
+        {nayPct > 0 && <div className="bg-red-500" style={{ width: `${nayPct}%` }} />}
+        {abstainPct > 0 && <div className="bg-gray-300" style={{ width: `${abstainPct}%` }} />}
       </div>
     </div>
   );
@@ -72,8 +66,8 @@ function MotionCard({ motion }: { motion: Motion }) {
     motion.status === "passed"
       ? "border-green-300"
       : motion.status === "failed"
-      ? "border-red-300"
-      : "border-gray-200";
+        ? "border-red-300"
+        : "border-gray-200";
 
   const votes = motion.votes ?? [];
 
@@ -93,14 +87,20 @@ function MotionCard({ motion }: { motion: Motion }) {
 
       <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1">{motion.title}</h3>
 
-      {motion.description && (
-        <p className="text-xs text-gray-500 mb-2">{motion.description}</p>
-      )}
+      {motion.description && <p className="text-xs text-gray-500 mb-2">{motion.description}</p>}
 
       {(motion.movedBy || motion.secondedBy) && (
         <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-2">
-          {motion.movedBy && <span>Moved by: <span className="font-medium text-gray-700">{motion.movedBy}</span></span>}
-          {motion.secondedBy && <span>Seconded by: <span className="font-medium text-gray-700">{motion.secondedBy}</span></span>}
+          {motion.movedBy && (
+            <span>
+              Moved by: <span className="font-medium text-gray-700">{motion.movedBy}</span>
+            </span>
+          )}
+          {motion.secondedBy && (
+            <span>
+              Seconded by: <span className="font-medium text-gray-700">{motion.secondedBy}</span>
+            </span>
+          )}
         </div>
       )}
 
@@ -130,9 +130,7 @@ function MotionCard({ motion }: { motion: Motion }) {
 export function PublicMotionsPanel({ motions }: Props) {
   if (motions.length === 0) {
     return (
-      <div className="py-8 text-center text-gray-400 text-sm">
-        No motions have been tabled yet
-      </div>
+      <div className="py-8 text-center text-gray-400 text-sm">No motions have been tabled yet</div>
     );
   }
 

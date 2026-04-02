@@ -136,7 +136,9 @@ export default function ContactPage() {
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left: form */}
             <div>
-              <h2 className="text-3xl font-semibold text-gray-900 md:text-4xl">Send us a message</h2>
+              <h2 className="text-3xl font-semibold text-gray-900 md:text-4xl">
+                Send us a message
+              </h2>
               <p className="mt-3 text-base leading-relaxed text-gray-500">
                 Fill out the form and we&apos;ll connect you via WhatsApp instantly.
               </p>
@@ -259,7 +261,9 @@ export default function ContactPage() {
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-cd-blue/10">
                   <LuCalendar className="h-8 w-8 text-cd-blue" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">Ready to see GovClerk in action?</h3>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Ready to see GovClerk in action?
+                </h3>
                 <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-gray-500">
                   Pick a time that works for you and our team will walk you through everything
                   GovClerk has to offer.

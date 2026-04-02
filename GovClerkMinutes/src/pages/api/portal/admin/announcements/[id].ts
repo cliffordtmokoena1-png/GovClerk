@@ -40,11 +40,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const setClauses: string[] = [];
     const params: any[] = [];
 
-    if (title !== undefined) { setClauses.push("title = ?"); params.push(title); }
-    if (body !== undefined) { setClauses.push("body = ?"); params.push(body); }
-    if (type !== undefined) { setClauses.push("type = ?"); params.push(type); }
-    if (isActive !== undefined) { setClauses.push("is_active = ?"); params.push(isActive ? 1 : 0); }
-    if (expiresAt !== undefined) { setClauses.push("expires_at = ?"); params.push(expiresAt || null); }
+    if (title !== undefined) {
+      setClauses.push("title = ?");
+      params.push(title);
+    }
+    if (body !== undefined) {
+      setClauses.push("body = ?");
+      params.push(body);
+    }
+    if (type !== undefined) {
+      setClauses.push("type = ?");
+      params.push(type);
+    }
+    if (isActive !== undefined) {
+      setClauses.push("is_active = ?");
+      params.push(isActive ? 1 : 0);
+    }
+    if (expiresAt !== undefined) {
+      setClauses.push("expires_at = ?");
+      params.push(expiresAt || null);
+    }
 
     if (setClauses.length === 0) {
       return res.status(400).json({ error: "No fields to update" });

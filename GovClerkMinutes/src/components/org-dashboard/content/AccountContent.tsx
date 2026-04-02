@@ -110,7 +110,7 @@ export function AccountContent({ initialSubscriptionData }: Readonly<AccountCont
         throw new Error("Failed to renew subscription");
       }
 
-      const data = await response.json() as { url?: string; success?: boolean };
+      const data = (await response.json()) as { url?: string; success?: boolean };
       if (data.url) {
         // PayStack needs a new checkout — redirect the user
         window.location.href = data.url;

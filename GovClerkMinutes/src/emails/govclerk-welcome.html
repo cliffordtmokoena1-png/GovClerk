@@ -1,206 +1,207 @@
 <!-- Subject: Welcome to GovClerk Minutes! -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to GovClerk Minutes!</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #1e293b;
-    }
-    .wrapper {
-      width: 100%;
-      background-color: #f8fafc;
-      padding: 32px 16px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .header {
-      background-color: #2563eb;
-      padding: 32px 40px;
-      text-align: center;
-    }
-    .header-logo {
-      font-size: 22px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.5px;
-    }
-    .header-logo span {
-      opacity: 0.75;
-      font-weight: 400;
-    }
-    .body {
-      padding: 40px 40px 32px;
-    }
-    .greeting {
-      font-size: 24px;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0 0 16px;
-    }
-    .body p {
-      font-size: 15px;
-      line-height: 1.65;
-      color: #475569;
-      margin: 0 0 20px;
-    }
-    .cta-wrapper {
-      text-align: center;
-      margin: 32px 0;
-    }
-    .cta-button {
-      display: inline-block;
-      padding: 14px 32px;
-      background-color: #2563eb;
-      color: #ffffff !important;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.2px;
-    }
-    .features {
-      background-color: #f8fafc;
-      border-radius: 10px;
-      padding: 24px 28px;
-      margin: 28px 0;
-    }
-    .features-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin: 0 0 16px;
-    }
-    .feature-item {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 14px;
-    }
-    .feature-item:last-child {
-      margin-bottom: 0;
-    }
-    .feature-icon {
-      font-size: 18px;
-      margin-right: 12px;
-      flex-shrink: 0;
-      line-height: 1.5;
-    }
-    .feature-text {
-      font-size: 14px;
-      line-height: 1.55;
-      color: #334155;
-    }
-    .divider {
-      border: none;
-      border-top: 1px solid #e2e8f0;
-      margin: 28px 0;
-    }
-    .footer {
-      background-color: #f8fafc;
-      padding: 24px 40px;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-    .footer p {
-      font-size: 13px;
-      color: #94a3b8;
-      margin: 0 0 6px;
-      line-height: 1.6;
-    }
-    .footer a {
-      color: #2563eb;
-      text-decoration: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="wrapper">
-    <div class="container">
-
-      <!-- Header -->
-      <div class="header">
-        <div class="header-logo">GovClerk <span>Minutes</span></div>
-      </div>
-
-      <!-- Body -->
-      <div class="body">
-        <p class="greeting">Welcome, {{first_name}}! 👋</p>
-
-        <p>
-          We're thrilled to have you on board. GovClerk Minutes uses AI to automatically
-          generate professional meeting minutes from your audio and video recordings —
-          saving you hours of manual work.
-        </p>
-
-        <!-- Features -->
-        <div class="features">
-          <div class="features-title">Here's what you can do</div>
-
-          <div class="feature-item">
-            <span class="feature-icon">🎙️</span>
-            <span class="feature-text">
-              <strong>Upload audio or video</strong> — our AI converts your recording into
-              structured meeting minutes automatically.
-            </span>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon">✅</span>
-            <span class="feature-text">
-              <strong>Save hours of transcription time</strong> — no more manual note-taking
-              or formatting after every meeting.
-            </span>
-          </div>
-
-          <div class="feature-item">
-            <span class="feature-icon">📄</span>
-            <span class="feature-text">
-              <strong>Professional minutes ready to share</strong> — download or distribute
-              polished minutes to your team instantly.
-            </span>
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to GovClerk Minutes!</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8fafc;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #1e293b;
+      }
+      .wrapper {
+        width: 100%;
+        background-color: #f8fafc;
+        padding: 32px 16px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .header {
+        background-color: #2563eb;
+        padding: 32px 40px;
+        text-align: center;
+      }
+      .header-logo {
+        font-size: 22px;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+      }
+      .header-logo span {
+        opacity: 0.75;
+        font-weight: 400;
+      }
+      .body {
+        padding: 40px 40px 32px;
+      }
+      .greeting {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 16px;
+      }
+      .body p {
+        font-size: 15px;
+        line-height: 1.65;
+        color: #475569;
+        margin: 0 0 20px;
+      }
+      .cta-wrapper {
+        text-align: center;
+        margin: 32px 0;
+      }
+      .cta-button {
+        display: inline-block;
+        padding: 14px 32px;
+        background-color: #2563eb;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+      .features {
+        background-color: #f8fafc;
+        border-radius: 10px;
+        padding: 24px 28px;
+        margin: 28px 0;
+      }
+      .features-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin: 0 0 16px;
+      }
+      .feature-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+      .feature-item:last-child {
+        margin-bottom: 0;
+      }
+      .feature-icon {
+        font-size: 18px;
+        margin-right: 12px;
+        flex-shrink: 0;
+        line-height: 1.5;
+      }
+      .feature-text {
+        font-size: 14px;
+        line-height: 1.55;
+        color: #334155;
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid #e2e8f0;
+        margin: 28px 0;
+      }
+      .footer {
+        background-color: #f8fafc;
+        padding: 24px 40px;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+      }
+      .footer p {
+        font-size: 13px;
+        color: #94a3b8;
+        margin: 0 0 6px;
+        line-height: 1.6;
+      }
+      .footer a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="container">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-logo">GovClerk <span>Minutes</span></div>
         </div>
 
-        <p>
-          Head to your dashboard to upload your first recording and see GovClerk Minutes
-          in action. It only takes a minute!
-        </p>
+        <!-- Body -->
+        <div class="body">
+          <p class="greeting">Welcome, {{first_name}}! 👋</p>
 
-        <!-- CTA -->
-        <div class="cta-wrapper">
-          <a href="{{dashboard_url}}" class="cta-button">Go to Dashboard →</a>
+          <p>
+            We're thrilled to have you on board. GovClerk Minutes uses AI to automatically generate
+            professional meeting minutes from your audio and video recordings — saving you hours of
+            manual work.
+          </p>
+
+          <!-- Features -->
+          <div class="features">
+            <div class="features-title">Here's what you can do</div>
+
+            <div class="feature-item">
+              <span class="feature-icon">🎙️</span>
+              <span class="feature-text">
+                <strong>Upload audio or video</strong> — our AI converts your recording into
+                structured meeting minutes automatically.
+              </span>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon">✅</span>
+              <span class="feature-text">
+                <strong>Save hours of transcription time</strong> — no more manual note-taking or
+                formatting after every meeting.
+              </span>
+            </div>
+
+            <div class="feature-item">
+              <span class="feature-icon">📄</span>
+              <span class="feature-text">
+                <strong>Professional minutes ready to share</strong> — download or distribute
+                polished minutes to your team instantly.
+              </span>
+            </div>
+          </div>
+
+          <p>
+            Head to your dashboard to upload your first recording and see GovClerk Minutes in
+            action. It only takes a minute!
+          </p>
+
+          <!-- CTA -->
+          <div class="cta-wrapper">
+            <a href="{{dashboard_url}}" class="cta-button">Go to Dashboard →</a>
+          </div>
+
+          <hr class="divider" />
+
+          <p style="font-size: 13px; color: #64748b; margin: 0">
+            Need help getting started? Check out our
+            <a href="{{get_started_url}}" style="color: #2563eb; text-decoration: none"
+              >Getting Started Guide</a
+            >
+            or reply to this email — we're always happy to help.
+          </p>
         </div>
 
-        <hr class="divider" />
-
-        <p style="font-size:13px;color:#64748b;margin:0;">
-          Need help getting started? Check out our
-          <a href="{{get_started_url}}" style="color:#2563eb;text-decoration:none;">Getting Started Guide</a>
-          or reply to this email — we're always happy to help.
-        </p>
+        <!-- Footer -->
+        <div class="footer">
+          <p>Questions? Email us at <a href="mailto:{{support_email}}">{{support_email}}</a></p>
+          <p>© {{current_year}} {{company_name}}. All rights reserved.</p>
+        </div>
       </div>
-
-      <!-- Footer -->
-      <div class="footer">
-        <p>Questions? Email us at <a href="mailto:{{support_email}}">{{support_email}}</a></p>
-        <p>© {{current_year}} {{company_name}}. All rights reserved.</p>
-      </div>
-
     </div>
-  </div>
-</body>
+  </body>
 </html>

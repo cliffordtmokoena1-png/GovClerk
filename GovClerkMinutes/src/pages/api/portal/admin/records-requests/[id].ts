@@ -45,8 +45,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (status) {
     const validStatuses = [
-      "received", "acknowledged", "in_review", "fulfilled",
-      "partially_fulfilled", "denied", "withdrawn",
+      "received",
+      "acknowledged",
+      "in_review",
+      "fulfilled",
+      "partially_fulfilled",
+      "denied",
+      "withdrawn",
     ];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status" });

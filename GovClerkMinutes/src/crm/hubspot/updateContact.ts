@@ -10,7 +10,17 @@ export type UpdateContactParams = {
 };
 export async function updateContact({
   filter,
-  properties: { email, firstName, phone, minutesFreq, minutesDue, userId, instantlyId, occupation, organizationName },
+  properties: {
+    email,
+    firstName,
+    phone,
+    minutesFreq,
+    minutesDue,
+    userId,
+    instantlyId,
+    occupation,
+    organizationName,
+  },
 }: UpdateContactParams): Promise<void> {
   const contact = await getContact({
     filter,

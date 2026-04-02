@@ -71,7 +71,14 @@ async function handler(req: NextRequest): Promise<Response> {
       isActive?: boolean;
     };
 
-    const validPlatforms: StreamPlatform[] = ["youtube", "zoom", "google_meet", "facebook", "rtmp", "custom"];
+    const validPlatforms: StreamPlatform[] = [
+      "youtube",
+      "zoom",
+      "google_meet",
+      "facebook",
+      "rtmp",
+      "custom",
+    ];
     if (preferredPlatform && !validPlatforms.includes(preferredPlatform)) {
       return errorResponse("Invalid preferred_platform value", 400);
     }

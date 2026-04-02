@@ -153,8 +153,12 @@ export async function deleteAllSubscriptionsForUserId(userId: string): Promise<v
     });
 
   for (const row of rows) {
-    const customerCode = (row as { [key: string]: unknown })["paystack_customer_code"] as string | null;
-    const subscriptionCode = (row as { [key: string]: unknown })["paystack_subscription_code"] as string | null;
+    const customerCode = (row as { [key: string]: unknown })["paystack_customer_code"] as
+      | string
+      | null;
+    const subscriptionCode = (row as { [key: string]: unknown })["paystack_subscription_code"] as
+      | string
+      | null;
 
     if (!customerCode || !subscriptionCode) continue;
 
@@ -185,4 +189,3 @@ export async function deleteAllSubscriptionsForUserId(userId: string): Promise<v
     );
   }
 }
-

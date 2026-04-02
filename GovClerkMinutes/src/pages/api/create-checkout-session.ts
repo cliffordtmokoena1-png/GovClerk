@@ -11,7 +11,11 @@ import {
   getPrice,
   type PaidSubscriptionPlan,
 } from "@/utils/price";
-import { initializeTransaction, getPaystackPlanCode, getCurrencyForCountry } from "@/utils/paystack";
+import {
+  initializeTransaction,
+  getPaystackPlanCode,
+  getCurrencyForCountry,
+} from "@/utils/paystack";
 
 /**
  * Parameters for creating a PayStack checkout session.
@@ -51,13 +55,7 @@ export type CreateCheckoutSessionResult = {
 export async function createCheckoutSession(
   params: CreateCheckoutSessionParams
 ): Promise<CreateCheckoutSessionResult> {
-  const {
-    clientReferenceId,
-    customerEmail,
-    mode,
-    successUrl,
-    orgId,
-  } = params;
+  const { clientReferenceId, customerEmail, mode, successUrl, orgId } = params;
 
   if (!customerEmail) {
     throw new Error("[create-checkout-session] customerEmail is required");
@@ -203,4 +201,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withErrorReporting(handler);
-

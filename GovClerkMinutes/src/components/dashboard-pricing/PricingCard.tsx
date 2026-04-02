@@ -75,7 +75,11 @@ function renderPriceDisplay(
   if (isAnnual && (NEW_TIERS_WITH_ANNUAL as readonly string[]).includes(title) && country) {
     const effectiveMonthlyPrice = getEffectiveMonthlyPrice(
       country,
-      (title + "_Annual") as "Essential_Annual" | "Professional_Annual" | "Elite_Annual" | "Premium_Annual"
+      (title + "_Annual") as
+        | "Essential_Annual"
+        | "Professional_Annual"
+        | "Elite_Annual"
+        | "Premium_Annual"
     );
 
     return (

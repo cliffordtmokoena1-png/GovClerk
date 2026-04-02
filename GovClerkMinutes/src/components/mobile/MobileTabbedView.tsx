@@ -283,7 +283,14 @@ export default function MobileTabbedView({
                   flexDirection="column"
                   h="full"
                 >
-                  <Box flex={1} minH={0} overflowY="auto" h="full" w="full" pb={viewMode === "transcript" ? bottomPadding : "0"}>
+                  <Box
+                    flex={1}
+                    minH={0}
+                    overflowY="auto"
+                    h="full"
+                    w="full"
+                    pb={viewMode === "transcript" ? bottomPadding : "0"}
+                  >
                     {tab.content}
                   </Box>
                 </TabPanel>

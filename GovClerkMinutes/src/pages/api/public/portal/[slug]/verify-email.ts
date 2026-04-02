@@ -75,10 +75,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
     const expiresAtStr = expiresAt.toISOString().slice(0, 19).replace("T", " ");
 
     // Invalidate any existing codes for this org+email before inserting a new one
-    await conn.execute(
-      "DELETE FROM gc_portal_email_verifications WHERE org_id = ? AND email = ?",
-      [orgId, email]
-    );
+    await conn.execute("DELETE FROM gc_portal_email_verifications WHERE org_id = ? AND email = ?", [
+      orgId,
+      email,
+    ]);
 
     await conn.execute(
       `INSERT INTO gc_portal_email_verifications
@@ -140,17 +140,16 @@ export default async function handler(req: NextRequest): Promise<Response> {
     }
 
     // Mark as verified
-    await conn.execute(
-      "UPDATE gc_portal_email_verifications SET is_verified = 1 WHERE id = ?",
-      [row.id]
-    );
+    await conn.execute("UPDATE gc_portal_email_verifications SET is_verified = 1 WHERE id = ?", [
+      row.id,
+    ]);
 
     // Update the portal user's record to mark email as verified (if applicable)
     if (session.portalUserId != null) {
-      await conn.execute(
-        "UPDATE gc_portal_users SET is_active = 1 WHERE id = ? AND org_id = ?",
-        [session.portalUserId, orgId]
-      );
+      await conn.execute("UPDATE gc_portal_users SET is_active = 1 WHERE id = ? AND org_id = ?", [
+        session.portalUserId,
+        orgId,
+      ]);
     }
 
     // Check if the email domain matches an existing organisation in gc_portal_settings

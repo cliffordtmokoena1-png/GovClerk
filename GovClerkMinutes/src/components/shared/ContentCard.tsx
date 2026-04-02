@@ -20,13 +20,7 @@ export default function ContentCard({ children, icon, title }: Props) {
       w="full"
     >
       {(icon || title) && (
-        <Box
-          px={6}
-          py={4}
-          borderBottom="1px solid"
-          borderColor="gray.100"
-          bg="gray.50"
-        >
+        <Box px={6} py={4} borderBottom="1px solid" borderColor="gray.100" bg="gray.50">
           <Flex align="center" gap={2}>
             {icon && <Icon as={icon} color="#1e40af" boxSize={4} />}
             {title && (

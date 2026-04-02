@@ -48,14 +48,7 @@ export const TemplateHeroSection = ({
       overflow="hidden"
     >
       {/* V2 Background */}
-      <Box
-        position="absolute"
-        top={0}
-        left={0}
-        right={0}
-        bottom={0}
-        bg="white"
-      />
+      <Box position="absolute" top={0} left={0} right={0} bottom={0} bg="white" />
 
       <Container maxW="7xl" position="relative" zIndex={1}>
         {/* Mobile: Vertical Stack */}

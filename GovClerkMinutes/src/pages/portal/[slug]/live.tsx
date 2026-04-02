@@ -207,7 +207,11 @@ export default function PublicLivePage({
                   <h2 className="text-sm font-semibold text-gray-700 mb-2">Attendance</h2>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-2xl font-bold text-gray-900">
-                      {liveData.attendance.filter((rec) => rec.status === "present" || rec.status === "late").length}
+                      {
+                        liveData.attendance.filter(
+                          (rec) => rec.status === "present" || rec.status === "late"
+                        ).length
+                      }
                     </span>
                     <span className="text-gray-500">/ {liveData.attendance.length} present</span>
                   </div>
@@ -231,7 +235,9 @@ export default function PublicLivePage({
                 >
                   {tab.label}
                   {tab.count !== undefined && (
-                    <span className={`px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab.id ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                    <span
+                      className={`px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab.id ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}
+                    >
                       {tab.count}
                     </span>
                   )}
@@ -247,13 +253,9 @@ export default function PublicLivePage({
                 />
               )}
 
-              {activeTab === "motions" && (
-                <PublicMotionsPanel motions={motions} />
-              )}
+              {activeTab === "motions" && <PublicMotionsPanel motions={motions} />}
 
-              {activeTab === "speakers" && (
-                <PublicSpeakerQueue queue={speakerQueue} />
-              )}
+              {activeTab === "speakers" && <PublicSpeakerQueue queue={speakerQueue} />}
 
               {activeTab === "comment" && (
                 <PublicCommentForm
@@ -264,9 +266,7 @@ export default function PublicLivePage({
                 />
               )}
 
-              {activeTab === "captions" && (
-                <PublicLiveCaptions segments={segments} />
-              )}
+              {activeTab === "captions" && <PublicLiveCaptions segments={segments} />}
             </div>
           </div>
         </main>
@@ -317,7 +317,9 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
   }
 
   // Require authentication to view live stream
-  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
+    () => null
+  );
   if (!session) {
     return {
       redirect: {

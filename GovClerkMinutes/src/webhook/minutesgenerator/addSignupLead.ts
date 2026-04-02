@@ -11,7 +11,9 @@ export async function addSignupLead(lead: PostSignupLead, conn: Connection): Pro
 
   const signInToken = await createSignInToken(lead.user_id);
   if (!signInToken) {
-    throw new Error(`[addSignupLead] Failed to create Clerk sign-in token for userId=${lead.user_id}`);
+    throw new Error(
+      `[addSignupLead] Failed to create Clerk sign-in token for userId=${lead.user_id}`
+    );
   }
   const variables: Record<string, string> = { signInToken };
   if (lead.minutes_freq) {

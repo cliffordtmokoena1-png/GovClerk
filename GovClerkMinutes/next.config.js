@@ -37,7 +37,7 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
-      test: /@ffmpeg\/ffmpeg/, 
+      test: /@ffmpeg\/ffmpeg/,
       parser: {
         commonjs: true,
       },
@@ -45,8 +45,8 @@ const nextConfig = {
 
     config.ignoreWarnings = [
       {
-        module: /@ffmpeg\/ffmpeg/, 
-        message: /Critical dependency: the request of a dependency is an expression/, 
+        module: /@ffmpeg\/ffmpeg/,
+        message: /Critical dependency: the request of a dependency is an expression/,
       },
     ];
 

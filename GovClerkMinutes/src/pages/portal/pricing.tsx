@@ -111,13 +111,11 @@ export default function PortalPricingPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           {/* Hero */}
           <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Simple, transparent pricing
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Simple, transparent pricing</h1>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto">
               GovClerk Public Portal is priced as a fixed monthly subscription based on the number
-              of admin seats and live-stream hours your organisation needs. No tokens, no
-              per-minute charges.
+              of admin seats and live-stream hours your organisation needs. No tokens, no per-minute
+              charges.
             </p>
           </div>
 
@@ -137,9 +135,7 @@ export default function PortalPricingPage() {
                   {tier.badge && (
                     <div
                       className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold ${
-                        isPopular
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-900 text-white"
+                        isPopular ? "bg-blue-600 text-white" : "bg-gray-900 text-white"
                       }`}
                     >
                       {tier.badge}
@@ -155,7 +151,9 @@ export default function PortalPricingPage() {
                         <span className="text-base font-normal text-gray-500"> / month</span>
                       </p>
                       {isEnterprise && (
-                        <p className="text-sm text-gray-500 mt-1">Starting price — custom quote available</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Starting price — custom quote available
+                        </p>
                       )}
                     </div>
 

@@ -81,10 +81,20 @@ export function PublicCommentForm({ slug, meetingId, agendaItems = [], approvedC
           <div className="text-3xl mb-2">✅</div>
           <p className="font-semibold text-green-800 mb-1">Request Submitted</p>
           <p className="text-sm text-green-700">
-            Your request to speak has been submitted. The clerk will review and add you to the queue.
+            Your request to speak has been submitted. The clerk will review and add you to the
+            queue.
           </p>
           <button
-            onClick={() => { setSubmitted(false); setForm({ speakerName: "", speakerEmail: "", topic: "", commentText: "", agendaItemId: "" }); }}
+            onClick={() => {
+              setSubmitted(false);
+              setForm({
+                speakerName: "",
+                speakerEmail: "",
+                topic: "",
+                commentText: "",
+                agendaItemId: "",
+              });
+            }}
             className="mt-3 text-xs text-green-600 underline"
           >
             Submit another request
@@ -193,7 +203,9 @@ export function PublicCommentForm({ slug, meetingId, agendaItems = [], approvedC
                   {index + 1}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{comment.speakerName}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {comment.speakerName}
+                  </p>
                   <p className="text-xs text-gray-500 truncate">{comment.topic}</p>
                 </div>
               </div>

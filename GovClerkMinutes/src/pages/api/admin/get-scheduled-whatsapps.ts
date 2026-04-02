@@ -43,7 +43,9 @@ async function handler(req: NextRequest) {
     console.error("[admin/get-scheduled-whatsapps] Handler error:", error);
     // If the table doesn't exist yet (errno 1146), return an empty array instead of 500
     if (isMissingTableError(error)) {
-      console.warn("[admin/get-scheduled-whatsapps] gc_scheduled_whatsapps table not yet created — returning empty result");
+      console.warn(
+        "[admin/get-scheduled-whatsapps] gc_scheduled_whatsapps table not yet created — returning empty result"
+      );
       return new Response(JSON.stringify([]), {
         status: 200,
         headers: { "Content-Type": "application/json" },

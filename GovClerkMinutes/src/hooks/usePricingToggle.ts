@@ -67,7 +67,8 @@ export function usePricingToggle({
     plan: professionalPlan,
     price: getPrice(country, professionalPlan),
     priceId: "",
-    features: billingPeriod === BillingPeriod.Yearly ? PROFESSIONAL_ANNUAL_FEATURES : PROFESSIONAL_FEATURES,
+    features:
+      billingPeriod === BillingPeriod.Yearly ? PROFESSIONAL_ANNUAL_FEATURES : PROFESSIONAL_FEATURES,
   };
 
   const eliteInfo: PlanInfo = {

@@ -61,7 +61,13 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       return errorResponse("id and status are required", 400);
     }
 
-    const validStatuses: PublicCommentStatus[] = ["pending", "approved", "spoken", "rejected", "withdrawn"];
+    const validStatuses: PublicCommentStatus[] = [
+      "pending",
+      "approved",
+      "spoken",
+      "rejected",
+      "withdrawn",
+    ];
     if (!validStatuses.includes(status)) {
       return errorResponse("Invalid status value", 400);
     }
@@ -86,10 +92,7 @@ async function handler(req: NextRequest, session: PortalSessionPayload): Promise
       values
     );
 
-    const result = await conn.execute(
-      "SELECT * FROM gc_portal_public_comments WHERE id = ?",
-      [id]
-    );
+    const result = await conn.execute("SELECT * FROM gc_portal_public_comments WHERE id = ?", [id]);
     const comment = result.rows.length > 0 ? rowToComment(result.rows[0] as any) : null;
     return jsonResponse({ comment });
   }

@@ -150,12 +150,11 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
                 flex={1}
                 size="sm"
                 variant={activeTab === "email" ? "solid" : "ghost"}
-                style={
-                  activeTab === "email"
-                    ? { backgroundColor: accentColor, color: "#fff" }
-                    : {}
-                }
-                onClick={() => { setActiveTab("email"); setError(null); }}
+                style={activeTab === "email" ? { backgroundColor: accentColor, color: "#fff" } : {}}
+                onClick={() => {
+                  setActiveTab("email");
+                  setError(null);
+                }}
               >
                 Work Email
               </Button>
@@ -164,11 +163,12 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
                 size="sm"
                 variant={activeTab === "shared" ? "solid" : "ghost"}
                 style={
-                  activeTab === "shared"
-                    ? { backgroundColor: accentColor, color: "#fff" }
-                    : {}
+                  activeTab === "shared" ? { backgroundColor: accentColor, color: "#fff" } : {}
                 }
-                onClick={() => { setActiveTab("shared"); setError(null); }}
+                onClick={() => {
+                  setActiveTab("shared");
+                  setError(null);
+                }}
               >
                 Organisation Access
               </Button>

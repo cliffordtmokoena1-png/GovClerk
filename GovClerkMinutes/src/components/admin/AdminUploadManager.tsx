@@ -125,8 +125,8 @@ export default function AdminUploadManager({}: AdminUploadManagerProps) {
       </Heading>
 
       <Text mb={6} color="gray.600">
-        Upload files on behalf of users without deducting their tokens. This is useful for
-        providing customer support or handling special cases.
+        Upload files on behalf of users without deducting their tokens. This is useful for providing
+        customer support or handling special cases.
       </Text>
 
       <Stack spacing={6}>

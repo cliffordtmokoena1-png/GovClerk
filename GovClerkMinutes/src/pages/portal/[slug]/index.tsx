@@ -13,7 +13,12 @@ import { useLiveSession } from "@/hooks/portal/useLiveSession";
 import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 
-const EMPTY_MEETINGS: PublicMeetingsListResponse = { meetings: [], total: 0, page: 1, pageSize: 12 };
+const EMPTY_MEETINGS: PublicMeetingsListResponse = {
+  meetings: [],
+  total: 0,
+  page: 1,
+  pageSize: 12,
+};
 
 interface PublicPortalPageProps {
   settings: PublicPortalResponse["settings"];
@@ -21,12 +26,21 @@ interface PublicPortalPageProps {
   slug: string;
   announcements: PortalAnnouncement[];
   upcomingMeetings: Array<{ id: number; title: string; meetingDate: string }>;
-  latestArtifacts: Array<{ id: number; fileName: string; artifactType: string; s3Url: string; meetingId: number | null }>;
+  latestArtifacts: Array<{
+    id: number;
+    fileName: string;
+    artifactType: string;
+    s3Url: string;
+    meetingId: number | null;
+  }>;
   isAuthenticated: boolean;
   portalExists: boolean;
 }
 
-function AnnouncementsBanner({ announcements, slug }: Readonly<{ announcements: PortalAnnouncement[]; slug: string }>) {
+function AnnouncementsBanner({
+  announcements,
+  slug,
+}: Readonly<{ announcements: PortalAnnouncement[]; slug: string }>) {
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -61,16 +75,21 @@ function AnnouncementsBanner({ announcements, slug }: Readonly<{ announcements: 
           a.type === "emergency"
             ? "bg-red-50 border-red-400"
             : a.type === "alert"
-            ? "bg-yellow-50 border-yellow-400"
-            : "bg-blue-50 border-blue-300";
+              ? "bg-yellow-50 border-yellow-400"
+              : "bg-blue-50 border-blue-300";
         const textClass =
           a.type === "emergency"
             ? "text-red-900"
             : a.type === "alert"
-            ? "text-yellow-900"
-            : "text-blue-900";
+              ? "text-yellow-900"
+              : "text-blue-900";
         return (
-          <div key={a.id} className={`border-b px-4 py-3 ${bgClass}`} role="region" aria-label={a.title}>
+          <div
+            key={a.id}
+            className={`border-b px-4 py-3 ${bgClass}`}
+            role="region"
+            aria-label={a.title}
+          >
             <div className="max-w-7xl mx-auto flex items-start justify-between gap-4">
               <div className={`flex-1 text-sm ${textClass}`}>
                 <strong>{a.title}</strong>
@@ -103,7 +122,9 @@ function LiveNowBanner({ slug }: Readonly<{ slug: string }>) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-red-700 font-bold text-sm uppercase tracking-wide">🔴 LIVE NOW</span>
+            <span className="text-red-700 font-bold text-sm uppercase tracking-wide">
+              🔴 LIVE NOW
+            </span>
           </div>
           <span className="text-red-600 text-sm font-medium">{data.broadcast.meeting.title}</span>
         </div>
@@ -202,168 +223,192 @@ export default function PublicPortalPage({
       <AnnouncementsBanner announcements={announcements} slug={slug} />
       <LiveNowBanner slug={slug} />
       <PublicPortalLayout
-      settings={settings}
-      meetings={allMeetings}
-      filter={sidebarFilter}
-      onFilterChange={handleSidebarFilterChange}
-    >
-      {!isAuthenticated ? (
-        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
-            <span className="text-3xl" aria-hidden="true">🔒</span>
+        settings={settings}
+        meetings={allMeetings}
+        filter={sidebarFilter}
+        onFilterChange={handleSidebarFilterChange}
+      >
+        {!isAuthenticated ? (
+          <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
+              <span className="text-3xl" aria-hidden="true">
+                🔒
+              </span>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Sign in to access this portal
+            </h2>
+            <p className="text-gray-500 mb-8 max-w-sm">
+              Sign in with your organisational email to access meetings, documents, and other portal
+              content.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href={`/portal/${slug}/sign-in`}
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href={`/portal/${slug}/register`}
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              >
+                Create Account
+              </Link>
+            </div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Sign in to access this portal
-          </h2>
-          <p className="text-gray-500 mb-8 max-w-sm">
-            Sign in with your organisational email to access meetings, documents, and other portal content.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
+        ) : !portalExists ? (
+          <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-3xl" aria-hidden="true">
+                🏢
+              </span>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Not Found</h2>
+            <p className="text-gray-500 mb-8 max-w-sm">
+              This organization hasn&apos;t been set up on GovClerk yet. Would you like to create
+              it?
+            </p>
             <Link
-              href={`/portal/${slug}/sign-in`}
+              href="/org/signup"
               className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             >
-              Sign In
-            </Link>
-            <Link
-              href={`/portal/${slug}/register`}
-              className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-            >
-              Create Account
+              Create Organization
             </Link>
           </div>
-        </div>
-      ) : !portalExists ? (
-        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-            <span className="text-3xl" aria-hidden="true">🏢</span>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Organization Not Found
-          </h2>
-          <p className="text-gray-500 mb-8 max-w-sm">
-            This organization hasn&apos;t been set up on GovClerk yet. Would you like to create it?
-          </p>
-          <Link
-            href="/org/signup"
-            className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-          >
-            Create Organization
-          </Link>
-        </div>
-      ) : (
-        <>
-      {/* Quick Access Links */}
-      <nav aria-label="Quick access links" className="mb-6">
-        <ul className="grid grid-cols-2 sm:grid-cols-5 gap-3 list-none">
-          {[
-            { href: `/portal/${slug}/records`, icon: "🗂️", label: "Public Records" },
-            { href: `/portal/${slug}/calendar`, icon: "📅", label: "Meeting Calendar" },
-            { href: `/portal/${slug}/request-records`, icon: "📄", label: "Request Records" },
-            { href: `/portal/${slug}/notices`, icon: "📢", label: "Notices" },
-            { href: `/api/public/portal/${slug}/feed`, icon: "📡", label: "RSS Feed", external: true },
-          ].map((link) => (
-            <li key={link.label}>
-              {link.external ? (
-                <a
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={link.label}
-                  className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center w-full"
-                >
-                  <span className="text-xl" aria-hidden="true">{link.icon}</span>
-                  <span className="text-xs font-medium text-gray-700">{link.label}</span>
-                </a>
-              ) : (
+        ) : (
+          <>
+            {/* Quick Access Links */}
+            <nav aria-label="Quick access links" className="mb-6">
+              <ul className="grid grid-cols-2 sm:grid-cols-5 gap-3 list-none">
+                {[
+                  { href: `/portal/${slug}/records`, icon: "🗂️", label: "Public Records" },
+                  { href: `/portal/${slug}/calendar`, icon: "📅", label: "Meeting Calendar" },
+                  { href: `/portal/${slug}/request-records`, icon: "📄", label: "Request Records" },
+                  { href: `/portal/${slug}/notices`, icon: "📢", label: "Notices" },
+                  {
+                    href: `/api/public/portal/${slug}/feed`,
+                    icon: "📡",
+                    label: "RSS Feed",
+                    external: true,
+                  },
+                ].map((link) => (
+                  <li key={link.label}>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={link.label}
+                        className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center w-full"
+                      >
+                        <span className="text-xl" aria-hidden="true">
+                          {link.icon}
+                        </span>
+                        <span className="text-xs font-medium text-gray-700">{link.label}</span>
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        aria-label={link.label}
+                        className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center"
+                      >
+                        <span className="text-xl" aria-hidden="true">
+                          {link.icon}
+                        </span>
+                        <span className="text-xs font-medium text-gray-700">{link.label}</span>
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Upcoming Meetings */}
+            {upcomingMeetings.length > 0 && (
+              <section
+                aria-label="Upcoming meetings"
+                className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+              >
+                <h2 className="text-sm font-semibold text-blue-800 mb-3">📅 Upcoming Meetings</h2>
+                <ul className="space-y-2 list-none">
+                  {upcomingMeetings.map((meeting) => (
+                    <li key={meeting.id} className="flex items-center justify-between gap-2">
+                      <Link
+                        href={`/portal/${slug}/meetings/${meeting.id}`}
+                        className="text-sm text-blue-700 hover:text-blue-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate"
+                      >
+                        {meeting.title}
+                      </Link>
+                      <span className="text-xs text-blue-600 flex-shrink-0">
+                        {new Date(meeting.meetingDate).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
                 <Link
-                  href={link.href}
-                  aria-label={link.label}
-                  className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center"
+                  href={`/portal/${slug}/calendar`}
+                  className="mt-3 inline-block text-xs text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                 >
-                  <span className="text-xl" aria-hidden="true">{link.icon}</span>
-                  <span className="text-xs font-medium text-gray-700">{link.label}</span>
+                  View full calendar →
                 </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
+              </section>
+            )}
 
-      {/* Upcoming Meetings */}
-      {upcomingMeetings.length > 0 && (
-        <section aria-label="Upcoming meetings" className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h2 className="text-sm font-semibold text-blue-800 mb-3">📅 Upcoming Meetings</h2>
-          <ul className="space-y-2 list-none">
-            {upcomingMeetings.map((meeting) => (
-              <li key={meeting.id} className="flex items-center justify-between gap-2">
-                <Link
-                  href={`/portal/${slug}/meetings/${meeting.id}`}
-                  className="text-sm text-blue-700 hover:text-blue-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate"
-                >
-                  {meeting.title}
-                </Link>
-                <span className="text-xs text-blue-600 flex-shrink-0">
-                  {new Date(meeting.meetingDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href={`/portal/${slug}/calendar`}
-            className="mt-3 inline-block text-xs text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-          >
-            View full calendar →
-          </Link>
-        </section>
-      )}
+            {/* Latest Documents */}
+            {latestArtifacts.length > 0 && (
+              <section
+                aria-label="Latest public documents"
+                className="mb-6 p-4 bg-white border border-gray-200 rounded-lg"
+              >
+                <h2 className="text-sm font-semibold text-gray-800 mb-3">
+                  📄 Latest Public Documents
+                </h2>
+                <ul className="space-y-2 list-none">
+                  {latestArtifacts.map((artifact) => (
+                    <li key={artifact.id} className="flex items-center justify-between gap-2">
+                      <a
+                        href={artifact.s3Url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Download ${artifact.fileName}`}
+                        className="text-sm text-blue-700 hover:text-blue-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate"
+                      >
+                        {artifact.fileName}
+                      </a>
+                      <a
+                        href={artifact.s3Url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Download ${artifact.fileName}`}
+                        className="flex-shrink-0 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Download
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-      {/* Latest Documents */}
-      {latestArtifacts.length > 0 && (
-        <section aria-label="Latest public documents" className="mb-6 p-4 bg-white border border-gray-200 rounded-lg">
-          <h2 className="text-sm font-semibold text-gray-800 mb-3">📄 Latest Public Documents</h2>
-          <ul className="space-y-2 list-none">
-            {latestArtifacts.map((artifact) => (
-              <li key={artifact.id} className="flex items-center justify-between gap-2">
-                <a
-                  href={artifact.s3Url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Download ${artifact.fileName}`}
-                  className="text-sm text-blue-700 hover:text-blue-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate"
-                >
-                  {artifact.fileName}
-                </a>
-                <a
-                  href={artifact.s3Url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Download ${artifact.fileName}`}
-                  className="flex-shrink-0 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Download
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <PublicMeetingsList
-        meetings={displayMeetings}
-        total={displayTotal}
-        page={displayPage}
-        pageSize={displayPageSize}
-        onPageChange={handlePageChange}
-        accentColor={settings.accentColor}
-        isLoading={useClientData && isLoading}
-        searchValue={search}
-        onSearchChange={handleSearchChange}
-        portalSlug={slug}
-      />
-        </>
-      )}
-    </PublicPortalLayout>
+            <PublicMeetingsList
+              meetings={displayMeetings}
+              total={displayTotal}
+              page={displayPage}
+              pageSize={displayPageSize}
+              onPageChange={handlePageChange}
+              accentColor={settings.accentColor}
+              isLoading={useClientData && isLoading}
+              searchValue={search}
+              onSearchChange={handleSearchChange}
+              portalSlug={slug}
+            />
+          </>
+        )}
+      </PublicPortalLayout>
     </>
   );
 }
@@ -396,7 +441,9 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
   }
 
   // Check if user has a valid portal session
-  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
+    () => null
+  );
   const isAuthenticated = session !== null;
 
   // For unauthenticated users, return shell-only props (no content)
@@ -436,8 +483,12 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
     const [meetingsRes, announcementsRes, upcomingRes, artifactsRes] = await Promise.all([
       fetch(`${baseUrl}/api/public/portal/${slug}/meetings?page=1&limit=12&sortBy=newest`),
       fetch(`${baseUrl}/api/public/portal/${slug}/announcements`).catch(() => null),
-      fetch(`${baseUrl}/api/public/portal/${slug}/calendar?month=${new Date().getMonth() + 1}&year=${new Date().getFullYear()}`).catch(() => null),
-      fetch(`${baseUrl}/api/public/portal/${slug}/records/search?type=artifact&pageSize=5`).catch(() => null),
+      fetch(
+        `${baseUrl}/api/public/portal/${slug}/calendar?month=${new Date().getMonth() + 1}&year=${new Date().getFullYear()}`
+      ).catch(() => null),
+      fetch(`${baseUrl}/api/public/portal/${slug}/records/search?type=artifact&pageSize=5`).catch(
+        () => null
+      ),
     ]);
 
     if (!meetingsRes.ok) {

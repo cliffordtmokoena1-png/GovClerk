@@ -11,7 +11,7 @@ export async function revalidateCustomerDetails(
     ),
     mutate(["/api/get-tokens", userId]),
     mutate(["/api/get-tokens", orgId ?? null]),
-    mutate("/api/get-tokens"),   // catch-all for any key variant
+    mutate("/api/get-tokens"), // catch-all for any key variant
     mutate("/api/get-customer-details"),
   ]);
 }

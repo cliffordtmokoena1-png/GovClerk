@@ -19,7 +19,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const conn = getPortalDbConnection();
 
-  const { status, startDate, endDate, page = "1", pageSize = "20" } = req.query as Record<string, string>;
+  const {
+    status,
+    startDate,
+    endDate,
+    page = "1",
+    pageSize = "20",
+  } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page, 10));
   const pageSizeNum = Math.min(100, Math.max(1, parseInt(pageSize, 10)));
   const offset = (pageNum - 1) * pageSizeNum;
@@ -58,5 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     [...params, pageSizeNum, offset]
   );
 
-  return res.status(200).json({ requests: result.rows, total, page: pageNum, pageSize: pageSizeNum });
+  return res
+    .status(200)
+    .json({ requests: result.rows, total, page: pageNum, pageSize: pageSizeNum });
 }

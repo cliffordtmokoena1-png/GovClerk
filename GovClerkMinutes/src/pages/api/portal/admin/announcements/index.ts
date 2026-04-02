@@ -28,7 +28,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
-    const { title, body, type = "notice", expiresAt } = req.body as {
+    const {
+      title,
+      body,
+      type = "notice",
+      expiresAt,
+    } = req.body as {
       title?: string;
       body?: string;
       type?: string;

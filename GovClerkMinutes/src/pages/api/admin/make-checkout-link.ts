@@ -58,7 +58,9 @@ async function handler(req: NextRequest) {
 
     if (!VALID_COUNTRIES.has(country)) {
       return json(
-        { error: `Unsupported country code: ${country}. Supported values: ${[...VALID_COUNTRIES].join(", ")}` },
+        {
+          error: `Unsupported country code: ${country}. Supported values: ${[...VALID_COUNTRIES].join(", ")}`,
+        },
         400
       );
     }

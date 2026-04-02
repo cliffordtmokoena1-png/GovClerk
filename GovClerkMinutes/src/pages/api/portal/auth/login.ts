@@ -75,7 +75,10 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   const user = userResult.rows[0] as any;
   if (!user.is_active) {
-    return errorResponse("Your account has been deactivated. Please contact your administrator.", 403);
+    return errorResponse(
+      "Your account has been deactivated. Please contact your administrator.",
+      403
+    );
   }
 
   // 4. Verify password
@@ -85,10 +88,9 @@ export default async function handler(req: NextRequest): Promise<Response> {
   }
 
   // Update last_login_at
-  await conn.execute(
-    "UPDATE gc_portal_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?",
-    [user.id]
-  );
+  await conn.execute("UPDATE gc_portal_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?", [
+    user.id,
+  ]);
 
   // 5. Create session
   const { cookieValue } = await createPortalSession({
