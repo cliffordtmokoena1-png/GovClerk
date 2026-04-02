@@ -82,8 +82,8 @@ export default function PortalRegisterPage({ settings, slug }: RegisterPageProps
         setError(data.error || "Registration failed. Please try again.");
         return;
       }
-      // Auto-login on success — redirect to portal
-      router.push(`/portal/${slug}`);
+      // Redirect to verification page so the user can enter their emailed code
+      router.push(`/portal/${slug}/verify?email=${encodeURIComponent(email)}`);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
