@@ -23,6 +23,8 @@ import { MIGRATIONS } from "../db/migrations/index";
 const DRY_RUN = process.argv.includes("--dry-run");
 const STATUS_ONLY = process.argv.includes("--status");
 
+const STATEMENT_SEPARATOR = ";";
+
 function getConnection() {
   const host = process.env.PLANETSCALE_DB_HOST;
   const username = process.env.PLANETSCALE_DB_USERNAME;
@@ -39,14 +41,14 @@ function getConnection() {
 }
 
 async function ensureMigrationsTable(conn: ReturnType<typeof connect>): Promise<void> {
-  await conn.execute(`
-    CREATE TABLE IF NOT EXISTS gc_portal_migrations (
-      id VARCHAR(20) NOT NULL PRIMARY KEY COMMENT 'Migration ID e.g. 001, 002',
-      name VARCHAR(255) NOT NULL COMMENT 'Human-readable name',
-      applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      KEY idx_applied (applied_at)
-    );
-  `);
+  await conn.execute(
+    "CREATE TABLE IF NOT EXISTS gc_portal_migrations (" +
+    "  id VARCHAR(20) NOT NULL PRIMARY KEY," +
+    "  name VARCHAR(255) NOT NULL," +
+    "  applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+    "  KEY idx_applied (applied_at)" +
+    ")"
+  );
 }
 
 async function getAppliedMigrations(
@@ -64,7 +66,7 @@ async function applyMigration(
 ): Promise<void> {
   // Split on semicolons to handle multi-statement migrations
   const statements = sql
-    .split(":")
+    .split(STATEMENT_SEPARATOR)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
@@ -81,7 +83,8 @@ async function applyMigration(
 
 async function main() {
   console.log("GovClerk Portal Migration Runner");
-  console.log("================================\n");
+  console.log("================================");
+  console.log("");
 
   const conn = getConnection();
 
@@ -91,30 +94,35 @@ async function main() {
   const pending = MIGRATIONS.filter((m) => !applied.has(m.id));
 
   if (STATUS_ONLY) {
-    console.log("Migration Status:\n");
+    console.log("Migration Status:");
+    console.log("");
     for (const m of MIGRATIONS) {
       const status = applied.has(m.id) ? "[APPLIED]" : "[PENDING]";
-      console.log(`  ${m.id} - ${m.name}  ${status}`);
+      console.log("  " + m.id + " - " + m.name + "  " + status);
     }
-    console.log(`\n  Total: ${MIGRATIONS.length} | Applied: ${applied.size} | Pending: ${pending.length}`);
+    console.log("");
+    console.log("  Total: " + MIGRATIONS.length + " | Applied: " + applied.size + " | Pending: " + pending.length);
     return;
   }
 
   if (pending.length === 0) {
-    console.log("All migrations are up to date. Nothing to apply.\n");
+    console.log("All migrations are up to date. Nothing to apply.");
+    console.log("");
     return;
   }
 
-  console.log(`Found ${pending.length} pending migration(s):\n");
+  console.log("Found " + pending.length + " pending migration(s):");
+  console.log("");
   for (const m of pending) {
-    console.log(`  [PENDING] ${m.id} - ${m.name}`);
+    console.log("  [PENDING] " + m.id + " - " + m.name);
   }
   console.log("");
 
   if (DRY_RUN) {
-    console.log("DRY RUN - showing SQL that would be executed:\n");
+    console.log("DRY RUN - showing SQL that would be executed:");
+    console.log("");
     for (const m of pending) {
-      console.log(`--- ${m.id}: ${m.name} ---`);
+      console.log("--- " + m.id + ": " + m.name + " ---");
       console.log(m.sql);
       console.log("");
     }
@@ -123,20 +131,23 @@ async function main() {
   }
 
   for (const m of pending) {
-    process.stdout.write(`  Applying ${m.id} - ${m.name}...`);
+    process.stdout.write("  Applying " + m.id + " - " + m.name + "...");
     try {
       await applyMigration(conn, m.id, m.name, m.sql);
       console.log(" OK");
     } catch (err: any) {
       console.log(" FAILED");
-      console.error(`\n  Error applying migration ${m.id}:`);
-      console.error(`  ${err.message || err}\n`);
+      console.error("");
+      console.error("  Error applying migration " + m.id + ":");
+      console.error("  " + (err.message || err));
+      console.error("");
       console.error("  Aborting. Fix the issue and re-run.");
       process.exit(1);
     }
   }
 
-  console.log(`\nSuccessfully applied ${pending.length} migration(s).`);
+  console.log("");
+  console.log("Successfully applied " + pending.length + " migration(s).");
 }
 
 main().catch((err) => {
