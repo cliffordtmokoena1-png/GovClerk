@@ -6,9 +6,9 @@
  * src/db/migrations/index.ts in sequential order.
  *
  * Usage:
- *   npx tsx src/scripts/run-portal-migrations.ts            # apply pending
- *   npx tsx src/scripts/run-portal-migrations.ts --dry-run   # preview only
- *   npx tsx src/scripts/run-portal-migrations.ts --status     # show status
+ *   npm run db:migrate            # apply pending migrations
+ *   npm run db:migrate:dry        # preview only (no changes)
+ *   npm run db:migrate:status     # show which are applied/pending
  *
  * Requires environment variables:
  *   PLANETSCALE_DB_HOST
@@ -30,7 +30,7 @@ function getConnection() {
 
   if (!host || !username || !password) {
     console.error(
-      "❌ Missing required environment variables: PLANETSCALE_DB_HOST, PLANETSCALE_DB_USERNAME, PLANETSCALE_DB_PASSWORD"
+      "Missing required environment variables: PLANETSCALE_DB_HOST, PLANETSCALE_DB_USERNAME, PLANETSCALE_DB_PASSWORD"
     );
     process.exit(1);
   }
@@ -39,8 +39,6 @@ function getConnection() {
 }
 
 async function ensureMigrationsTable(conn: ReturnType<typeof connect>): Promise<void> {
-  // Migration 001 creates the tracking table itself, but we need to bootstrap
-  // it if this is the very first run.
   await conn.execute(`
     CREATE TABLE IF NOT EXISTS gc_portal_migrations (
       id VARCHAR(20) NOT NULL PRIMARY KEY COMMENT 'Migration ID e.g. 001, 002',
@@ -66,7 +64,7 @@ async function applyMigration(
 ): Promise<void> {
   // Split on semicolons to handle multi-statement migrations
   const statements = sql
-    .split(",")
+    .split(":")
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
@@ -82,42 +80,39 @@ async function applyMigration(
 }
 
 async function main() {
-  console.log("🔄 GovClerk Portal Migration Runner\n");
+  console.log("GovClerk Portal Migration Runner");
+  console.log("================================\n");
 
   const conn = getConnection();
 
-  // Ensure the tracking table exists
   await ensureMigrationsTable(conn);
 
-  // Get already-applied migrations
   const applied = await getAppliedMigrations(conn);
-
-  // Determine pending migrations
   const pending = MIGRATIONS.filter((m) => !applied.has(m.id));
 
   if (STATUS_ONLY) {
-    console.log(`📊 Migration Status:\n`);
+    console.log("Migration Status:\n");
     for (const m of MIGRATIONS) {
-      const status = applied.has(m.id) ? "✅ Applied" : "⏳ Pending";
-      console.log(`  ${m.id} — ${m.name}  [${status}]`);
+      const status = applied.has(m.id) ? "[APPLIED]" : "[PENDING]";
+      console.log(`  ${m.id} - ${m.name}  ${status}`);
     }
     console.log(`\n  Total: ${MIGRATIONS.length} | Applied: ${applied.size} | Pending: ${pending.length}`);
     return;
   }
 
   if (pending.length === 0) {
-    console.log("✅ All migrations are up to date. Nothing to apply.\n");
+    console.log("All migrations are up to date. Nothing to apply.\n");
     return;
   }
 
-  console.log(`Found ${pending.length} pending migration(s):\n`);
+  console.log(`Found ${pending.length} pending migration(s):\n");
   for (const m of pending) {
-    console.log(`  ⏳ ${m.id} — ${m.name}`);
+    console.log(`  [PENDING] ${m.id} - ${m.name}`);
   }
   console.log("");
 
   if (DRY_RUN) {
-    console.log("🔍 DRY RUN — showing SQL that would be executed:\n");
+    console.log("DRY RUN - showing SQL that would be executed:\n");
     for (const m of pending) {
       console.log(`--- ${m.id}: ${m.name} ---`);
       console.log(m.sql);
@@ -127,14 +122,13 @@ async function main() {
     return;
   }
 
-  // Apply each pending migration
   for (const m of pending) {
-    process.stdout.write(`  Applying ${m.id} — ${m.name}...`);
+    process.stdout.write(`  Applying ${m.id} - ${m.name}...`);
     try {
       await applyMigration(conn, m.id, m.name, m.sql);
-      console.log(" ✅");
+      console.log(" OK");
     } catch (err: any) {
-      console.log(" ❌");
+      console.log(" FAILED");
       console.error(`\n  Error applying migration ${m.id}:`);
       console.error(`  ${err.message || err}\n`);
       console.error("  Aborting. Fix the issue and re-run.");
@@ -142,7 +136,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ Successfully applied ${pending.length} migration(s).`);
+  console.log(`\nSuccessfully applied ${pending.length} migration(s).`);
 }
 
 main().catch((err) => {
