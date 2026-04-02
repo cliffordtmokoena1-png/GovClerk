@@ -65,6 +65,7 @@ type ApiGetMinutesResponseResult = {
   minutes?: string[];
   rating?: string;
   steps?: { name: string; status: string }[];
+  transcribeFailed?: boolean;
 };
 
 type BroadcastSegmentsCheckResult = {
@@ -171,7 +172,7 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
     },
     {
       refreshInterval: (data) =>
-        data?.status === "IN_PROGRESS" || data?.status === "NOT_STARTED" ? 3000 : 0,
+        (data?.status === "IN_PROGRESS" || data?.status === "NOT_STARTED") && !data?.transcribeFailed ? 3000 : 0,
     }
   );
 
@@ -448,9 +449,9 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
       toast.error("Unsupported file type. Please upload mp3, wav, m4a, mp4, webm, ogg, or flac.");
       return;
     }
-    const maxSize = 500 * 1024 * 1024;
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2 GB
     if (file.size > maxSize) {
-      toast.error("File is too large. Maximum size is 500 MB.");
+      toast.error("File is too large. Maximum size is 2 GB.");
       return;
     }
 
@@ -459,7 +460,7 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
     setStartError(null);
 
     try {
-      // Phase 1: create transcript record and get presigned URL
+      // Phase 1: create transcript record and get presigned URL (or multipart credentials)
       const initRes = await fetch(`/api/portal/meetings/${meeting.id}/minutes/upload-audio`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -477,32 +478,99 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
         throw new Error(err.error || "Failed to initialize upload");
       }
 
-      const { transcriptId, uploadUrl, alreadyExists } = await initRes.json();
+      const { transcriptId, uploadUrl, multipartUpload, alreadyExists } = await initRes.json();
       if (alreadyExists) {
         onUpdate?.();
         return;
       }
 
-      // Phase 2: upload file to S3 with progress tracking
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", (event) => {
-          if (event.lengthComputable) {
-            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+      // Phase 2: upload file to S3
+      if (multipartUpload) {
+        // Large file: upload in parts using S3 multipart upload
+        const { uploadId, partSize, parts } = multipartUpload as {
+          uploadId: string;
+          partSize: number;
+          parts: Array<{ partNumber: number; url: string }>;
+        };
+
+        const completedParts: Array<{ partNumber: number; etag: string }> = [];
+        let totalUploaded = 0;
+
+        for (const part of parts) {
+          const start = (part.partNumber - 1) * partSize;
+          const end = Math.min(start + partSize, file.size);
+          const chunk = file.slice(start, end);
+
+          const etag = await new Promise<string>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener("progress", (event) => {
+              if (event.lengthComputable) {
+                const chunkUploaded = totalUploaded + event.loaded;
+                setUploadProgress(Math.round((chunkUploaded / file.size) * 100));
+              }
+            });
+            xhr.addEventListener("load", () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                const responseEtag = xhr.getResponseHeader("ETag") ?? "";
+                totalUploaded += chunk.size;
+                resolve(responseEtag);
+              } else {
+                reject(new Error(`Part ${part.partNumber} upload failed: ${xhr.status}`));
+              }
+            });
+            xhr.addEventListener("error", () =>
+              reject(new Error(`Network error uploading part ${part.partNumber}`))
+            );
+            xhr.open("PUT", part.url);
+            xhr.setRequestHeader("Content-Type", file.type);
+            xhr.send(chunk);
+          });
+
+          completedParts.push({ partNumber: part.partNumber, etag });
+        }
+
+        // Phase 2.5: complete the multipart upload
+        const completeRes = await fetch(
+          `/api/portal/meetings/${meeting.id}/minutes/upload-audio`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orgId,
+              action: "complete-multipart",
+              transcriptId,
+              uploadId,
+              parts: completedParts,
+            }),
           }
+        );
+
+        if (!completeRes.ok) {
+          const err = await completeRes.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to complete multipart upload");
+        }
+      } else {
+        // Small file: single presigned PUT upload
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              setUploadProgress(Math.round((event.loaded / event.total) * 100));
+            }
+          });
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`S3 upload failed: ${xhr.status}`));
+            }
+          });
+          xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type);
+          xhr.send(file);
         });
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`S3 upload failed: ${xhr.status}`));
-          }
-        });
-        xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
+      }
 
       setUploadProgress(100);
 
@@ -1179,6 +1247,74 @@ export default function MeetingMinutesTab({ meeting, onUpdate }: Props) {
               </div>
 
               <MinutesProgressStepper steps={minutesData.steps} isPaused={false} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (minutesData.transcribeFailed) {
+      return (
+        <div className="p-4 md:p-6">
+          <div className="max-w-5xl mx-auto w-full flex flex-col items-center justify-center py-12 bg-destructive/5 rounded-lg border border-destructive/20">
+            <div className="max-w-md mx-auto text-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-destructive/10">
+                <LuAlertCircle className="w-8 h-8 text-destructive" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-foreground">Transcription Failed</h3>
+                <p className="text-sm text-muted-foreground">
+                  The audio could not be transcribed. This can happen with very large or long
+                  recordings. You can retry transcription using the uploaded audio, or upload a
+                  new recording.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button
+                  variant="default"
+                  disabled={isRetrying}
+                  onClick={async () => {
+                    setIsRetrying(true);
+                    try {
+                      const res = await fetch(
+                        `/api/portal/meetings/${meeting.id}/minutes/upload-audio`,
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            orgId,
+                            action: "retry-diarization",
+                            transcriptId: meeting.minutesTranscriptId,
+                          }),
+                        }
+                      );
+                      if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err.error || "Failed to retry");
+                      }
+                      toast.success("Transcription retry started.");
+                      onUpdate?.();
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Failed to retry");
+                    } finally {
+                      setIsRetrying(false);
+                    }
+                  }}
+                >
+                  {isRetrying ? (
+                    <>
+                      <Spinner className="w-4 h-4" />
+                      Retrying...
+                    </>
+                  ) : (
+                    <>
+                      <LuRotateCw className="w-4 h-4" />
+                      Retry Transcription
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

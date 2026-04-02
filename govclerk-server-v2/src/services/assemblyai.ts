@@ -48,8 +48,19 @@ export async function transcribeAndDiarize(
     config.language_detection = true;  // auto-detect language
   }
 
-  // 3. Wait for transcription to complete (AssemblyAI polls internally)
-  const transcript = await client.transcripts.transcribe(config);
+  // 3. Wait for transcription to complete (AssemblyAI polls internally).
+  // Wrap with a 60-minute timeout so the process doesn't hang indefinitely
+  // for very large recordings.
+  const TRANSCRIPTION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
+  const transcript = await Promise.race([
+    client.transcripts.transcribe(config),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`AssemblyAI transcription timed out after ${TRANSCRIPTION_TIMEOUT_MS / 60_000} minutes`)),
+        TRANSCRIPTION_TIMEOUT_MS
+      )
+    ),
+  ]);
 
   if (transcript.status === 'error') {
     throw new Error(`AssemblyAI transcription failed: ${transcript.error}`);

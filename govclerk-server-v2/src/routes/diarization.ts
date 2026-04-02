@@ -67,9 +67,25 @@ diarizationRoute.post('/get-diarization', authMiddleware, zValidator('json', bod
     started_at: new Date(),
   });
 
-  // Process asynchronously — return 202 immediately so the frontend isn't blocked
+  // Process asynchronously — return 202 immediately so the frontend isn't blocked.
+  // Wrap in a 65-minute hard timeout (slightly longer than the AssemblyAI internal
+  // 60-minute timeout) to prevent the job from hanging indefinitely.
+  const PROCESS_TIMEOUT_MS = 65 * 60 * 1000;
+  const timeoutHandle = setTimeout(() => {
+    if (activeJobs.has(transcriptId)) {
+      console.error(`[diarization] Hard timeout reached for transcript ${transcriptId}`);
+      activeJobs.delete(transcriptId);
+      execute(
+        "UPDATE transcripts SET transcribe_failed = 1 WHERE id = ?",
+        [transcriptId]
+      ).catch(console.error);
+    }
+  }, PROCESS_TIMEOUT_MS);
+
   processTranscription(transcriptId, transcript.userId, transcript.org_id, s3_audio_key, transcript.aws_region, language ?? transcript.language ?? undefined)
+    .then(() => clearTimeout(timeoutHandle))
     .catch(err => {
+      clearTimeout(timeoutHandle);
       console.error(`[diarization] Failed for transcript ${transcriptId}:`, err);
       activeJobs.delete(transcriptId);
       execute(
@@ -205,7 +221,16 @@ async function processTranscription(
       started_at: new Date(),
     });
 
-    // 7. Auto-trigger minutes generation
+    // 7. Auto-trigger minutes generation (only if transcript has content)
+    if (!formattedTranscript.trim()) {
+      console.error(`[diarization] Transcript is empty for ${transcriptId} — skipping minutes generation and marking as failed`);
+      await execute(
+        'UPDATE transcripts SET transcribe_failed = 1 WHERE id = ?',
+        [transcriptId]
+      );
+      activeJobs.delete(transcriptId);
+      return;
+    }
     await triggerMinutesGeneration(transcriptId, userId, orgId, formattedTranscript);
 
     // 8. Clean up job tracker
