@@ -16,9 +16,15 @@ export async function checkRenewToken(): Promise<void> {
     password: process.env.PLANETSCALE_DB_PASSWORD,
   });
 
+  const now = new Date();
+  const cronMarker = `cron_renewal_${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+
   await conn.transaction(async (tx) => {
     // Find subscribers who are due for a monthly top-up.
     // Include paystack_plan_code so we can grant the correct token amount.
+    // The JOIN filters only by action='add' (not mode='subscription') so that
+    // tokens inserted by the PayStack charge.success webhook are also counted,
+    // preventing double-grants when both the webhook and the cron fire in the same month.
     const due = await tx
       .execute(
         `
@@ -28,7 +34,6 @@ export async function checkRenewToken(): Promise<void> {
           LEFT JOIN payments p
           ON p.user_id = mc.user_id
           AND p.action = 'add'
-          AND p.mode = 'subscription'
           WHERE mc.paystack_subscription_code IS NOT NULL
           GROUP BY mc.user_id, mc.paystack_customer_code, mc.paystack_plan_code
           HAVING MAX(p.created_at) IS NULL
@@ -58,17 +63,18 @@ export async function checkRenewToken(): Promise<void> {
       const renewalTokens = getTokensForPlan(plan);
 
       valueRows.push(
-        `(?, ?, 'add', 'subscription', ${lastCreated ? "DATE_ADD(?, INTERVAL 1 MONTH)" : "NOW()"})`
+        `(?, ?, 'add', 'subscription', ${lastCreated ? "DATE_ADD(?, INTERVAL 1 MONTH)" : "NOW()"}, ?)`
       );
       params.push(row.user_id, renewalTokens);
       if (lastCreated) {
         params.push(lastCreated);
       }
+      params.push(cronMarker);
     }
 
     await tx.execute(
       `
-      INSERT INTO payments (user_id, credit, action, mode, created_at)
+      INSERT INTO payments (user_id, credit, action, mode, created_at, checkout_session_id)
       VALUES ${valueRows.join(",")}
       `,
       [...params]

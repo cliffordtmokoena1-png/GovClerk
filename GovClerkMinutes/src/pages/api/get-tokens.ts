@@ -102,7 +102,10 @@ async function handler(req: NextRequest) {
         if (!isActionColumnMissing(selectErr)) {
           throw selectErr;
         }
-        // 'action' column missing — no 'add' grant row can exist yet; proceed to INSERT fallback
+        // 'action' column missing — fallback: check without action filter
+        existingRows = await conn
+          .execute("SELECT id FROM payments WHERE user_id = ? AND credit = 30 LIMIT 1", [userId])
+          .then((res) => res.rows);
       }
 
       if (existingRows.length > 0) {
