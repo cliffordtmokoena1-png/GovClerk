@@ -9,6 +9,7 @@ import {
   LuLogIn,
   LuLogOut,
   LuUser,
+  LuSettings,
 } from "react-icons/lu";
 import { useAuth } from "@clerk/nextjs";
 import { usePortalSession } from "@/hooks/portal/usePortalSession";
@@ -143,6 +144,17 @@ export function PublicPortalHeader({
                     <LuUser className="w-3.5 h-3.5" />
                     {session.email ?? "Signed in"}
                   </span>
+                  {/* Admin settings link — only for portal admins */}
+                  {session.role === "admin" && slug && (
+                    <Link
+                      href={`/portal/${slug}/admin`}
+                      style={{ color: settings.headerTextColor || "#ffffff" }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                    >
+                      <LuSettings className="w-3.5 h-3.5" />
+                      Admin
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handlePortalSignOut}
@@ -267,6 +279,18 @@ export function PublicPortalHeader({
                     <LuUser className="w-3.5 h-3.5" />
                     {session.email ?? "Signed in"}
                   </span>
+                  {/* Admin settings link — only for portal admins */}
+                  {session.role === "admin" && slug && (
+                    <Link
+                      href={`/portal/${slug}/admin`}
+                      style={{ color: settings.headerTextColor || "#ffffff" }}
+                      className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors w-full uppercase tracking-wide"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <LuSettings className="w-3.5 h-3.5" />
+                      Admin
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handlePortalSignOut}
