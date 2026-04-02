@@ -75,6 +75,18 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   const user = userResult.rows[0] as any;
   if (!user.is_active) {
+    // Distinguish between "never verified" and "admin-deactivated" by checking
+    // for a pending (unverified) verification record.
+    const verifyResult = await conn.execute(
+      "SELECT id FROM gc_portal_email_verifications WHERE org_id = ? AND email = ? AND is_verified = 0",
+      [orgId, email.toLowerCase()]
+    );
+    if (verifyResult.rows.length > 0) {
+      return errorResponse(
+        "Your email has not been verified yet. Please check your inbox for the verification code, or register again to receive a new one.",
+        403
+      );
+    }
     return errorResponse(
       "Your account has been deactivated. Please contact your administrator.",
       403
