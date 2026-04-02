@@ -21,14 +21,15 @@ CREATE TABLE IF NOT EXISTS gc_portal_users (
 
 -- Email verification codes (6-digit, time-limited)
 CREATE TABLE IF NOT EXISTS gc_portal_email_verifications (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  email      VARCHAR(255) NOT NULL,
-  org_id     VARCHAR(255) NOT NULL,
-  code       VARCHAR(6)   NOT NULL,
-  expires_at TIMESTAMP    NOT NULL,
-  used       TINYINT(1)   NOT NULL DEFAULT 0,
-  created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_email_code (email, code)
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  org_id            VARCHAR(255) NOT NULL,
+  email             VARCHAR(255) NOT NULL,
+  verification_code VARCHAR(10)  NOT NULL,
+  is_verified       TINYINT(1)   NOT NULL DEFAULT 0,
+  expires_at        TIMESTAMP    NOT NULL,
+  created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_org_email (org_id, email),
+  INDEX idx_email (email)
 );
 
 -- Allowed email domains per organisation
