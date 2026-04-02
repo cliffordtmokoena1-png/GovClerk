@@ -29,12 +29,12 @@ export default function PortalHeroSection() {
             >
               Request a Quote →
             </Link>
-            <a
-              href="#demo"
+            <Link
+              href="/portal/demo/sign-in"
               className="rounded-lg border border-gray-300 px-8 py-3.5 text-base font-semibold text-gray-700 transition-all hover:border-gray-400 hover:bg-gray-50"
             >
-              See a Live Demo Portal →
-            </a>
+              Sign In &amp; Create Account →
+            </Link>
           </div>
         </FadeContent>
       </div>

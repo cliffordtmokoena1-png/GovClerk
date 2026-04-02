@@ -47,7 +47,7 @@ const plans: Plan[] = [
       "Live meeting broadcasting",
       "Real-time transcription",
       "Agenda tracking during broadcasts",
-      "GovClerkMinutes access (50 tokens/month)",
+      "GovClerkMinutes access (10,000 tokens/month)",
     ],
     cta: "Select Professional",
   },

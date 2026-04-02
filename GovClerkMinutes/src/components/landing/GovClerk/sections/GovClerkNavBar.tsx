@@ -382,12 +382,26 @@ export default function GovClerkNavBar() {
                     </button>
                   </div>
                 ))}
-                <Link
-                  href="/portal/request-quote"
-                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                <div
+                  className="relative"
+                  onMouseEnter={() => handleDropdownEnter("pricing")}
+                  onMouseLeave={handleDropdownLeave}
                 >
-                  Pricing
-                </Link>
+                  <button
+                    type="button"
+                    aria-haspopup="true"
+                    aria-expanded={activeDropdown === "pricing"}
+                    aria-controls="mega-panel-pricing"
+                    className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                  >
+                    Pricing
+                    <LuChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        activeDropdown === "pricing" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
                 <a
                   href="https://calendly.com/cliff-govclerkminutes/30min"
                   target="_blank"
@@ -513,6 +527,57 @@ export default function GovClerkNavBar() {
             </div>
           </div>
         ))}
+        {/* Pricing dropdown panel */}
+        <div
+          id="mega-panel-pricing"
+          role="menu"
+          className={`absolute left-0 right-0 top-full border-t border-gray-100 bg-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] ${
+            activeDropdown === "pricing"
+              ? "block animate-[megaFadeIn_0.15s_ease-out]"
+              : "hidden"
+          }`}
+          onMouseEnter={() => handleDropdownEnter("pricing")}
+          onMouseLeave={handleDropdownLeave}
+        >
+          <div className="mx-auto max-w-7xl px-6 py-8">
+            <div className="grid grid-cols-2 gap-4 max-w-xl">
+              <Link
+                href="/portal/request-quote"
+                className="group flex gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-6 transition-all hover:border-blue-100 hover:bg-blue-50/30 hover:shadow-sm"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-cd-blue/10">
+                  <LuGlobe className="h-5 w-5 text-cd-blue" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900">GovClerk Portal</p>
+                    <LuArrowRight className="h-3.5 w-3.5 -translate-x-1 text-gray-400 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                    Public portal, live streaming &amp; transparency
+                  </p>
+                </div>
+              </Link>
+              <Link
+                href="/pricing"
+                className="group flex gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-6 transition-all hover:border-blue-100 hover:bg-blue-50/30 hover:shadow-sm"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-cd-blue/10">
+                  <LuFileText className="h-5 w-5 text-cd-blue" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900">GovClerkMinutes</p>
+                    <LuArrowRight className="h-3.5 w-3.5 -translate-x-1 text-gray-400 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                    AI minutes generation &amp; agenda management
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
       </nav>
 
       {/* Mobile fullscreen menu */}
@@ -587,6 +652,52 @@ export default function GovClerkNavBar() {
               )}
             </div>
           ))}
+
+          {/* Pricing mobile dropdown - shown for all users */}
+          <div>
+            <button
+              type="button"
+              onClick={() =>
+                setMobileExpanded(mobileExpanded === "pricing" ? null : "pricing")
+              }
+              aria-expanded={mobileExpanded === "pricing"}
+              aria-controls="mobile-panel-pricing"
+              className="flex w-full items-center justify-between py-5 text-lg font-medium text-gray-900 transition-colors hover:text-blue-600"
+            >
+              Pricing
+              <LuChevronDown
+                className={`h-5 w-5 transition-transform duration-200 ${
+                  mobileExpanded === "pricing" ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {mobileExpanded === "pricing" && (
+              <div id="mobile-panel-pricing" className="flex flex-col gap-0 pb-4 pl-2">
+                <Link
+                  href="/portal/request-quote"
+                  onClick={handleClose}
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-gray-50"
+                >
+                  <LuGlobe className="h-5 w-5 text-cd-blue" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">GovClerk Portal</p>
+                    <p className="text-xs text-gray-500">Public portal, live streaming &amp; transparency</p>
+                  </div>
+                </Link>
+                <Link
+                  href="/pricing"
+                  onClick={handleClose}
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-gray-50"
+                >
+                  <LuFileText className="h-5 w-5 text-cd-blue" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">GovClerkMinutes</p>
+                    <p className="text-xs text-gray-500">AI minutes generation &amp; agenda management</p>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </div>
 
           {isLoaded && !userId && (
             <div className="mt-4 flex flex-col gap-0 border-t border-gray-100 pt-4">

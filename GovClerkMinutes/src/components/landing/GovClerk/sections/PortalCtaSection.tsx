@@ -24,12 +24,12 @@ export default function PortalCtaSection() {
               >
                 Request a Quote →
               </Link>
-              <a
-                href="#demo"
+              <Link
+                href="/portal/demo/sign-in"
                 className="rounded-lg border border-white/40 px-10 py-3 text-base font-semibold text-white transition-all hover:border-white/70 hover:bg-white/10"
               >
-                See a Live Demo Portal →
-              </a>
+                Sign In &amp; Create Account →
+              </Link>
             </div>
           </div>
         </FadeContent>
