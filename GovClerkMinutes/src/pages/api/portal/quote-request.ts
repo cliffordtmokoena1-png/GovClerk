@@ -22,6 +22,40 @@
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
+import { sendSlackWebhook } from "@/utils/slack";
+import { getPhoneNumberIdFor, WHATSAPP_API_VERSION } from "@/admin/whatsapp/api/consts";
+
+const BUSINESS_WHATSAPP_ID = "27664259236";
+
+/**
+ * Sends a WhatsApp text message directly via the Meta Cloud API,
+ * bypassing writeMessageToDb (which requires a Clerk admin user ID).
+ */
+async function sendWhatsAppNotification(to: string, body: string): Promise<boolean> {
+  try {
+    const phoneNumberId = getPhoneNumberIdFor(BUSINESS_WHATSAPP_ID);
+    const url = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.META_WHATSAPP_BUSINESS_API_KEY}`,
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        type: "text",
+        to,
+        text: { preview_url: false, body },
+      }),
+    });
+
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export const config = {
   runtime: "edge",
@@ -144,6 +178,54 @@ export default async function handler(req: NextRequest): Promise<Response> {
     console.log(
       `[portal/quote-request] New portal-quote from ${normalizedEmail} (${organizationName.trim()}, plan: ${selectedPlan ?? "unspecified"})`
     );
+
+    // Notify team via WhatsApp (best-effort) and Slack (always)
+    const customerPhone = phone.trim().replace(/[^0-9]/g, "");
+    let whatsappSent = false;
+    const MIN_PHONE_LENGTH = 10;
+
+    if (customerPhone.length >= MIN_PHONE_LENGTH) {
+      const waMessage =
+        `Hi ${firstName.trim()}! 👋\n\n` +
+        `Thank you for requesting a quote for *GovClerk Portal* for ${organizationName.trim()}.\n\n` +
+        `We've received your inquiry${selectedPlan ? ` for the *${selectedPlan}* plan` : ""}. ` +
+        `Samantha from our team will review your requirements and get back to you shortly with a tailored quote.\n\n` +
+        `Feel free to ask any questions right here — I'm happy to help! 😊\n\n` +
+        `— The GovClerk Team`;
+
+      whatsappSent = await sendWhatsAppNotification(customerPhone, waMessage);
+      if (whatsappSent) {
+        console.log(`[portal/quote-request] WhatsApp message sent to ${customerPhone}`);
+      } else {
+        console.warn(`[portal/quote-request] WhatsApp send failed for ${customerPhone}`);
+      }
+    }
+
+    try {
+      const slackTitle = whatsappSent
+        ? "🏛️ New Portal Quote Request (WhatsApp sent ✅)"
+        : "🏛️ New Portal Quote Request (WhatsApp failed ❌ — follow up needed)";
+      await sendSlackWebhook([
+        {
+          color: "#10B981",
+          title: slackTitle,
+          fields: [
+            { title: "Contact", value: `${firstName.trim()} ${lastName.trim()}`, short: true },
+            { title: "Email", value: normalizedEmail, short: true },
+            { title: "Phone", value: phone.trim(), short: true },
+            { title: "Organization", value: organizationName.trim(), short: true },
+            { title: "Website", value: websiteUrl?.trim() || "Not provided", short: true },
+            { title: "Selected Plan", value: selectedPlan || "Not specified", short: true },
+            { title: "Est. Seats", value: estimatedSeats?.toString() || "Not specified", short: true },
+            { title: "Est. Streaming Hours", value: estimatedStreamingHours?.toString() || "Not specified", short: true },
+            { title: "Comments", value: comments?.trim() || "None", short: false },
+          ],
+          footer: `Portal Quote • ${new Date().toISOString()}`,
+        },
+      ]);
+    } catch (slackErr) {
+      console.error("[portal/quote-request] Slack notification failed:", slackErr);
+    }
   } else {
     // Legacy format
     const {
@@ -201,6 +283,33 @@ export default async function handler(req: NextRequest): Promise<Response> {
     console.log(
       `[portal/quote-request] New quote request from ${normalizedEmail} (${org_name.trim()}, ${org_type})`
     );
+
+    try {
+      await sendSlackWebhook([
+        {
+          color: "#10B981",
+          title: "🏛️ New Portal Quote Request (Legacy Form)",
+          fields: [
+            { title: "Contact", value: contact_name.trim(), short: true },
+            { title: "Email", value: normalizedEmail, short: true },
+            { title: "Phone", value: contact_phone?.trim() || "Not provided", short: true },
+            { title: "Organization", value: org_name.trim(), short: true },
+            { title: "Org Type", value: org_type, short: true },
+            { title: "Est. Seats", value: estimated_seats?.toString() || "Not specified", short: true },
+            { title: "Est. Monthly Meetings", value: estimated_monthly_meetings?.toString() || "Not specified", short: true },
+            { title: "Est. Avg Duration (hrs)", value: estimated_avg_meeting_duration_hours?.toString() || "Not specified", short: true },
+            { title: "Needs Live Streaming", value: needs_live_streaming ? "Yes" : "No", short: true },
+            { title: "Needs Public Records", value: needs_public_records ? "Yes" : "No", short: true },
+            { title: "Needs Doc Archival", value: needs_document_archival ? "Yes" : "No", short: true },
+            { title: "Needs GovClerkMinutes", value: needs_govclerk_minutes ? "Yes" : "No", short: true },
+            { title: "Notes", value: additional_notes?.trim() || "None", short: false },
+          ],
+          footer: `Portal Quote (Legacy) • ${new Date().toISOString()}`,
+        },
+      ]);
+    } catch (slackErr) {
+      console.error("[portal/quote-request] Slack notification failed (legacy):", slackErr);
+    }
   }
 
   return jsonResponse({ success: true, message: "Quote request received" }, 201);
