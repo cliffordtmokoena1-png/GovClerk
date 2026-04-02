@@ -4,14 +4,14 @@
  * These emails are visually and tonally DISTINCT from GovClerkMinutes emails:
  * - Header colour: #0d5e3a (deep civic green) vs #1a3c6e (navy) for GovClerkMinutes
  * - Brand name: "GovClerk Portal" vs "GovClerk Minutes"
- * - Sender: portal@govclerkminutes.com vs admin@govclerkminutes.com
+ * - Sender: admin@govclerkminutes.com (display name "GovClerk Portal") vs admin@govclerkminutes.com (display name "GovClerk Minutes")
  * - Tone: civic, transparent, community-focused vs productivity/professional
  * - Sign-off: "The GovClerk Portal Team" vs "Cliff Mokoena, Founder, GovClerk Minutes"
  */
 
 import { sendEmail } from "./postmark";
 
-const FROM_PORTAL = '"GovClerk Portal" <portal@govclerkminutes.com>';
+const FROM_PORTAL = '"GovClerk Portal" <admin@govclerkminutes.com>';
 const PORTAL_GREEN = "#0d5e3a";
 
 /**
