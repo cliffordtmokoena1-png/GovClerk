@@ -78,7 +78,7 @@ async function handler(req: NextRequest): Promise<Response> {
     firstName,
     templateName: "samantha_ad_welcome",
     templateBody:
-      "Hi {{first_name}}! 👋 I'm Samantha from GovClerk Minutes.\n\nThanks for your interest in automating your meeting minutes! I'd love to learn a bit more about your needs so I can point you to the right solution.\n\nCan I ask you a few quick questions? It'll only take a minute! 🕐",
+      "Hi {{first_name}}! 👋 I'm Samantha from GovClerk.\n\nThanks for your interest in automating your meeting minutes! I'd love to learn a bit more about your needs so I can point you to the right solution.\n\nCan I ask you a few quick questions? It'll only take a minute! 🕐",
     parameters: { first_name: firstName },
     leadSource: "paid_ad",
   });

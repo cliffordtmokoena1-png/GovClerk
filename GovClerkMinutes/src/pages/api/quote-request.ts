@@ -211,7 +211,7 @@ async function handler(req: NextRequest) {
         firstName: trimmedFirstName,
         templateName: "samantha_demo_welcome",
         templateBody:
-          "Hi {{first_name}}! 👋 I'm Samantha from GovClerk Minutes.\n\nThank you for requesting a demo for {{organization_name}}! I'd love to help you see how we can streamline your meeting minutes process.\n\nBefore we schedule your demo, I have a few quick questions to make sure we tailor it perfectly for your needs. Ready to chat?",
+          "Hi {{first_name}}! 👋 I'm Samantha from GovClerk.\n\nThank you for requesting a demo for {{organization_name}}! I'd love to help you see how we can streamline your meeting minutes process.\n\nBefore we schedule your demo, I have a few quick questions to make sure we tailor it perfectly for your needs. Ready to chat?",
         parameters: {
           first_name: trimmedFirstName,
           organization_name: trimmedOrganizationName,

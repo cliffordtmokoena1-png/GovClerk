@@ -77,7 +77,7 @@ export async function runPostSignupTasks(): Promise<void> {
           firstName: name,
           templateName: "samantha_organic_welcome",
           templateBody:
-            "Hi {{first_name}}! 👋 I'm Samantha, your GovClerk Minutes assistant.\n\nI noticed you signed up — welcome! I'm here to help you get started. To make sure we set things up right for your organisation, mind if I ask a few quick questions?",
+            "Hi {{first_name}}! 👋 I'm Samantha, your GovClerk assistant.\n\nI noticed you signed up — welcome! I'm here to help you get started. To make sure we set things up right for your organisation, mind if I ask a few quick questions?",
           parameters: { first_name: name },
           leadSource: "organic_signup",
           userId: lead.user_id,
