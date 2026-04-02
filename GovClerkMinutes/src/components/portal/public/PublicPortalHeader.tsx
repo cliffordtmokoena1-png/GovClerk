@@ -9,9 +9,7 @@ import {
   LuLogIn,
   LuLogOut,
   LuUser,
-  LuSettings,
 } from "react-icons/lu";
-import { useAuth } from "@clerk/nextjs";
 import { usePortalSession } from "@/hooks/portal/usePortalSession";
 import type { PublicPortalResponse } from "@/types/portal";
 
@@ -52,7 +50,6 @@ export function PublicPortalHeader({
   onFilterToggle,
 }: PublicPortalHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isSignedIn } = useAuth();
   const { session, refresh: refreshSession } = usePortalSession();
   const router = useRouter();
 
@@ -151,8 +148,8 @@ export function PublicPortalHeader({
                       style={{ color: settings.headerTextColor || "#ffffff" }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
                     >
-                      <LuSettings className="w-3.5 h-3.5" />
-                      Admin
+                      <LuLayoutDashboard className="w-3.5 h-3.5" />
+                      Org Dashboard
                     </Link>
                   )}
                   <button
@@ -176,17 +173,6 @@ export function PublicPortalHeader({
                 </Link>
               )}
 
-              {/* Clerk admin dashboard link */}
-              {isSignedIn && (
-                <Link
-                  href="/a/portal"
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
-                >
-                  <LuLayoutDashboard className="w-3.5 h-3.5" />
-                  Admin Dashboard
-                </Link>
-              )}
             </div>
 
             {/* Mobile: Filter + Hamburger buttons side by side */}
@@ -287,8 +273,8 @@ export function PublicPortalHeader({
                       className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors w-full uppercase tracking-wide"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <LuSettings className="w-3.5 h-3.5" />
-                      Admin
+                      <LuLayoutDashboard className="w-3.5 h-3.5" />
+                      Org Dashboard
                     </Link>
                   )}
                   <button
@@ -309,16 +295,6 @@ export function PublicPortalHeader({
                 >
                   <LuLogIn className="w-3.5 h-3.5" />
                   Sign In
-                </Link>
-              )}
-              {isSignedIn && (
-                <Link
-                  href="/a/portal"
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors border-t border-white/10 mt-2 pt-4 uppercase tracking-wide"
-                >
-                  <LuLayoutDashboard className="w-3.5 h-3.5" />
-                  Admin Dashboard
                 </Link>
               )}
             </nav>
