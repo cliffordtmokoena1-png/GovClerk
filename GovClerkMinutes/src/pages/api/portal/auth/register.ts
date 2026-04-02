@@ -92,11 +92,67 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   // Check if user already exists
   const existingUser = await conn.execute(
-    "SELECT id FROM gc_portal_users WHERE org_id = ? AND email = ?",
+    "SELECT id, is_active FROM gc_portal_users WHERE org_id = ? AND email = ?",
     [orgId, normalizedEmail]
   );
   if (existingUser.rows.length > 0) {
-    return errorResponse("An account with this email already exists", 409);
+    const existing = existingUser.rows[0] as any;
+    if (existing.is_active) {
+      // User is already verified — do not allow re-registration
+      return errorResponse("An account with this email already exists", 409);
+    }
+
+    // User exists but hasn't verified yet (is_active = 0).
+    // Re-generate a fresh code, re-send the verification email, and return success
+    // so the frontend redirects to the verify page rather than showing an error.
+    const code = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const expiresAtStr = expiresAt.toISOString().slice(0, 19).replace("T", " ");
+
+    await conn.execute(
+      "DELETE FROM gc_portal_email_verifications WHERE org_id = ? AND email = ?",
+      [orgId, normalizedEmail]
+    );
+    await conn.execute(
+      `INSERT INTO gc_portal_email_verifications
+         (org_id, email, verification_code, is_verified, expires_at)
+       VALUES (?, ?, ?, 0, ?)`,
+      [orgId, normalizedEmail, code, expiresAtStr]
+    );
+
+    let orgName: string | undefined;
+    try {
+      const orgResult = await conn.execute(
+        "SELECT page_title FROM gc_portal_settings WHERE org_id = ? LIMIT 1",
+        [orgId]
+      );
+      if (orgResult.rows.length > 0) {
+        orgName = (orgResult.rows[0] as any).page_title as string | undefined;
+      }
+    } catch {
+      // Non-critical — proceed without org name
+    }
+
+    try {
+      await sendPortalVerificationEmail(normalizedEmail, code, orgName);
+    } catch (err) {
+      console.error("[register] Failed to re-send portal verification email:", err);
+    }
+
+    const { cookieValue } = await createPortalSession({
+      orgId,
+      portalUserId: existing.id,
+      email: normalizedEmail,
+      authType: "email",
+    });
+
+    return new Response(JSON.stringify({ success: true, requiresVerification: true }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": cookieValue,
+      },
+    });
   }
 
   // 3. Hash password
