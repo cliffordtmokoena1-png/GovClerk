@@ -323,7 +323,7 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
   if (!session) {
     return {
       redirect: {
-        destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/live`,
+        destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/broadcast`,
         permanent: false,
       },
     };

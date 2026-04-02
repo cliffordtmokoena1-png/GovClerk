@@ -131,7 +131,7 @@ function LiveNowBanner({ slug }: Readonly<{ slug: string }>) {
           <span className="text-red-600 text-sm font-medium">{data.broadcast.meeting.title}</span>
         </div>
         <a
-          href={`/portal/${slug}/live`}
+          href={`/portal/${slug}/broadcast`}
           className="shrink-0 px-4 py-1.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
         >
           Join Live Meeting
@@ -420,50 +420,18 @@ export default function PublicPortalPage({
 
 export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
-  // Fix: Detect localhost and use http, otherwise respect NEXT_PUBLIC_APP_URL
-  const host = context.req.headers.host || "localhost:3000";
-  const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
-
-  // Fetch portal settings — a 404 means the org doesn't exist yet; render the
-  // shell with default styling rather than showing a Next.js 404 page.
-  let settingsData: PublicPortalResponse = { settings: makeDefaultPortalSettings(slug) };
-  let portalExists = false;
-
-  try {
-    const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
-    if (settingsRes.ok) {
-      settingsData = await settingsRes.json();
-      portalExists = true;
-    } else if (settingsRes.status !== 404) {
-      // Unexpected error — log but still render shell
-      console.error(`Failed to fetch portal settings: ${settingsRes.status}`);
-    }
-    // 404 → portalExists stays false, default settings used
-  } catch (error) {
-    console.error("Error fetching portal settings:", error);
-    // Network/parse error — still render shell with defaults
-  }
 
   // Check if user has a valid portal session
   const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
     () => null
   );
-  const isAuthenticated = session !== null;
 
-  // For unauthenticated users, return shell-only props (no content)
-  if (!isAuthenticated) {
+  // Unauthenticated users go to the demo page (shows sign-in prompt)
+  if (!session) {
     return {
-      props: {
-        settings: settingsData.settings,
-        initialMeetings: EMPTY_MEETINGS,
-        slug,
-        announcements: [],
-        upcomingMeetings: [],
-        latestArtifacts: [],
-        isAuthenticated: false,
-        portalExists,
-        portalMode: "demo" as const,
+      redirect: {
+        destination: `/portal/${slug}/demo`,
+        permanent: false,
       },
     };
   }
@@ -478,7 +446,11 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         "SELECT is_active FROM gc_portal_users WHERE id = ? AND org_id = ? LIMIT 1",
         [session.portalUserId, session.orgId]
       );
-      if (userResult.rows.length > 0 && ((userResult.rows[0] as any).is_active === 0 || (userResult.rows[0] as any).is_active === false)) {
+      if (
+        userResult.rows.length > 0 &&
+        ((userResult.rows[0] as any).is_active === 0 ||
+          (userResult.rows[0] as any).is_active === false)
+      ) {
         return {
           redirect: {
             destination: `/portal/${slug}/verify`,
@@ -511,108 +483,11 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
     }
   }
 
-  // Authenticated but portal not set up — return shell with org-not-found state
-  if (!portalExists) {
-    return {
-      props: {
-        settings: settingsData.settings,
-        initialMeetings: EMPTY_MEETINGS,
-        slug,
-        announcements: [],
-        upcomingMeetings: [],
-        latestArtifacts: [],
-        isAuthenticated: true,
-        portalExists: false,
-        portalMode,
-      },
-    };
-  }
-
-  // Demo mode: return minimal props (no live content needed)
-  if (portalMode === "demo") {
-    return {
-      props: {
-        settings: settingsData.settings,
-        initialMeetings: EMPTY_MEETINGS,
-        slug,
-        announcements: [],
-        upcomingMeetings: [],
-        latestArtifacts: [],
-        isAuthenticated: true,
-        portalExists: true,
-        portalMode,
-      },
-    };
-  }
-
-  try {
-    // Fetch initial meetings, announcements, upcoming meetings, and latest artifacts in parallel
-    const [meetingsRes, announcementsRes, upcomingRes, artifactsRes] = await Promise.all([
-      fetch(`${baseUrl}/api/public/portal/${slug}/meetings?page=1&limit=12&sortBy=newest`),
-      fetch(`${baseUrl}/api/public/portal/${slug}/announcements`).catch(() => null),
-      fetch(
-        `${baseUrl}/api/public/portal/${slug}/calendar?month=${new Date().getMonth() + 1}&year=${new Date().getFullYear()}`
-      ).catch(() => null),
-      fetch(`${baseUrl}/api/public/portal/${slug}/records/search?type=artifact&pageSize=5`).catch(
-        () => null
-      ),
-    ]);
-
-    if (!meetingsRes.ok) {
-      throw new Error(`Failed to fetch meetings: ${meetingsRes.status}`);
-    }
-    const meetingsData: PublicMeetingsListResponse = await meetingsRes.json();
-
-    const announcements: PortalAnnouncement[] = announcementsRes?.ok
-      ? (await announcementsRes.json()).announcements || []
-      : [];
-
-    const calendarData = upcomingRes?.ok ? await upcomingRes.json() : null;
-    const upcomingMeetings = calendarData?.meetings
-      ? calendarData.meetings
-          .filter((m: any) => new Date(m.meetingDate) >= new Date())
-          .slice(0, 3)
-          .map((m: any) => ({ id: m.id, title: m.title, meetingDate: m.meetingDate }))
-      : [];
-
-    const artifactsData = artifactsRes?.ok ? await artifactsRes.json() : null;
-    const latestArtifacts = artifactsData?.results
-      ? artifactsData.results.slice(0, 5).map((r: any) => ({
-          id: r.id,
-          fileName: r.title,
-          artifactType: r.artifactType || "",
-          s3Url: r.downloadUrl || "",
-          meetingId: r.meetingId || null,
-        }))
-      : [];
-
-    return {
-      props: {
-        settings: settingsData.settings,
-        initialMeetings: meetingsData,
-        slug,
-        announcements,
-        upcomingMeetings,
-        latestArtifacts,
-        isAuthenticated: true,
-        portalExists: true,
-        portalMode,
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching portal data:", error);
-    return {
-      props: {
-        settings: settingsData.settings,
-        initialMeetings: EMPTY_MEETINGS,
-        slug,
-        announcements: [],
-        upcomingMeetings: [],
-        latestArtifacts: [],
-        isAuthenticated: true,
-        portalExists: true,
-        portalMode,
-      },
-    };
-  }
+  // Redirect to the appropriate URL based on portal mode
+  return {
+    redirect: {
+      destination: `/portal/${slug}/${portalMode}`,
+      permanent: false,
+    },
+  };
 };

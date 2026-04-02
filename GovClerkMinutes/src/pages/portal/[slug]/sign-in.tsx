@@ -41,7 +41,6 @@ type TabType = "email" | "shared";
 
 export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
   const router = useRouter();
-  const redirect = (router.query.redirect as string) || `/portal/${slug}`;
 
   const [activeTab, setActiveTab] = useState<TabType>("email");
   const [email, setEmail] = useState("");
@@ -53,6 +52,19 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
   const accentColor = settings.accentColor || "#1e3a5f";
   const headerBg = settings.headerBgColor || "#1e3a5f";
   const headerText = settings.headerTextColor || "#ffffff";
+
+  async function getPortalModeRedirect(): Promise<string> {
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/auth-status`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.portalMode === "live") return `/portal/${slug}/live`;
+      }
+    } catch {
+      // ignore — fall back to demo
+    }
+    return `/portal/${slug}/demo`;
+  }
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -69,7 +81,8 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
         setError(data.error || "Sign in failed. Please try again.");
         return;
       }
-      router.push(redirect);
+      const destination = await getPortalModeRedirect();
+      router.push(destination);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -92,7 +105,8 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
         setError(data.error || "Access denied. Please check the password and try again.");
         return;
       }
-      router.push(redirect);
+      const destination = await getPortalModeRedirect();
+      router.push(destination);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -108,17 +122,15 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
 
       {/* Header */}
       <Box style={{ backgroundColor: headerBg }} py={4} px={6}>
-        <HStack gap={4}>
-          {settings.logoUrl && (
-            <Box
-              as="img"
-              src={settings.logoUrl}
-              alt=""
-              style={{ height: 48, width: "auto", objectFit: "contain" }}
-            />
-          )}
+        <HStack gap={3}>
+          <Box
+            as="img"
+            src="/govclerk-logo.svg"
+            alt="GovClerk"
+            style={{ height: 36, width: "auto", objectFit: "contain" }}
+          />
           <Text fontWeight="bold" fontSize="xl" style={{ color: headerText }}>
-            {settings.pageTitle ?? "Public Records Portal"}
+            Portal
           </Text>
         </HStack>
       </Box>

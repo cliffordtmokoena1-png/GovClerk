@@ -29,7 +29,7 @@ export function usePortalAuth(slug: string | undefined) {
   const { data, isLoading, error } = useSWR<PortalAuthStatus>(
     slug ? `/api/public/portal/${slug}/auth-status` : null,
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: true, refreshInterval: 30000 }
   );
 
   return {
