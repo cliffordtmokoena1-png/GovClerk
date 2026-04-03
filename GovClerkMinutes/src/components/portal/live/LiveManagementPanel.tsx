@@ -4,6 +4,7 @@ import type {
   Motion,
   SpeakerQueueEntry,
   PublicComment,
+  VoteValue,
 } from "@/types/liveSession";
 
 type Props = {
@@ -15,7 +16,7 @@ type Props = {
   onRefresh?: () => void;
 };
 
-type ActiveTab = "rollcall" | "motions" | "speakers" | "comments";
+type ActiveTab = "rollcall" | "motions" | "speakers" | "comments" | "votes";
 
 const ATTENDANCE_STATUS_OPTIONS = ["present", "absent", "late", "excused"] as const;
 const ATTENDANCE_LABELS: Record<string, { label: string; className: string }> = {
@@ -462,6 +463,208 @@ function CommentsTab({
   );
 }
 
+const VOTE_OPTIONS: {
+  value: VoteValue;
+  label: string;
+  baseClass: string;
+  ringClass: string;
+}[] = [
+  {
+    value: "aye",
+    label: "Aye",
+    baseClass: "bg-green-600 text-white hover:bg-green-700",
+    ringClass: "ring-2 ring-green-600 ring-offset-1",
+  },
+  {
+    value: "nay",
+    label: "Nay",
+    baseClass: "bg-red-600 text-white hover:bg-red-700",
+    ringClass: "ring-2 ring-red-600 ring-offset-1",
+  },
+  {
+    value: "abstain",
+    label: "Abstain",
+    baseClass: "bg-yellow-500 text-white hover:bg-yellow-600",
+    ringClass: "ring-2 ring-yellow-500 ring-offset-1",
+  },
+  {
+    value: "absent",
+    label: "Absent",
+    baseClass: "bg-gray-300 text-gray-700 hover:bg-gray-400",
+    ringClass: "ring-2 ring-gray-400 ring-offset-1",
+  },
+];
+
+function VotesTab({
+  broadcastId,
+  motions,
+  attendance,
+  onRefresh,
+}: {
+  broadcastId: number;
+  motions: Motion[];
+  attendance: AttendanceRecord[];
+  onRefresh?: () => void;
+}) {
+  const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
+
+  const openMotions = motions.filter((m) => m.status === "open");
+  const closedMotions = motions.filter(
+    (m) => m.status !== "open" && m.status !== "pending" && m.status !== "withdrawn"
+  );
+
+  async function castVote(motionId: number, memberName: string, vote: VoteValue) {
+    const key = `${motionId}-${memberName}`;
+    setSubmitting((prev) => ({ ...prev, [key]: true }));
+    try {
+      const res = await fetch(`/api/portal/live/${broadcastId}/motions/${motionId}/votes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberName, vote }),
+      });
+      if (!res.ok) return;
+      onRefresh?.();
+    } finally {
+      setSubmitting((prev) => ({ ...prev, [key]: false }));
+    }
+  }
+
+  function getVoteForMember(motion: Motion, memberName: string): VoteValue | undefined {
+    return motion.votes?.find((v) => v.memberName === memberName)?.vote;
+  }
+
+  function computeLocalTally(motion: Motion) {
+    const votes = motion.votes ?? [];
+    return {
+      aye: votes.filter((v) => v.vote === "aye").length,
+      nay: votes.filter((v) => v.vote === "nay").length,
+      abstain: votes.filter((v) => v.vote === "abstain").length,
+      absent: votes.filter((v) => v.vote === "absent").length,
+    };
+  }
+
+  return (
+    <div className="space-y-5">
+      {openMotions.length === 0 && closedMotions.length === 0 && (
+        <p className="text-center text-gray-400 text-sm py-4">No motions available for voting</p>
+      )}
+
+      {openMotions.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">
+            Open for Voting ({openMotions.length})
+          </h3>
+          <div className="space-y-4">
+            {openMotions.map((motion) => {
+              const tally = computeLocalTally(motion);
+              return (
+                <div
+                  key={motion.id}
+                  className="p-4 bg-white border border-gray-200 rounded-xl space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-900">{motion.title}</p>
+                    <span className="text-xs text-gray-400">#{motion.ordinal}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                      Aye: {tally.aye}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                      Nay: {tally.nay}
+                    </span>
+                    {tally.abstain > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+                        Abstain: {tally.abstain}
+                      </span>
+                    )}
+                    {tally.absent > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                        Absent: {tally.absent}
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {attendance.map((rec) => {
+                      const currentVote = getVoteForMember(motion, rec.memberName);
+                      const key = `${motion.id}-${rec.memberName}`;
+                      const isSubmitting = submitting[key];
+                      return (
+                        <div
+                          key={rec.memberName}
+                          className="flex items-center justify-between gap-3 p-2 bg-gray-50 rounded-lg"
+                        >
+                          <span className="text-xs font-medium text-gray-800 min-w-0 truncate flex-1">
+                            {rec.memberName}
+                          </span>
+                          <div className="flex gap-1 flex-shrink-0">
+                            {VOTE_OPTIONS.map((opt) => (
+                              <button
+                                key={opt.value}
+                                onClick={() => castVote(motion.id, rec.memberName, opt.value)}
+                                disabled={isSubmitting}
+                                className={`px-2 py-1 text-xs rounded font-medium transition-colors disabled:opacity-50 ${opt.baseClass} ${currentVote === opt.value ? opt.ringClass : ""}`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {attendance.length === 0 && (
+                      <p className="text-xs text-gray-400 text-center py-2">
+                        No council members in attendance
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {closedMotions.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">
+            Closed Votes ({closedMotions.length})
+          </h3>
+          <div className="space-y-2">
+            {closedMotions.map((motion) => (
+              <div
+                key={motion.id}
+                className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-semibold text-gray-900">{motion.title}</p>
+                  <span className="text-xs text-gray-400">#{motion.ordinal}</span>
+                </div>
+                <span
+                  className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
+                    motion.status === "passed"
+                      ? "bg-green-100 text-green-700"
+                      : motion.status === "failed"
+                      ? "bg-red-100 text-red-700"
+                      : motion.status === "tabled"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {motion.status.charAt(0).toUpperCase() + motion.status.slice(1)}
+                </span>
+                {motion.voteResultSummary && (
+                  <p className="text-xs text-gray-600">{motion.voteResultSummary}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LiveManagementPanel({
   broadcastId,
   attendance,
@@ -475,6 +678,7 @@ export function LiveManagementPanel({
   const tabs: { id: ActiveTab; label: string }[] = [
     { id: "rollcall", label: "Roll Call" },
     { id: "motions", label: "Motions" },
+    { id: "votes", label: "Votes" },
     { id: "speakers", label: "Speakers" },
     { id: "comments", label: "Comments" },
   ];
@@ -502,6 +706,14 @@ export function LiveManagementPanel({
         )}
         {activeTab === "motions" && (
           <MotionsTab broadcastId={broadcastId} motions={motions} onRefresh={onRefresh} />
+        )}
+        {activeTab === "votes" && (
+          <VotesTab
+            broadcastId={broadcastId}
+            motions={motions}
+            attendance={attendance}
+            onRefresh={onRefresh}
+          />
         )}
         {activeTab === "speakers" && (
           <SpeakersTab
