@@ -5,11 +5,12 @@
  * Tabs:
  *   - Overview: Subscription plan card (tier, seats, streaming hours, price, status)
  *   - Streaming: Platform connections, preferred platform selector, streaming hours
+ *   - Live Broadcast: Start, manage, and end live broadcasts from the portal
  *   - Members: Member list with add/edit/deactivate actions
  *   - Appearance: Portal branding (title, description, logo, colors, nav links)
  *   - Settings: Allowed email domains, portal visibility, portal URL
  *
- * URL: /portal/[slug]/admin?tab=overview|streaming|members|appearance|settings
+ * URL: /portal/[slug]/admin?tab=overview|streaming|broadcast|members|appearance|settings
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -72,11 +73,16 @@ import {
   LuRefreshCw,
   LuBarChart2,
   LuRadio,
+  LuVideo,
   LuUsers,
   LuPalette,
   LuSettings,
   LuPlus,
   LuTrash2,
+  LuCopy,
+  LuEye,
+  LuEyeOff,
+  LuExternalLink,
 } from "react-icons/lu";
 import type { PublicPortalResponse } from "@/types/portal";
 import type { StreamPlatform } from "@/types/liveSession";
@@ -149,6 +155,23 @@ interface SharedPassword {
   createdAt: string;
 }
 
+interface BroadcastData {
+  id: number;
+  orgId: string;
+  meetingId: number | null;
+  title: string | null;
+  status: "setup" | "live" | "paused" | "ended";
+  streamKey: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+}
+
+interface BroadcastMeeting {
+  id: number;
+  title: string;
+}
+
 interface AdminPageProps {
   settings: PublicPortalResponse["settings"];
   slug: string;
@@ -156,7 +179,7 @@ interface AdminPageProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TAB_KEYS = ["overview", "streaming", "members", "appearance", "settings"] as const;
+const TAB_KEYS = ["overview", "streaming", "broadcast", "members", "appearance", "settings"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const TIER_LABELS: Record<string, string> = {
@@ -416,6 +439,18 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
   const hasLoadedSettings = useRef(false);
   const [newDomain, setNewDomain] = useState("");
 
+  // ── Broadcast State ──────────────────────────────────────────────────────
+  const [broadcast, setBroadcast] = useState<BroadcastData | null>(null);
+  const [broadcastMeetings, setBroadcastMeetings] = useState<BroadcastMeeting[]>([]);
+  const [isLoadingBroadcast, setIsLoadingBroadcast] = useState(false);
+  const [broadcastError, setBroadcastError] = useState<string | null>(null);
+  const [newBroadcastTitle, setNewBroadcastTitle] = useState("");
+  const [newBroadcastMeetingId, setNewBroadcastMeetingId] = useState<number | null>(null);
+  const [showStreamKey, setShowStreamKey] = useState(false);
+  const [isSavingBroadcast, setIsSavingBroadcast] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
+  const hasLoadedBroadcast = useRef(false);
+
   const fetchSettings = useCallback(async () => {
     setIsLoadingSettings(true);
     setSettingsError(null);
@@ -437,6 +472,26 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
     }
   }, [slug]);
 
+  const fetchBroadcast = useCallback(async () => {
+    setIsLoadingBroadcast(true);
+    setBroadcastError(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/broadcast`);
+      if (res.ok) {
+        const data = await res.json();
+        setBroadcast(data.broadcast ?? null);
+        setBroadcastMeetings(data.meetings ?? []);
+      } else {
+        const data = await res.json();
+        setBroadcastError(data.error || "Failed to load broadcast data");
+      }
+    } catch {
+      setBroadcastError("Failed to load broadcast data");
+    } finally {
+      setIsLoadingBroadcast(false);
+    }
+  }, [slug]);
+
   // ── Effects ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -450,6 +505,9 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
     if (key === "streaming" && !hasLoadedStream.current) {
       hasLoadedStream.current = true;
       fetchStreamConfig();
+    } else if (key === "broadcast" && !hasLoadedBroadcast.current) {
+      hasLoadedBroadcast.current = true;
+      fetchBroadcast();
     } else if (key === "appearance" && !hasLoadedAppearance.current) {
       hasLoadedAppearance.current = true;
       fetchAppearance();
@@ -457,7 +515,7 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
       hasLoadedSettings.current = true;
       fetchSettings();
     }
-  }, [tabIndex, fetchStreamConfig, fetchAppearance, fetchSettings]);
+  }, [tabIndex, fetchStreamConfig, fetchBroadcast, fetchAppearance, fetchSettings]);
 
   // ── Members Handlers ─────────────────────────────────────────────────────
 
@@ -718,6 +776,102 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
     }
   }
 
+  // ── Broadcast Handlers ────────────────────────────────────────────────────
+
+  async function handleSetupBroadcast() {
+    setIsSavingBroadcast(true);
+    setBroadcastError(null);
+    setBroadcastSuccess(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/broadcast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meetingId: newBroadcastMeetingId ?? undefined,
+          title: newBroadcastTitle.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBroadcastError(data.error || "Failed to create broadcast");
+        return;
+      }
+      setBroadcast(data.broadcast ?? null);
+      setNewBroadcastTitle("");
+      setNewBroadcastMeetingId(null);
+      setBroadcastSuccess("Broadcast created. Share your stream key with your streaming software.");
+    } catch {
+      setBroadcastError("Failed to create broadcast");
+    } finally {
+      setIsSavingBroadcast(false);
+    }
+  }
+
+  async function handleUpdateBroadcastStatus(status: "live" | "paused" | "ended" | "setup") {
+    if (!broadcast) { return; }
+    setIsSavingBroadcast(true);
+    setBroadcastError(null);
+    setBroadcastSuccess(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/broadcast`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ broadcastId: broadcast.id, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBroadcastError(data.error || "Failed to update broadcast");
+        return;
+      }
+      setBroadcast(data.broadcast ?? null);
+      if (status === "ended") {
+        setBroadcastSuccess("Broadcast ended.");
+      } else if (status === "live") {
+        setBroadcastSuccess("You are now live!");
+      }
+    } catch {
+      setBroadcastError("Failed to update broadcast");
+    } finally {
+      setIsSavingBroadcast(false);
+    }
+  }
+
+  async function handleDeleteBroadcast() {
+    if (!broadcast) { return; }
+    setIsSavingBroadcast(true);
+    setBroadcastError(null);
+    setBroadcastSuccess(null);
+    try {
+      const res = await fetch(`/api/public/portal/${slug}/admin/broadcast`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ broadcastId: broadcast.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBroadcastError(data.error || "Failed to cancel broadcast");
+        return;
+      }
+      setBroadcast(null);
+      setBroadcastSuccess("Broadcast cancelled.");
+    } catch {
+      setBroadcastError("Failed to cancel broadcast");
+    } finally {
+      setIsSavingBroadcast(false);
+    }
+  }
+
+  async function handleCopyStreamKey() {
+    if (!broadcast?.streamKey) { return; }
+    try {
+      await navigator.clipboard.writeText(broadcast.streamKey);
+      setBroadcastSuccess("Stream key copied to clipboard!");
+      setTimeout(() => setBroadcastSuccess(null), 2000);
+    } catch {
+      setBroadcastError("Failed to copy stream key");
+    }
+  }
+
   // ── Derived State ────────────────────────────────────────────────────────
 
   const atSeatLimit = plan ? plan.seatsUsed >= plan.seatsIncluded : false;
@@ -779,6 +933,10 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
               <Tab fontSize="sm" fontWeight="medium" gap={2}>
                 <LuRadio size={15} />
                 Streaming
+              </Tab>
+              <Tab fontSize="sm" fontWeight="medium" gap={2}>
+                <LuVideo size={15} />
+                Live Broadcast
               </Tab>
               <Tab fontSize="sm" fontWeight="medium" gap={2}>
                 <LuUsers size={15} />
@@ -1114,6 +1272,240 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
                         </Button>
                       </VStack>
                     </form>
+                  )}
+                </Box>
+              </TabPanel>
+
+              {/* ── LIVE BROADCAST TAB ───────────────────────────────────────── */}
+              <TabPanel p={0}>
+                <Box bg="white" rounded="xl" shadow="sm" p={6} borderWidth={1} borderColor="gray.200">
+                  <HStack justify="space-between" mb={2}>
+                    <VStack align="start" gap={0}>
+                      <Text fontSize="lg" fontWeight="semibold" color="gray.800">
+                        Live Broadcast Control
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">Manage your live council meetings</Text>
+                    </VStack>
+                    <IconButton
+                      aria-label="Refresh broadcast"
+                      icon={<LuRefreshCw size={14} />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { hasLoadedBroadcast.current = false; fetchBroadcast(); }}
+                    />
+                  </HStack>
+
+                  {isLoadingBroadcast ? (
+                    <Center py={8}><Spinner size="md" color={accentColor} /></Center>
+                  ) : plan && plan.status !== "active" && plan.status !== "trial" ? (
+                    /* ── Demo / No subscription CTA ── */
+                    <Box p={6} bg="blue.50" rounded="xl" borderWidth={1} borderColor="blue.200" textAlign="center">
+                      <Text fontSize="2xl" mb={2}>🎥</Text>
+                      <Text fontSize="md" fontWeight="semibold" color="blue.800" mb={1}>
+                        Live Broadcast is a Live Plan feature
+                      </Text>
+                      <Text fontSize="sm" color="blue.700" mb={4}>
+                        Subscribe to go live with your council meetings.
+                      </Text>
+                      <HStack justify="center" gap={3}>
+                        <Link href="/portal/request-quote">
+                          <Button size="sm" style={{ backgroundColor: accentColor, color: "#fff" }}>
+                            Subscribe Now
+                          </Button>
+                        </Link>
+                        <Link href="/portal/request-quote">
+                          <Button size="sm" variant="outline" colorScheme="blue">
+                            View Pricing
+                          </Button>
+                        </Link>
+                      </HStack>
+                    </Box>
+                  ) : (
+                    <VStack gap={5} align="stretch">
+                      {broadcastError && (
+                        <Alert status="error" rounded="md" fontSize="sm">
+                          <AlertIcon />{broadcastError}
+                        </Alert>
+                      )}
+                      {broadcastSuccess && (
+                        <Alert status="success" rounded="md" fontSize="sm">
+                          <AlertIcon />{broadcastSuccess}
+                        </Alert>
+                      )}
+
+                      {/* ── Current Broadcast Status ── */}
+                      {broadcast ? (
+                        <Box p={4} bg="gray.50" rounded="lg" borderWidth={1} borderColor="gray.200">
+                          <HStack justify="space-between" mb={3} flexWrap="wrap" gap={2}>
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+                              Current Broadcast
+                            </Text>
+                            {broadcast.status === "live" ? (
+                              <Badge colorScheme="red" px={3} py={1} rounded="full" fontSize="sm" display="flex" alignItems="center" gap={1}>
+                                🔴 LIVE
+                              </Badge>
+                            ) : broadcast.status === "setup" ? (
+                              <Badge colorScheme="yellow" px={3} py={1} rounded="full" fontSize="sm">SETUP</Badge>
+                            ) : broadcast.status === "paused" ? (
+                              <Badge colorScheme="orange" px={3} py={1} rounded="full" fontSize="sm">PAUSED</Badge>
+                            ) : null}
+                          </HStack>
+
+                          {broadcast.title && (
+                            <Text fontSize="sm" color="gray.600" mb={2}>{broadcast.title}</Text>
+                          )}
+
+                          {/* Stream key */}
+                          {broadcast.streamKey && (
+                            <Box mb={3}>
+                              <Text fontSize="xs" fontWeight="medium" color="gray.600" mb={1}>Stream Key</Text>
+                              <HStack gap={2}>
+                                <Input
+                                  size="sm"
+                                  value={showStreamKey ? broadcast.streamKey : "•".repeat(32)}
+                                  readOnly
+                                  fontFamily="mono"
+                                  fontSize="xs"
+                                  bg="white"
+                                />
+                                <Tooltip label={showStreamKey ? "Hide stream key" : "Show stream key"}>
+                                  <IconButton
+                                    aria-label="Toggle stream key visibility"
+                                    icon={showStreamKey ? <LuEyeOff size={14} /> : <LuEye size={14} />}
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setShowStreamKey((v) => !v)}
+                                  />
+                                </Tooltip>
+                                <Tooltip label="Copy stream key">
+                                  <IconButton
+                                    aria-label="Copy stream key"
+                                    icon={<LuCopy size={14} />}
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => void handleCopyStreamKey()}
+                                  />
+                                </Tooltip>
+                              </HStack>
+                            </Box>
+                          )}
+
+                          {/* Action buttons */}
+                          <HStack gap={2} flexWrap="wrap">
+                            {(broadcast.status === "setup" || broadcast.status === "paused") && (
+                              <Button
+                                size="sm"
+                                colorScheme="red"
+                                isLoading={isSavingBroadcast}
+                                onClick={() => void handleUpdateBroadcastStatus("live")}
+                              >
+                                🔴 Go Live
+                              </Button>
+                            )}
+                            {broadcast.status === "live" && (
+                              <Button
+                                size="sm"
+                                colorScheme="orange"
+                                variant="outline"
+                                isLoading={isSavingBroadcast}
+                                onClick={() => void handleUpdateBroadcastStatus("paused")}
+                              >
+                                Pause
+                              </Button>
+                            )}
+                            {(broadcast.status === "setup" || broadcast.status === "live" || broadcast.status === "paused") && (
+                              <Button
+                                size="sm"
+                                colorScheme="gray"
+                                variant="outline"
+                                isLoading={isSavingBroadcast}
+                                onClick={() => {
+                                  if (window.confirm("Are you sure you want to end this broadcast? This cannot be undone.")) {
+                                    void handleUpdateBroadcastStatus("ended");
+                                  }
+                                }}
+                              >
+                                End Broadcast
+                              </Button>
+                            )}
+                            {broadcast.status === "setup" && (
+                              <Button
+                                size="sm"
+                                colorScheme="red"
+                                variant="ghost"
+                                isLoading={isSavingBroadcast}
+                                onClick={() => {
+                                  if (window.confirm("Cancel and delete this broadcast setup?")) {
+                                    void handleDeleteBroadcast();
+                                  }
+                                }}
+                              >
+                                Cancel Setup
+                              </Button>
+                            )}
+                          </HStack>
+                        </Box>
+                      ) : (
+                        /* ── No active broadcast — setup form ── */
+                        <Box>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={3}>
+                            No active broadcast. Set up a new broadcast below.
+                          </Text>
+                          <VStack gap={3} align="stretch">
+                            <FormControl>
+                              <FormLabel fontSize="sm">Meeting (optional)</FormLabel>
+                              <Select
+                                size="sm"
+                                value={newBroadcastMeetingId ?? ""}
+                                onChange={(e) =>
+                                  setNewBroadcastMeetingId(e.target.value ? Number(e.target.value) : null)
+                                }
+                              >
+                                <option value="">— No meeting selected —</option>
+                                {broadcastMeetings.map((m) => (
+                                  <option key={m.id} value={m.id}>{m.title}</option>
+                                ))}
+                              </Select>
+                            </FormControl>
+                            <FormControl>
+                              <FormLabel fontSize="sm">Broadcast Title (optional)</FormLabel>
+                              <Input
+                                size="sm"
+                                value={newBroadcastTitle}
+                                onChange={(e) => setNewBroadcastTitle(e.target.value)}
+                                placeholder="e.g. Ordinary Council Meeting — April 2026"
+                              />
+                            </FormControl>
+                            <Button
+                              size="sm"
+                              style={{ backgroundColor: accentColor, color: "#fff" }}
+                              alignSelf="flex-start"
+                              isLoading={isSavingBroadcast}
+                              onClick={() => void handleSetupBroadcast()}
+                            >
+                              Setup Broadcast
+                            </Button>
+                          </VStack>
+                        </Box>
+                      )}
+
+                      {/* Public view link */}
+                      <Box p={3} bg="gray.50" rounded="md" borderWidth={1} borderColor="gray.200">
+                        <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                          <Text fontSize="sm" color="gray.600">
+                            Public view:{" "}
+                            <Text as="span" fontFamily="mono" fontSize="xs">
+                              /portal/{slug}/broadcast
+                            </Text>
+                          </Text>
+                          <Link href={`/portal/${slug}/broadcast`} target="_blank" rel="noreferrer">
+                            <Button size="xs" variant="outline" rightIcon={<LuExternalLink size={12} />}>
+                              Open ↗
+                            </Button>
+                          </Link>
+                        </HStack>
+                      </Box>
+                    </VStack>
                   )}
                 </Box>
               </TabPanel>
