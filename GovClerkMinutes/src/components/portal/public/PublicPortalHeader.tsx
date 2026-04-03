@@ -42,13 +42,14 @@ function getLogoUrl(settings: PublicPortalResponse["settings"]): string | null {
 }
 
 // Phase 3 portal navigation links
+// desktopLabel: shortened label shown on desktop to keep the nav compact
 const PORTAL_NAV_LINKS = [
-  { label: "Home", hrefSuffix: "", icon: LuHome },
-  { label: "Calendar", hrefSuffix: "/calendar", icon: LuCalendar },
-  { label: "Public Records", hrefSuffix: "/records", icon: LuFolder },
-  { label: "Notices", hrefSuffix: "/notices", icon: LuBell },
-  { label: "Request Records", hrefSuffix: "/request-records", icon: LuFileText },
-  { label: "Live Meeting", hrefSuffix: "/broadcast", icon: LuRadio },
+  { label: "Home", desktopLabel: "Home", hrefSuffix: "", icon: LuHome },
+  { label: "Calendar", desktopLabel: "Calendar", hrefSuffix: "/calendar", icon: LuCalendar },
+  { label: "Public Records", desktopLabel: "Records", hrefSuffix: "/records", icon: LuFolder },
+  { label: "Notices", desktopLabel: "Notices", hrefSuffix: "/notices", icon: LuBell },
+  { label: "Request Records", desktopLabel: "Requests", hrefSuffix: "/request-records", icon: LuFileText },
+  { label: "Live Meeting", desktopLabel: "Live", hrefSuffix: "/broadcast", icon: LuRadio },
 ];
 
 export function PublicPortalHeader({
@@ -75,13 +76,14 @@ export function PublicPortalHeader({
 
   return (
     <header className="sticky top-0 z-40 print:static print:shadow-none">
-      {/* Single dark navbar */}
+      {/* Desktop: two-row layout — brand+auth on top, nav links below */}
       <div
         style={{ backgroundColor: settings.headerBgColor || "#1e3a5f" }}
         className="border-b border-black/10"
       >
+        {/* Row 1 (desktop): Logo + Org Name on left, auth controls on right */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between min-h-[64px] py-3">
+          <div className="flex items-center justify-between min-h-[56px] py-2">
             {/* Left: Logo + Org Name */}
             <div className="flex items-center gap-3 shrink-0">
               {getLogoUrl(settings) && (
@@ -102,62 +104,15 @@ export function PublicPortalHeader({
               </span>
             </div>
 
-            {/* Center/Left: Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 ml-6" aria-label="Main navigation">
-              {/* Phase 3 built-in portal nav links */}
-              {slug &&
-                PORTAL_NAV_LINKS.map((link) => {
-                  const Icon = link.icon;
-                  return (
-                    <Link
-                      key={link.label}
-                      href={`/portal/${slug}${link.hrefSuffix}`}
-                      style={{ color: settings.headerTextColor || "#ffffff" }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                    >
-                      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                      {link.label}
-                    </Link>
-                  );
-                })}
-              {/* RSS Feed link */}
-              {slug && (
-                <a
-                  href={`/api/public/portal/${slug}/feed`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Subscribe to RSS Feed"
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                >
-                  <LuRss className="w-3.5 h-3.5" aria-hidden="true" />
-                  RSS Feed
-                </a>
-              )}
-              {/* Additional custom nav links from portal settings */}
-              {settings.navLinks?.map((link, index) => (
-                <a
-                  key={index}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-
             {/* Right: Desktop auth actions */}
             <div className="hidden lg:flex items-center gap-2 ml-auto">
               {session?.isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   <span
                     style={{ color: settings.headerTextColor || "#ffffff" }}
-                    className="flex items-center gap-1 text-xs opacity-80"
+                    className="flex items-center gap-1 text-xs opacity-80 truncate max-w-[160px]"
                   >
-                    <LuUser className="w-3.5 h-3.5" />
+                    <LuUser className="w-3.5 h-3.5 shrink-0" />
                     {session.email ?? "Signed in"}
                   </span>
                   {/* Admin settings link — only for portal admins */}
@@ -165,7 +120,7 @@ export function PublicPortalHeader({
                     <Link
                       href={`/portal/${slug}/admin`}
                       style={{ color: settings.headerTextColor || "#ffffff" }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                      className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide whitespace-nowrap"
                     >
                       <LuLayoutDashboard className="w-3.5 h-3.5" />
                       Org Dashboard
@@ -175,7 +130,7 @@ export function PublicPortalHeader({
                     type="button"
                     onClick={handlePortalSignOut}
                     style={{ color: settings.headerTextColor || "#ffffff" }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                    className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide whitespace-nowrap"
                   >
                     <LuLogOut className="w-3.5 h-3.5" />
                     Sign Out
@@ -185,7 +140,7 @@ export function PublicPortalHeader({
                 <Link
                   href={portalSignInUrl}
                   style={{ color: settings.headerTextColor || "#ffffff" }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
+                  className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium border border-white/30 rounded hover:bg-white/10 transition-colors uppercase tracking-wide"
                 >
                   <LuLogIn className="w-3.5 h-3.5" />
                   Sign In
@@ -235,6 +190,54 @@ export function PublicPortalHeader({
                 </span>
               </button>
             </div>
+          </div>
+
+          {/* Row 2 (desktop only): Navigation links below the brand/auth bar */}
+          <div className="hidden lg:block border-t border-white/10">
+            <nav className="flex items-center gap-1 py-1 flex-wrap" aria-label="Main navigation">
+              {/* Phase 3 built-in portal nav links */}
+              {slug &&
+                PORTAL_NAV_LINKS.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.label}
+                      href={`/portal/${slug}${link.hrefSuffix}`}
+                      style={{ color: settings.headerTextColor || "#ffffff" }}
+                      className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50 whitespace-nowrap"
+                    >
+                      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                      {link.desktopLabel}
+                    </Link>
+                  );
+                })}
+              {/* RSS Feed link — icon-only on desktop */}
+              {slug && (
+                <a
+                  href={`/api/public/portal/${slug}/feed`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Subscribe to RSS Feed"
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="flex items-center px-2 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  <LuRss className="w-3.5 h-3.5" aria-hidden="true" />
+                </a>
+              )}
+              {/* Additional custom nav links from portal settings */}
+              {settings.navLinks?.map((link, index) => (
+                <a
+                  key={index}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="px-2 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50 whitespace-nowrap"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
           </div>
         </div>
       </div>

@@ -9,7 +9,7 @@ export const DEFAULT_ACCENT_COLOR = "#3182ce";
  * Org slug values that conflict with Next.js portal page routes.
  * Note: "demo" and "live" are NOT listed here — they are fixed sub-path
  * segments in `/portal/[slug]/demo` and `/portal/[slug]/live`, never org
- * slugs, so they create no routing conflict.
+ * slugs, so they create no routing conflict at the [slug] level.
  */
 export const RESERVED_PORTAL_SLUGS = new Set([
   "admin",
@@ -25,6 +25,16 @@ export const RESERVED_PORTAL_SLUGS = new Set([
   "notices",
   "request-records",
 ]);
+
+/**
+ * Sub-directory page names that are structurally part of every portal's URL.
+ * These differ from RESERVED_PORTAL_SLUGS in that they don't conflict with
+ * Next.js page files at `[slug]/X.tsx` — instead they are the directory names
+ * used in `/portal/[slug]/demo` and `/portal/[slug]/live`.  An org whose slug
+ * were "demo" or "live" would receive the wrong Next.js route, so we block them
+ * from ever being assigned as org slugs.
+ */
+export const SLUG_SUBPATH_NAMES = new Set(["demo", "live"]);
 
 /**
  * Converts an org display name into a URL-safe slug:
@@ -50,10 +60,12 @@ export async function generateUniquePortalSlug(
 ): Promise<string> {
   const base = slugifyOrgName(orgName);
 
+  const isBlocked = (s: string) => RESERVED_PORTAL_SLUGS.has(s) || SLUG_SUBPATH_NAMES.has(s);
+
   let candidate: string;
-  if (!base || RESERVED_PORTAL_SLUGS.has(base)) {
+  if (!base || isBlocked(base)) {
     // Fall back to Clerk slug if it is not reserved/empty
-    if (clerkSlug && !RESERVED_PORTAL_SLUGS.has(clerkSlug) && clerkSlug.trim() !== "") {
+    if (clerkSlug && !isBlocked(clerkSlug) && clerkSlug.trim() !== "") {
       candidate = clerkSlug;
     } else {
       // Append -portal to the org name slug (or clerk slug as last resort)
