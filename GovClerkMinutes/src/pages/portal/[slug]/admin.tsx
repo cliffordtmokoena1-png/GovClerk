@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GetServerSideProps } from "next";
+import { RESERVED_PORTAL_SLUGS } from "@/pages/api/portal/utils/initializePortalSettings";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -1634,6 +1635,11 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
 
 export const getServerSideProps: GetServerSideProps<AdminPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
+
+  if (RESERVED_PORTAL_SLUGS.has(slug)) {
+    return { notFound: true };
+  }
+
   const cookieHeader = context.req.headers.cookie;
 
   const session = await getPortalSessionFromCookieHeader(cookieHeader);

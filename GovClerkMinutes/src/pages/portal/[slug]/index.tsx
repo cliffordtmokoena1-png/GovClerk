@@ -1,4 +1,5 @@
 import { GetServerSideProps } from "next";
+import { RESERVED_PORTAL_SLUGS } from "@/pages/api/portal/utils/initializePortalSettings";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { PublicPortalResponse, PublicMeetingsListResponse } from "@/types/portal";
@@ -420,6 +421,10 @@ export default function PublicPortalPage({
 
 export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
+
+  if (RESERVED_PORTAL_SLUGS.has(slug)) {
+    return { notFound: true };
+  }
 
   // Check if user has a valid portal session
   const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
