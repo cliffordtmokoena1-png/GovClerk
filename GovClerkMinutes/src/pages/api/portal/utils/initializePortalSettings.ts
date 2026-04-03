@@ -5,10 +5,13 @@ export const DEFAULT_HEADER_BG_COLOR = "#1a365d";
 export const DEFAULT_HEADER_TEXT_COLOR = "#ffffff";
 export const DEFAULT_ACCENT_COLOR = "#3182ce";
 
-/** Slug segments that conflict with Next.js portal page routes. */
+/**
+ * Org slug values that conflict with Next.js portal page routes.
+ * Note: "demo" and "live" are NOT listed here — they are fixed sub-path
+ * segments in `/portal/[slug]/demo` and `/portal/[slug]/live`, never org
+ * slugs, so they create no routing conflict.
+ */
 export const RESERVED_PORTAL_SLUGS = new Set([
-  "demo",
-  "live",
   "admin",
   "sign-in",
   "sign-up",
