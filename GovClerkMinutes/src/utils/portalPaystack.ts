@@ -6,6 +6,8 @@
  * token-based billing.
  */
 
+export const PAYSTACK_BASE_URL = "https://api.paystack.co";
+
 // PayStack plan codes for portal tiers
 // Set the matching environment variables in production.
 export const PORTAL_PAYSTACK_PLANS = {
@@ -14,18 +16,21 @@ export const PORTAL_PAYSTACK_PLANS = {
     monthly_zar: 2500,
     seats: 5,
     stream_hours: 10,
+    minutes_tokens: 0,
   },
   professional: {
     ZA: process.env.PAYSTACK_PORTAL_PROFESSIONAL_PLAN_CODE || "PLN_portal_pro_za",
     monthly_zar: 8000,
     seats: 15,
     stream_hours: 20,
+    minutes_tokens: 2000,
   },
   enterprise: {
     ZA: process.env.PAYSTACK_PORTAL_ENTERPRISE_PLAN_CODE || "PLN_portal_enterprise_za",
     monthly_zar: 20000,
     seats: 50,
     stream_hours: 20,
+    minutes_tokens: 0,
   },
 } as const;
 
@@ -95,4 +100,107 @@ export function estimatePortalCost(
     extra_hours * PORTAL_OVERAGE_RATES.stream_hour_zar;
 
   return { estimated_zar, recommended_tier };
+}
+
+/**
+ * Create a one-time Paystack charge (for the pro-rata first payment).
+ * Uses the /transaction/initialize endpoint.
+ * Amount is in KOBO (ZAR cents × 100).
+ */
+export async function initializePaystackTransaction(params: {
+  email: string;
+  amountZar: number;
+  reference: string;
+  metadata?: Record<string, unknown>;
+  callbackUrl?: string;
+}): Promise<{ authorizationUrl: string; reference: string }> {
+  const { email, amountZar, reference, metadata, callbackUrl } = params;
+  const amountKobo = Math.round(amountZar * 100);
+
+  const body: Record<string, unknown> = {
+    email,
+    amount: amountKobo,
+    reference,
+    currency: "ZAR",
+  };
+  if (metadata) body.metadata = metadata;
+  if (callbackUrl) body.callback_url = callbackUrl;
+
+  const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Paystack transaction initialize failed: ${res.status} ${errText}`);
+  }
+
+  const data = (await res.json()) as {
+    status: boolean;
+    data?: { authorization_url: string; reference: string };
+  };
+
+  if (!data.status || !data.data) {
+    throw new Error("Paystack transaction initialize returned unexpected response");
+  }
+
+  return {
+    authorizationUrl: data.data.authorization_url,
+    reference: data.data.reference,
+  };
+}
+
+/**
+ * Create a recurring Paystack subscription for a customer who has already
+ * been charged the pro-rata amount and has a valid Paystack authorization code.
+ *
+ * Uses POST /subscription.
+ */
+export async function createPaystackSubscription(params: {
+  customerEmail: string;
+  planCode: string;
+  authorizationCode: string;
+  startDate: Date;
+}): Promise<{ subscriptionCode: string; subscriptionId: number }> {
+  const { customerEmail, planCode, authorizationCode, startDate } = params;
+
+  const body = {
+    customer: customerEmail,
+    plan: planCode,
+    authorization: authorizationCode,
+    start_date: startDate.toISOString(),
+  };
+
+  const res = await fetch(`${PAYSTACK_BASE_URL}/subscription`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Paystack create subscription failed: ${res.status} ${errText}`);
+  }
+
+  const data = (await res.json()) as {
+    status: boolean;
+    data?: { subscription_code: string; id: number };
+  };
+
+  if (!data.status || !data.data) {
+    throw new Error("Paystack create subscription returned unexpected response");
+  }
+
+  return {
+    subscriptionCode: data.data.subscription_code,
+    subscriptionId: data.data.id,
+  };
 }
