@@ -22,7 +22,10 @@ export function PublicPortalLayout({
   children,
 }: PublicPortalLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const pageTitle = settings.pageTitle ?? "Public Records Portal";
+  const pageTitle =
+    settings.pageTitle && settings.pageTitle !== "Demo Portal"
+      ? settings.pageTitle
+      : "Public Records Portal";
   const pageDescription =
     settings.pageDescription ?? "Access public meeting records, agendas, and minutes.";
 

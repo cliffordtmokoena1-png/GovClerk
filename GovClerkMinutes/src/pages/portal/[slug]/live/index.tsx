@@ -419,7 +419,9 @@ export const getServerSideProps: GetServerSideProps<LivePortalPageProps> = async
     }
   }
 
-  // Determine portal mode
+  // Determine portal mode.
+  // isGovClerkAdmin() handles null/undefined email, so a single call is sufficient.
+  // GovClerk admins (emails ending @govclerkminutes.com) always access the live portal.
   let portalMode: "live" | "demo" = "demo";
   if (isGovClerkAdmin(session.email)) {
     portalMode = "live";

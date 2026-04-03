@@ -223,6 +223,16 @@ export const getServerSideProps: GetServerSideProps<DemoPortalPageProps> = async
     };
   }
 
+  // GovClerk admins always bypass subscription checks and go directly to the live portal.
+  if (isGovClerkAdmin(session.email)) {
+    return {
+      redirect: {
+        destination: `/portal/${slug}/live`,
+        permanent: false,
+      },
+    };
+  }
+
   // Gate access: if the authenticated user has not verified their email (is_active=0),
   // redirect them to the verification page.
   if (session.portalUserId != null) {
