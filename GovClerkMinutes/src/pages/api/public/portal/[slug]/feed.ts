@@ -41,7 +41,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
   const conn = getPortalDbConnection();
 
   const settingsRes = await conn.execute(
-    "SELECT org_id, page_title, description FROM gc_portal_settings WHERE slug = ? AND is_enabled = 1",
+    "SELECT org_id, page_title, page_description FROM gc_portal_settings WHERE slug = ? AND is_enabled = 1",
     [slug]
   );
   if (settingsRes.rows.length === 0) {
@@ -50,7 +50,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
   const {
     org_id: orgId,
     page_title: pageTitle,
-    description: portalDesc,
+    page_description: portalDesc,
   } = settingsRes.rows[0] as any;
 
   const meetingsRes = await conn.execute(
