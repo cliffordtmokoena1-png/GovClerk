@@ -84,7 +84,7 @@ async function handler(req: NextRequest) {
     Subject: `See you Thursday, ${firstName}!`,
     HtmlBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.<br /><br />Add this to your calendar!<br /><br />Here's the <a href=${url}>FB event for our free training.</a><br /><br />It will go live at ${prettyEventTime}.<br /><br />See you there!<br />Max Sherman`,
     TextBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.\n\nAdd this to your calendar!\n\nHere's the FB event for our free training: ${url}\n\nIt will go live at ${prettyEventTime}.\n\nSee you there!\nMax Sherman`,
-    MessageStream: "signup_and_purchase",
+    MessageStream: "outbound",
     Attachments: [
       {
         Name: "invite.ics",
