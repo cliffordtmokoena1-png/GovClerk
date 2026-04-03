@@ -2052,10 +2052,10 @@ export const getServerSideProps: GetServerSideProps<AdminPageProps> = async (con
         [session.portalUserId, session.orgId]
       );
       if (userResult.rows.length === 0 || (userResult.rows[0] as any).role !== "admin") {
-        return { redirect: { destination: `/portal/${slug}`, permanent: false } };
+        return { redirect: { destination: `/portal/${slug}/trial`, permanent: false } };
       }
     } else {
-      return { redirect: { destination: `/portal/${slug}`, permanent: false } };
+      return { redirect: { destination: `/portal/${slug}/trial`, permanent: false } };
     }
   }
 

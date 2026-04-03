@@ -7,7 +7,6 @@ import type { PortalAnnouncement } from "@/types/publicRecords";
 import {
   PublicPortalLayout,
   PublicMeetingsList,
-  DemoPortalView,
   type MeetingsFilter,
 } from "@/components/portal/public";
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
@@ -15,12 +14,6 @@ import { useLiveSession } from "@/hooks/portal/useLiveSession";
 import { getPortalSessionFromCookieHeader, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 
-const EMPTY_MEETINGS: PublicMeetingsListResponse = {
-  meetings: [],
-  total: 0,
-  page: 1,
-  pageSize: 12,
-};
 
 interface PublicPortalPageProps {
   settings: PublicPortalResponse["settings"];
@@ -36,8 +29,8 @@ interface PublicPortalPageProps {
     meetingId: number | null;
   }>;
   isAuthenticated: boolean;
+  hasAdminAccess: boolean;
   portalExists: boolean;
-  portalMode: "live" | "demo";
 }
 
 function AnnouncementsBanner({
@@ -150,8 +143,8 @@ export default function PublicPortalPage({
   upcomingMeetings,
   latestArtifacts,
   isAuthenticated,
+  hasAdminAccess,
   portalExists,
-  portalMode,
 }: PublicPortalPageProps) {
   const [useClientData, setUseClientData] = useState(false);
   const [sidebarFilter, setSidebarFilter] = useState<MeetingsFilter>({ sortBy: "newest" });
@@ -225,43 +218,14 @@ export default function PublicPortalPage({
   return (
     <>
       <AnnouncementsBanner announcements={announcements} slug={slug} />
-      {portalMode === "live" && <LiveNowBanner slug={slug} />}
+      <LiveNowBanner slug={slug} />
       <PublicPortalLayout
         settings={settings}
         meetings={allMeetings}
         filter={sidebarFilter}
         onFilterChange={handleSidebarFilterChange}
       >
-        {!isAuthenticated ? (
-          <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
-              <span className="text-3xl" aria-hidden="true">
-                🔒
-              </span>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Sign in to access this portal
-            </h2>
-            <p className="text-gray-500 mb-8 max-w-sm">
-              Sign in with your organisational email to access meetings, documents, and other portal
-              content.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href={`/portal/${slug}/sign-in`}
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href={`/portal/${slug}/register`}
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              >
-                Create Account
-              </Link>
-            </div>
-          </div>
-        ) : !portalExists ? (
+        {!portalExists ? (
           <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
               <span className="text-3xl" aria-hidden="true">
@@ -270,20 +234,30 @@ export default function PublicPortalPage({
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Not Found</h2>
             <p className="text-gray-500 mb-8 max-w-sm">
-              This organization hasn&apos;t been set up on GovClerk yet. Would you like to create
-              it?
+              This organization hasn&apos;t been set up on GovClerk yet.
             </p>
-            <Link
-              href="/org/signup"
-              className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-            >
-              Create Organization
-            </Link>
           </div>
-        ) : portalMode === "demo" ? (
-          <DemoPortalView slug={slug} accentColor={settings.accentColor} />
         ) : (
           <>
+            {/* Header action buttons */}
+            <div className="flex justify-end gap-2 mb-4">
+              {!isAuthenticated ? (
+                <Link
+                  href={`/portal/${slug}/sign-in`}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  Sign In
+                </Link>
+              ) : hasAdminAccess ? (
+                <Link
+                  href={`/portal/${slug}/admin`}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  Org Dashboard
+                </Link>
+              ) : null}
+            </div>
+
             {/* Upcoming Meetings */}
             {upcomingMeetings.length > 0 && (
               <section
@@ -380,74 +354,125 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
     return { notFound: true };
   }
 
-  // Check if user has a valid portal session
-  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
-    () => null
-  );
+  const host = context.req.headers.host || "localhost:3000";
+  const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
-  // Unauthenticated users go to the demo page (shows sign-in prompt)
-  if (!session) {
-    return {
-      redirect: {
-        destination: `/portal/${slug}/demo`,
-        permanent: false,
-      },
-    };
+  // Fetch portal settings (public)
+  let settings = makeDefaultPortalSettings(slug);
+  let portalExists = false;
+  try {
+    const res = await fetch(`${baseUrl}/api/public/portal/${slug}`);
+    if (res.ok) {
+      const data = await res.json();
+      settings = data.settings;
+      portalExists = true;
+    }
+  } catch {
+    // ignore — use defaults
   }
 
-  // Gate access: if the authenticated user has not verified their email (is_active=0),
-  // redirect them to the verification page.
-  if (session.portalUserId != null) {
-    try {
-      const { getPortalDbConnection } = await import("@/utils/portalDb");
-      const conn = getPortalDbConnection();
-      const userResult = await conn.execute(
-        "SELECT is_active FROM gc_portal_users WHERE id = ? AND org_id = ? LIMIT 1",
-        [session.portalUserId, session.orgId]
-      );
-      if (
-        userResult.rows.length > 0 &&
-        ((userResult.rows[0] as any).is_active === 0 ||
-          (userResult.rows[0] as any).is_active === false)
-      ) {
-        return {
-          redirect: {
-            destination: `/portal/${slug}/verify`,
-            permanent: false,
-          },
-        };
+  // Fetch meetings publicly
+  let initialMeetings: PublicMeetingsListResponse = { meetings: [], total: 0, page: 1, pageSize: 12 };
+  try {
+    const res = await fetch(`${baseUrl}/api/public/portal/${slug}/meetings?page=1&limit=12&sortBy=newest`);
+    if (res.ok) {
+      const data = await res.json();
+      initialMeetings = {
+        meetings: data.meetings || [],
+        total: data.total || 0,
+        page: data.page || 1,
+        pageSize: data.pageSize || 12,
+      };
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fetch announcements publicly
+  let announcements: PortalAnnouncement[] = [];
+  try {
+    const res = await fetch(`${baseUrl}/api/public/portal/${slug}/announcements`);
+    if (res.ok) {
+      const data = await res.json();
+      announcements = data.announcements || [];
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fetch upcoming meetings publicly
+  let upcomingMeetings: Array<{ id: number; title: string; meetingDate: string }> = [];
+  try {
+    const res = await fetch(`${baseUrl}/api/public/portal/${slug}/meetings?page=1&limit=5&sortBy=upcoming`);
+    if (res.ok) {
+      const data = await res.json();
+      upcomingMeetings = (data.meetings || []).map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        meetingDate: m.meetingDate,
+      }));
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fetch latest artifacts publicly
+  let latestArtifacts: Array<{ id: number; fileName: string; artifactType: string; s3Url: string; meetingId: number | null }> = [];
+  try {
+    const res = await fetch(`${baseUrl}/api/public/portal/${slug}/records?page=1&limit=5`);
+    if (res.ok) {
+      const data = await res.json();
+      latestArtifacts = (data.records || []).map((r: any) => ({
+        id: r.id,
+        fileName: r.fileName,
+        artifactType: r.artifactType,
+        s3Url: r.s3Url,
+        meetingId: r.meetingId ?? null,
+      }));
+    }
+  } catch {
+    // ignore
+  }
+
+  // Check session for auth state (no redirect — portal is public)
+  const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(() => null);
+
+  let isAuthenticated = false;
+  let hasAdminAccess = false;
+
+  if (session) {
+    isAuthenticated = true;
+    if (isGovClerkAdmin(session.email)) {
+      hasAdminAccess = true;
+    } else {
+      try {
+        const { getPortalDbConnection } = await import("@/utils/portalDb");
+        const conn = getPortalDbConnection();
+        const subResult = await conn.execute(
+          "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+          [session.orgId]
+        );
+        if ((subResult.rows as any[]).length > 0) {
+          hasAdminAccess = true;
+        }
+      } catch {
+        // DB error — default to no admin access
       }
-    } catch {
-      // DB error — do not block access, let the user through
     }
   }
 
-  // Determine portal mode: GovClerk admins and orgs with active/trial subscriptions get "live".
-  // isGovClerkAdmin() handles null/undefined email, so a single call is sufficient.
-  let portalMode: "live" | "demo" = "demo";
-  if (isGovClerkAdmin(session.email)) {
-    portalMode = "live";
-  } else {
-    try {
-      const { getPortalDbConnection } = await import("@/utils/portalDb");
-      const conn = getPortalDbConnection();
-      const subResult = await conn.execute(
-        "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
-        [session.orgId]
-      );
-      if (subResult.rows.length > 0) {
-        portalMode = "live";
-      }
-    } catch {
-      // DB error — default to demo to be safe
-    }
-  }
-
-  // Redirect to the appropriate URL based on portal mode
   return {
-    redirect: {
-      destination: `/portal/${slug}/${portalMode}`,
-      permanent: false,
+    props: {
+      settings,
+      slug,
+      initialMeetings,
+      announcements,
+      upcomingMeetings,
+      latestArtifacts,
+      isAuthenticated,
+      hasAdminAccess,
+      portalExists,
     },
   };
 };
