@@ -67,13 +67,14 @@ export default async function handler(req: NextRequest): Promise<Response> {
     return errorResponse("Portal not found", 404);
   }
   const orgId = (settingsResult.rows[0] as any).org_id;
-  if (orgId !== session.orgId) {
-    return errorResponse("Forbidden", 403);
-  }
 
-  // Check that the requesting portal user has admin role
-  // GovClerk admins (@govclerkminutes.com) bypass DB role check entirely
+  // GovClerk admins bypass all org and role checks
   if (!isGovClerkAdmin(session.email)) {
+    if (orgId !== session.orgId) {
+      return errorResponse("Forbidden", 403);
+    }
+
+    // Check that the requesting portal user has admin role
     if (!session.portalUserId) {
       return errorResponse("Admin access required", 403);
     }
