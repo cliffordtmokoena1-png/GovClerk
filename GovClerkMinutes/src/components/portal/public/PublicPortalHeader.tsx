@@ -15,6 +15,7 @@ import {
   LuBell,
   LuFileText,
   LuRss,
+  LuRadio,
 } from "react-icons/lu";
 import { usePortalSession } from "@/hooks/portal/usePortalSession";
 import type { PublicPortalResponse } from "@/types/portal";
@@ -47,6 +48,7 @@ const PORTAL_NAV_LINKS = [
   { label: "Public Records", hrefSuffix: "/records", icon: LuFolder },
   { label: "Notices", hrefSuffix: "/notices", icon: LuBell },
   { label: "Request Records", hrefSuffix: "/request-records", icon: LuFileText },
+  { label: "Live Meeting", hrefSuffix: "/broadcast", icon: LuRadio },
 ];
 
 export function PublicPortalHeader({
