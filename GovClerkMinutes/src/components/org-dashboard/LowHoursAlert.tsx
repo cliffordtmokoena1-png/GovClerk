@@ -7,7 +7,6 @@ type LowHoursAlertProps = {
   isOpen: boolean;
   onClose: () => void;
   remaining: number; // minutes remaining
-  orgName: string;
 };
 
 export default function LowHoursAlert({ isOpen, onClose, remaining }: LowHoursAlertProps) {

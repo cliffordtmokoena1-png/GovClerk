@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getAuth } from "@clerk/nextjs/server";
 import { connect } from "@planetscale/database";
+import { WHATSAPP_API_VERSION, getPhoneNumberIdFor } from "@/admin/whatsapp/api/consts";
+import { SUPPORT_WHATSAPP_NUMBER } from "@/utils/whatsapp";
 import withErrorReporting from "@/error/withErrorReporting";
 
 type WhatsappCrossSellRequest = {
@@ -30,21 +32,20 @@ async function handler(
     password: process.env.PLANETSCALE_DB_PASSWORD,
   });
 
-  // Create cross-sell session record
+  // Upsert cross-sell session — one active session per org (UNIQUE on org_id)
   await conn.execute(
     `INSERT INTO gc_cross_sell_sessions (org_id, org_name, phone, state, last_message_at, created_at)
      VALUES (?, ?, ?, 'entry', NOW(), NOW())
-     ON DUPLICATE KEY UPDATE state = 'entry', last_message_at = NOW()`,
+     ON DUPLICATE KEY UPDATE org_name = VALUES(org_name), phone = VALUES(phone), state = 'entry', last_message_at = NOW()`,
     [orgId, orgName, phone]
   );
 
   // Send initial Samantha WhatsApp message via WhatsApp Cloud API
-  const businessPhoneNumberId = "1088830760969865"; // 27664259236 (GovClerk support number)
-  const apiVersion = "v23.0";
+  const businessPhoneNumberId = getPhoneNumberIdFor(SUPPORT_WHATSAPP_NUMBER);
   const message = `Hey ${orgName}, nice to finally meet you! I noticed you're running low on streaming hours and want to try our Minutes generation — is that correct? Reply Yes or No 😊`;
 
   const waRes = await fetch(
-    `https://graph.facebook.com/${apiVersion}/${businessPhoneNumberId}/messages`,
+    `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${businessPhoneNumberId}/messages`,
     {
       method: "POST",
       headers: {

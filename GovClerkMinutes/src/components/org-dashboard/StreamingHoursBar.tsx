@@ -58,7 +58,6 @@ export default function StreamingHoursBar() {
           isOpen={showAlert}
           onClose={() => setShowAlert(false)}
           remaining={remaining}
-          orgName=""
         />
       )}
       <div

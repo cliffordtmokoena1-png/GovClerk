@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { connect } from "@planetscale/database";
+import { WHATSAPP_API_VERSION, getPhoneNumberIdFor } from "@/admin/whatsapp/api/consts";
+import { SUPPORT_WHATSAPP_NUMBER } from "@/utils/whatsapp";
 import withErrorReporting from "@/error/withErrorReporting";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -45,15 +47,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<{ ok: boolean }
     return res.status(200).json({ ok: true });
   }
 
-  const businessPhoneNumberId = "1088830760969865";
-  const apiVersion = "v23.0";
+  const businessPhoneNumberId = getPhoneNumberIdFor(SUPPORT_WHATSAPP_NUMBER);
 
   for (const session of sessions) {
     try {
       const message = RE_ENGAGE_MESSAGE(session.org_name ?? "there");
 
       await fetch(
-        `https://graph.facebook.com/${apiVersion}/${businessPhoneNumberId}/messages`,
+        `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${businessPhoneNumberId}/messages`,
         {
           method: "POST",
           headers: {
