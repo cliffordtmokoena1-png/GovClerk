@@ -24,7 +24,9 @@ import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { sendSlackWebhook } from "@/utils/slack";
 import { getPhoneNumberIdFor, WHATSAPP_API_VERSION } from "@/admin/whatsapp/api/consts";
-import { ordinalSuffix } from "@/utils/portalBillingUtils";
+import { ordinalSuffix, calculateProRata, ALLOWED_BILLING_DAYS } from "@/utils/portalBillingUtils";
+import type { BillingDay } from "@/utils/portalBillingUtils";
+import { PORTAL_PAYSTACK_PLANS } from "@/utils/portalPaystack";
 import { provisionProfessionalPlanTokens } from "@/utils/portalTokenProvisioning";
 import { sendPortalProfessionalCrossSellEmail } from "@/utils/portalEmails";
 
@@ -192,15 +194,52 @@ export default async function handler(req: NextRequest): Promise<Response> {
     const MIN_PHONE_LENGTH = 10;
 
     if (customerPhone.length >= MIN_PHONE_LENGTH) {
-      const waMessage =
-        `Hi ${firstName.trim()}! 👋\n\n` +
-        `Thank you for requesting a quote for *GovClerk Portal* for ${organizationName.trim()}.
+      const MONTH_NAMES = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+      ];
 
-` +
-        `We've received your inquiry${selectedPlan ? ` for the *${selectedPlan}* plan` : ""}. ` +
-        `Samantha from our team will review your requirements and get back to you shortly with a tailored quote.\n\n` +
-        `Feel free to ask any questions right here — I'm happy to help! 😊\n\n` +
-        `— The GovClerk Team`;
+      const planPriceMap: Record<string, number> = {
+        Starter: PORTAL_PAYSTACK_PLANS.starter.monthly_zar,
+        Professional: PORTAL_PAYSTACK_PLANS.professional.monthly_zar,
+        Enterprise: PORTAL_PAYSTACK_PLANS.enterprise.monthly_zar,
+      };
+
+      let waMessage: string;
+
+      if (!selectedPlan) {
+        waMessage =
+          `Hi ${firstName.trim()}! 👋 I'm Samantha from GovClerk.\n\n` +
+          `Thank you for your interest in GovClerk Portal for ${organizationName.trim()}! I'd love to help you find the right plan.\n\n` +
+          `We have three options — Starter (R2,500/month), Professional (R8,000/month), and Enterprise (custom pricing). Which one interests you most? 😊`;
+      } else if (selectedPlan === "Enterprise") {
+        waMessage =
+          `Hi ${firstName.trim()}! 👋 I'm Samantha from GovClerk.\n\n` +
+          `Thank you for requesting a quote for GovClerk Portal for ${organizationName.trim()}! We've received your inquiry for the *Enterprise* plan — custom pricing — our team will be in touch with a tailored quote.\n\n` +
+          `Would you like to get your plan active today? 😊`;
+      } else {
+        const monthlyZar = planPriceMap[selectedPlan];
+        const formattedMonthly = `R${monthlyZar.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        let billingLine = "";
+        if (billingDay && (ALLOWED_BILLING_DAYS as readonly number[]).includes(billingDay)) {
+          const { proRataAmountZar, firstBillingDate } = calculateProRata(
+            new Date(),
+            billingDay as BillingDay,
+            monthlyZar
+          );
+          const formattedProRata = `R${proRataAmountZar.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          const formattedFirstBilling = `${firstBillingDate.getDate()} ${MONTH_NAMES[firstBillingDate.getMonth()]} ${firstBillingDate.getFullYear()}`;
+          billingLine =
+            `\n\n💳 Based on your preferred billing day (${billingDay}${ordinalSuffix(billingDay)} of the month), your first charge will be ${formattedProRata} today, then ${formattedMonthly}/month from ${formattedFirstBilling}.`;
+        }
+
+        waMessage =
+          `Hi ${firstName.trim()}! 👋 I'm Samantha from GovClerk.\n\n` +
+          `Thank you for requesting a quote for GovClerk Portal for ${organizationName.trim()}! We've received your inquiry for the *${selectedPlan}* plan at ${formattedMonthly}/month.` +
+          billingLine +
+          `\n\nWould you like to get your plan active today? 😊`;
+      }
 
       whatsappSent = await sendWhatsAppNotification(customerPhone, waMessage);
       if (whatsappSent) {
