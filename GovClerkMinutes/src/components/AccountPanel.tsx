@@ -7,6 +7,7 @@ import {
   Alert,
   AlertIcon,
   AlertDescription,
+  Progress,
 } from "@chakra-ui/react";
 import { BsQuestionCircle } from "react-icons/bs";
 import { LayoutKind, ModalType } from "@/pages/dashboard/[[...slug]]";
@@ -29,6 +30,19 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
       ? getPrettyPlanName("Free")
       : getPrettyPlanName(customerDetails?.planName);
   const tokenCount = tokenData?.tokens ?? 0;
+  const tokensPerMonth = customerDetails?.tokensPerMonth ?? 30;
+  const tokenPercentage = Math.min(100, Math.max(0, (tokenCount / tokensPerMonth) * 100));
+
+  const getTokenColorScheme = () => {
+    if (tokenCount <= 0 || tokenPercentage < 20) return "red";
+    if (tokenPercentage < 50) return "yellow";
+    return "blue";
+  };
+
+  const getTokenCountColor = () => {
+    if (tokenCount <= 0 || tokenPercentage < 20) return "red.500";
+    return "gray.700";
+  };
   return (
     <Flex
       bg="gray.50"
@@ -73,53 +87,58 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
           )}
         </>
       )}
-      <Flex w="full" alignItems="center">
+      <Flex w="full" flexDirection="column" gap={1.5}>
         {tokenData != null ? (
-          <Flex flexDirection="column">
-            <Flex alignItems="center" gap={1}>
-              <Text fontSize="sm" fontWeight="semibold">
-                Tokens:
-              </Text>
-              <Text
-                fontSize="sm"
-                fontWeight="bold"
-                color={tokenCount > 0 ? "green.600" : "red.500"}
-              >
-                {tokenCount}
-              </Text>
-              <Flex alignItems="center" ml={1}>
+          <>
+            <Flex alignItems="center" justifyContent="space-between">
+              <Flex alignItems="center" gap={1}>
+                <Text fontSize="xs" fontWeight="semibold" color="gray.600">
+                  Tokens
+                </Text>
                 <Tooltip
                   label={`You can transcribe up to ${tokenCount} minutes of recorded meetings`}
                   fontSize="md"
                 >
                   <span>
-                    <BsQuestionCircle size={13} />
+                    <BsQuestionCircle size={11} />
                   </span>
                 </Tooltip>
               </Flex>
+              <Text
+                fontSize="xs"
+                fontWeight="bold"
+                color={getTokenCountColor()}
+              >
+                {tokenCount} / {tokensPerMonth}
+              </Text>
             </Flex>
+            <Progress
+              value={tokenPercentage}
+              size="sm"
+              borderRadius="full"
+              colorScheme={getTokenColorScheme()}
+              hasStripe
+              isAnimated
+              bg="gray.200"
+            />
             <Flex alignItems="center" gap={1}>
-              <Text fontSize="sm" fontWeight="semibold">
+              <Text fontSize="xs" color="gray.500">
                 Plan:
               </Text>
-              <Text fontSize="sm">{plan || getPrettyPlanName("Free")}</Text>
+              <Text fontSize="xs" color="gray.700" fontWeight="medium">
+                {plan || getPrettyPlanName("Free")}
+              </Text>
             </Flex>
-          </Flex>
+          </>
         ) : (
-          <Flex flexDirection="column">
-            <Flex alignItems="center" gap={1}>
-              <Text fontSize="sm" fontWeight="semibold">
-                Tokens:
-              </Text>
-              <Skeleton height="14px" width="30px" />
+          <>
+            <Flex alignItems="center" justifyContent="space-between">
+              <Skeleton height="12px" width="50px" />
+              <Skeleton height="12px" width="40px" />
             </Flex>
-            <Flex alignItems="center" gap={1}>
-              <Text fontSize="sm" fontWeight="semibold">
-                Plan:
-              </Text>
-              <Skeleton height="14px" width="40px" />
-            </Flex>
-          </Flex>
+            <Skeleton height="8px" width="full" borderRadius="full" />
+            <Skeleton height="12px" width="60px" />
+          </>
         )}
       </Flex>
       {tokenData != null && tokenCount <= 0 && (

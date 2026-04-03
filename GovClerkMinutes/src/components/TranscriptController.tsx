@@ -375,30 +375,30 @@ const TranscriptController = ({
         <ButtonGroup size="sm" isAttached variant="outline">
           <Button
             onClick={() => setViewMode("transcript")}
-            bg={viewMode === "transcript" ? "blue.500" : "white"}
+            bg={viewMode === "transcript" ? "#1a365d" : "white"}
             color={viewMode === "transcript" ? "white" : "gray.600"}
             borderColor="gray.300"
-            _hover={{ bg: viewMode === "transcript" ? "blue.600" : "gray.50" }}
+            _hover={{ bg: viewMode === "transcript" ? "#1e3a5f" : "gray.50" }}
             fontWeight={viewMode === "transcript" ? "semibold" : "normal"}
           >
             Show Transcript
           </Button>
           <Button
             onClick={() => setViewMode("both")}
-            bg={viewMode === "both" ? "blue.500" : "white"}
+            bg={viewMode === "both" ? "#1a365d" : "white"}
             color={viewMode === "both" ? "white" : "gray.600"}
             borderColor="gray.300"
-            _hover={{ bg: viewMode === "both" ? "blue.600" : "gray.50" }}
+            _hover={{ bg: viewMode === "both" ? "#1e3a5f" : "gray.50" }}
             fontWeight={viewMode === "both" ? "semibold" : "normal"}
           >
             Show Both
           </Button>
           <Button
             onClick={() => setViewMode("minutes")}
-            bg={viewMode === "minutes" ? "blue.500" : "white"}
+            bg={viewMode === "minutes" ? "#1a365d" : "white"}
             color={viewMode === "minutes" ? "white" : "gray.600"}
             borderColor="gray.300"
-            _hover={{ bg: viewMode === "minutes" ? "blue.600" : "gray.50" }}
+            _hover={{ bg: viewMode === "minutes" ? "#1e3a5f" : "gray.50" }}
             fontWeight={viewMode === "minutes" ? "semibold" : "normal"}
           >
             Show Minutes
