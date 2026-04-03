@@ -24,8 +24,12 @@ import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { sendSlackWebhook } from "@/utils/slack";
 import { getPhoneNumberIdFor, WHATSAPP_API_VERSION } from "@/admin/whatsapp/api/consts";
+<<<<<<< copilot/add-preferred-billing-day-system
+import { ordinalSuffix } from "@/utils/portalBillingUtils";
+=======
 import { provisionProfessionalPlanTokens } from "@/utils/portalTokenProvisioning";
 import { sendPortalProfessionalCrossSellEmail } from "@/utils/portalEmails";
+>>>>>>> main
 
 const BUSINESS_WHATSAPP_ID = "27664259236";
 
@@ -89,6 +93,7 @@ interface NewQuoteBody {
   estimatedSeats?: number;
   estimatedStreamingHours?: number;
   comments?: string;
+  billingDay?: number;
 }
 
 interface LegacyQuoteBody {
@@ -142,6 +147,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
       estimatedSeats,
       estimatedStreamingHours,
       comments,
+      billingDay,
     } = body;
 
     if (!firstName?.trim()) return errorResponse("firstName is required", 400);
@@ -162,8 +168,9 @@ export default async function handler(req: NextRequest): Promise<Response> {
     await conn.execute(
       `INSERT INTO gc_portal_quote_requests (
         org_name, contact_name, contact_email, contact_phone,
-        estimated_seats, additional_notes, selected_plan, estimated_streaming_hours, website_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        estimated_seats, additional_notes, selected_plan, estimated_streaming_hours, website_url,
+        preferred_billing_day
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         organizationName.trim(),
         `${firstName.trim()} ${lastName.trim()}`,
@@ -174,6 +181,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
         selectedPlan ?? null,
         estimatedStreamingHours ?? null,
         websiteUrl?.trim() ?? null,
+        billingDay ?? null,
       ]
     );
 
@@ -218,6 +226,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
             { title: "Organization", value: organizationName.trim(), short: true },
             { title: "Website", value: websiteUrl?.trim() || "Not provided", short: true },
             { title: "Selected Plan", value: selectedPlan || "Not specified", short: true },
+            { title: "Preferred Billing Day", value: billingDay ? `${billingDay}${ordinalSuffix(billingDay)} of the month` : "Not specified", short: true },
             { title: "Est. Seats", value: estimatedSeats?.toString() || "Not specified", short: true },
             { title: "Est. Streaming Hours", value: estimatedStreamingHours?.toString() || "Not specified", short: true },
             { title: "Comments", value: comments?.trim() || "None", short: false },

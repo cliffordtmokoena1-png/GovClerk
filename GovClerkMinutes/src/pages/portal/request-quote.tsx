@@ -5,7 +5,7 @@
  * Clicking "Select [Plan]" scrolls down and pre-fills the selected plan in the form.
  */
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import GovClerkHead from "@/components/landing/GovClerk/GovClerkHead";
 import GovClerkNavBar from "@/components/landing/GovClerk/sections/GovClerkNavBar";
 import GovClerkFooter from "@/components/landing/GovClerk/sections/GovClerkFooter";
@@ -13,8 +13,30 @@ import GovClerkAnnouncementBar from "@/components/landing/GovClerk/sections/GovC
 import PortalPricingSection, {
   type PlanTier,
 } from "@/components/landing/GovClerk/sections/PortalPricingSection";
+import {
+  ALLOWED_BILLING_DAYS,
+  calculateProRata,
+  formatZarAmount,
+  ordinalSuffix,
+} from "@/utils/portalBillingUtils";
+import type { BillingDay } from "@/utils/portalBillingUtils";
+import { PORTAL_PAYSTACK_PLANS } from "@/utils/portalPaystack";
 
 const PLAN_OPTIONS: PlanTier[] = ["Starter", "Professional", "Enterprise"];
+
+const BILLING_DAY_LABELS: Record<number, string> = {
+  1: "1st of the month",
+  15: "15th of the month",
+  25: "25th of the month",
+  26: "26th of the month",
+  28: "28th of the month",
+};
+
+const PLAN_MONTHLY_PRICES: Record<string, number> = {
+  Starter: PORTAL_PAYSTACK_PLANS.starter.monthly_zar,
+  Professional: PORTAL_PAYSTACK_PLANS.professional.monthly_zar,
+  Enterprise: PORTAL_PAYSTACK_PLANS.enterprise.monthly_zar,
+};
 
 interface FormState {
   firstName: string;
@@ -27,6 +49,7 @@ interface FormState {
   estimatedSeats: string;
   estimatedStreamingHours: string;
   comments: string;
+  billingDay: string;
 }
 
 const INITIAL_FORM: FormState = {
@@ -40,6 +63,7 @@ const INITIAL_FORM: FormState = {
   estimatedSeats: "",
   estimatedStreamingHours: "",
   comments: "",
+  billingDay: "",
 };
 
 export default function RequestQuotePage() {
@@ -60,6 +84,35 @@ export default function RequestQuotePage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  const billingPreview = useMemo(() => {
+    if (!form.selectedPlan || !form.billingDay) return null;
+    const monthlyPrice = PLAN_MONTHLY_PRICES[form.selectedPlan];
+    if (!monthlyPrice) return null;
+    const billingDay = parseInt(form.billingDay, 10) as BillingDay;
+    if (!(ALLOWED_BILLING_DAYS as readonly number[]).includes(billingDay)) return null;
+
+    const { proRataAmountZar, firstBillingDate, daysRemaining, daysInMonth } = calculateProRata(
+      new Date(),
+      billingDay,
+      monthlyPrice
+    );
+
+    const fullFormatted = formatZarAmount(monthlyPrice);
+    const proRataFormatted = formatZarAmount(proRataAmountZar);
+
+    if (daysRemaining === daysInMonth) {
+      return `Your first charge will be ${fullFormatted} today, then ${fullFormatted}/month from the ${billingDay}${ordinalSuffix(billingDay)}.`;
+    }
+
+    const billingDateStr = firstBillingDate.toLocaleDateString("en-ZA", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return `Your first charge will be ${proRataFormatted} today, then ${fullFormatted}/month from ${billingDateStr}.`;
+  }, [form.selectedPlan, form.billingDay]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -79,6 +132,7 @@ export default function RequestQuotePage() {
           ? parseFloat(form.estimatedStreamingHours)
           : undefined,
         comments: form.comments.trim() || undefined,
+        billingDay: form.billingDay ? parseInt(form.billingDay, 10) : undefined,
         formType: "portal-quote",
       };
 
@@ -282,6 +336,35 @@ export default function RequestQuotePage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Preferred Billing Day */}
+              <div className="mb-6">
+                <label
+                  htmlFor="billingDay"
+                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                >
+                  Preferred Billing Day <span className="text-gray-400">(optional)</span>
+                </label>
+                <select
+                  id="billingDay"
+                  name="billingDay"
+                  value={form.billingDay}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-cd-blue focus:outline-none focus:ring-1 focus:ring-cd-blue"
+                >
+                  <option value="">Select a billing day</option>
+                  {ALLOWED_BILLING_DAYS.map((day) => (
+                    <option key={day} value={day}>
+                      {BILLING_DAY_LABELS[day]}
+                    </option>
+                  ))}
+                </select>
+                {billingPreview && (
+                  <p className="mt-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+                    💳 {billingPreview}
+                  </p>
+                )}
               </div>
 
               {/* Usage estimates */}
