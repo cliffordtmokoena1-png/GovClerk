@@ -93,7 +93,9 @@ export function PublicPortalHeader({
                 style={{ color: settings.headerTextColor || "#ffffff" }}
                 className="font-bold text-base leading-tight"
               >
-                {settings.pageTitle ?? "Public Records Portal"}
+                {settings.pageTitle && settings.pageTitle !== "Demo Portal"
+                  ? settings.pageTitle
+                  : "Public Records Portal"}
               </span>
             </div>
 
