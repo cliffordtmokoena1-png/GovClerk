@@ -10,7 +10,7 @@
 
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
-import { getPortalSession } from "@/portal-auth/portalAuth";
+import { getPortalSession, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { jsonResponse, errorResponse } from "@/utils/apiHelpers";
 import type { StreamConfig, StreamPlatform } from "@/types/liveSession";
 
@@ -64,6 +64,11 @@ async function resolveAdminOrgId(req: NextRequest): Promise<{ orgId: string } | 
   const orgId = (settingsResult.rows[0] as any).org_id;
   if (orgId !== session.orgId) {
     return errorResponse("Forbidden", 403);
+  }
+
+  // GovClerk admins (@govclerkminutes.com) bypass DB role check entirely
+  if (isGovClerkAdmin(session.email)) {
+    return { orgId };
   }
 
   if (!session.portalUserId) {

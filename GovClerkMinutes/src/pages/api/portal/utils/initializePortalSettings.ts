@@ -5,6 +5,75 @@ export const DEFAULT_HEADER_BG_COLOR = "#1a365d";
 export const DEFAULT_HEADER_TEXT_COLOR = "#ffffff";
 export const DEFAULT_ACCENT_COLOR = "#3182ce";
 
+/** Slug segments that conflict with Next.js portal page routes. */
+export const RESERVED_PORTAL_SLUGS = new Set([
+  "demo",
+  "live",
+  "admin",
+  "sign-in",
+  "sign-up",
+  "register",
+  "forgot-password",
+  "reset-password",
+  "verify",
+  "broadcast",
+  "calendar",
+  "records",
+  "notices",
+  "request-records",
+]);
+
+/**
+ * Converts an org display name into a URL-safe slug:
+ * lowercase → replace non-alphanumeric runs with "-" → collapse → trim ends.
+ */
+export function slugifyOrgName(name: string | null | undefined): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Derives the best unique portal slug from an org name + Clerk slug.
+ * Checks uniqueness against `gc_portal_settings` in the supplied connection.
+ */
+export async function generateUniquePortalSlug(
+  conn: Connection,
+  orgName: string | null | undefined,
+  clerkSlug: string | null | undefined
+): Promise<string> {
+  const base = slugifyOrgName(orgName);
+
+  let candidate: string;
+  if (!base || RESERVED_PORTAL_SLUGS.has(base)) {
+    // Fall back to Clerk slug if it is not reserved/empty
+    if (clerkSlug && !RESERVED_PORTAL_SLUGS.has(clerkSlug) && clerkSlug.trim() !== "") {
+      candidate = clerkSlug;
+    } else {
+      // Append -portal to the org name slug (or clerk slug as last resort)
+      const fallbackBase = base || clerkSlug || "org";
+      candidate = `${fallbackBase}-portal`;
+    }
+  } else {
+    candidate = base;
+  }
+
+  // Ensure uniqueness by appending -2, -3, … as needed (max 100 attempts)
+  let slug = candidate;
+  let counter = 2;
+  while (counter <= 100) {
+    const existing = await conn.execute("SELECT id FROM gc_portal_settings WHERE slug = ?", [slug]);
+    if ((existing.rows as any[]).length === 0) break;
+    slug = `${candidate}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+}
+
 export interface PortalSettingsRow {
   id: number;
   org_id: string;
@@ -47,11 +116,15 @@ export function rowToPortalSettings(row: PortalSettingsRow): PortalSettings {
 /**
  * Gets existing portal settings for an organization, or creates default settings if none exist.
  * This ensures admin APIs always return settings instead of 404.
+ *
+ * @param orgName - The org's display name (used to derive a human-readable slug).
+ * @param orgSlug - The Clerk `org.slug` used as a fallback when the display name is reserved.
  */
 export async function getOrCreatePortalSettings(
   conn: Connection,
   orgId: string,
-  orgSlug: string
+  orgSlug: string,
+  orgName?: string | null
 ): Promise<PortalSettings> {
   // Check for existing settings
   const existing = await conn.execute("SELECT * FROM gc_portal_settings WHERE org_id = ?", [orgId]);
@@ -59,6 +132,9 @@ export async function getOrCreatePortalSettings(
   if (existing.rows.length > 0) {
     return rowToPortalSettings(existing.rows[0] as PortalSettingsRow);
   }
+
+  // Derive a human-readable, unique slug from the org display name.
+  const portalSlug = await generateUniquePortalSlug(conn, orgName, orgSlug);
 
   // Create default settings (id is auto-generated)
   await conn.execute(
@@ -68,7 +144,7 @@ export async function getOrCreatePortalSettings(
     ON DUPLICATE KEY UPDATE id = id`,
     [
       orgId,
-      orgSlug,
+      portalSlug,
       DEFAULT_HEADER_BG_COLOR,
       DEFAULT_HEADER_TEXT_COLOR,
       DEFAULT_ACCENT_COLOR,
@@ -76,7 +152,7 @@ export async function getOrCreatePortalSettings(
     ]
   );
 
-  console.info(`Auto-created portal settings for organization: ${orgId} with slug: ${orgSlug}`);
+  console.info(`Auto-created portal settings for organization: ${orgId} with slug: ${portalSlug}`);
 
   // Fetch the newly created settings
   const created = await conn.execute("SELECT * FROM gc_portal_settings WHERE org_id = ?", [orgId]);

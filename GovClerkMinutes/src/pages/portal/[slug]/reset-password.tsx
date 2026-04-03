@@ -97,10 +97,10 @@ export default function PortalResetPasswordPage({
               as="img"
               src={settings.logoUrl}
               alt=""
-              style={{ height: 48, width: "auto", objectFit: "contain" }}
+              style={{ height: 52, width: "auto", objectFit: "contain" }}
             />
           )}
-          <Text fontWeight="bold" fontSize="xl" style={{ color: headerText }}>
+          <Text fontWeight="bold" fontSize="2xl" style={{ color: headerText }}>
             {settings.pageTitle ?? "Public Records Portal"}
           </Text>
         </HStack>
