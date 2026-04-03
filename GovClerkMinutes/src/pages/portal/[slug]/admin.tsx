@@ -503,18 +503,26 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
       if (attendanceRes.ok) {
         const data = await attendanceRes.json();
         setLiveAttendance(data.attendance ?? []);
+      } else {
+        console.error("Failed to load attendance:", attendanceRes.status, attendanceRes.statusText);
       }
       if (motionsRes.ok) {
         const data = await motionsRes.json();
         setLiveMotions(data.motions ?? []);
+      } else {
+        console.error("Failed to load motions:", motionsRes.status, motionsRes.statusText);
       }
       if (queueRes.ok) {
         const data = await queueRes.json();
         setLiveSpeakerQueue(data.queue ?? []);
+      } else {
+        console.error("Failed to load speaker queue:", queueRes.status, queueRes.statusText);
       }
       if (commentsRes.ok) {
         const data = await commentsRes.json();
         setLivePublicComments(data.comments ?? []);
+      } else {
+        console.error("Failed to load public comments:", commentsRes.status, commentsRes.statusText);
       }
     } catch (err) {
       console.error("Failed to load live session data:", err);
