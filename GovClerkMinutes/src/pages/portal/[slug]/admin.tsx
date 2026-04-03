@@ -80,7 +80,7 @@ import {
 import type { PublicPortalResponse } from "@/types/portal";
 import type { StreamPlatform } from "@/types/liveSession";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
-import { getPortalSessionFromCookieHeader } from "@/portal-auth/portalAuth";
+import { getPortalSessionFromCookieHeader, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { getPortalDbConnection } from "@/utils/portalDb";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1646,17 +1646,19 @@ export const getServerSideProps: GetServerSideProps<AdminPageProps> = async (con
     };
   }
 
-  if (session.portalUserId) {
-    const conn = getPortalDbConnection();
-    const userResult = await conn.execute(
-      "SELECT role FROM gc_portal_users WHERE id = ? AND org_id = ?",
-      [session.portalUserId, session.orgId]
-    );
-    if (userResult.rows.length === 0 || (userResult.rows[0] as any).role !== "admin") {
+  if (!isGovClerkAdmin(session.email ?? null)) {
+    if (session.portalUserId) {
+      const conn = getPortalDbConnection();
+      const userResult = await conn.execute(
+        "SELECT role FROM gc_portal_users WHERE id = ? AND org_id = ?",
+        [session.portalUserId, session.orgId]
+      );
+      if (userResult.rows.length === 0 || (userResult.rows[0] as any).role !== "admin") {
+        return { redirect: { destination: `/portal/${slug}`, permanent: false } };
+      }
+    } else {
       return { redirect: { destination: `/portal/${slug}`, permanent: false } };
     }
-  } else {
-    return { redirect: { destination: `/portal/${slug}`, permanent: false } };
   }
 
   const host = context.req.headers.host || "localhost:3000";

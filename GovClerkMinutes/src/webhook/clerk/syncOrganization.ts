@@ -4,6 +4,7 @@ import {
   DEFAULT_HEADER_BG_COLOR,
   DEFAULT_HEADER_TEXT_COLOR,
   DEFAULT_ACCENT_COLOR,
+  generateUniquePortalSlug,
 } from "@/pages/api/portal/utils/initializePortalSettings";
 
 type PlanTier = "Free" | "Basic" | "Pro" | "Basic_Annual" | "Pro_Annual" | "Custom";
@@ -92,6 +93,9 @@ export async function upsertOrganizationFromWebhook(org: OrganizationJSON): Prom
     console.info(`Initialized 30 free tokens for new organization: ${org.id}`);
 
     if (org.slug) {
+      // Derive a human-readable slug from the org display name (not the Clerk org.slug).
+      const portalSlug = await generateUniquePortalSlug(conn, org.name, org.slug);
+
       // id is auto-generated
       await conn.execute(
         `INSERT INTO gc_portal_settings (
@@ -100,7 +104,7 @@ export async function upsertOrganizationFromWebhook(org: OrganizationJSON): Prom
         ON DUPLICATE KEY UPDATE id = id`,
         [
           org.id,
-          org.slug,
+          portalSlug,
           DEFAULT_HEADER_BG_COLOR,
           DEFAULT_HEADER_TEXT_COLOR,
           DEFAULT_ACCENT_COLOR,
@@ -108,7 +112,7 @@ export async function upsertOrganizationFromWebhook(org: OrganizationJSON): Prom
         ]
       );
       console.info(
-        `Auto-created portal settings for organization: ${org.id} with slug: ${org.slug}`
+        `Auto-created portal settings for organization: ${org.id} with slug: ${portalSlug}`
       );
     } else {
       console.warn(`Organization ${org.id} has no slug, skipping portal settings creation`);

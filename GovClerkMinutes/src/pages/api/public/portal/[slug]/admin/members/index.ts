@@ -68,19 +68,22 @@ export default async function handler(req: NextRequest): Promise<Response> {
   }
 
   // Check that the requesting portal user has admin role
-  if (!session.portalUserId) {
-    return errorResponse("Admin access required", 403);
-  }
-  const userResult = await conn.execute(
-    "SELECT role FROM gc_portal_users WHERE id = ? AND org_id = ?",
-    [session.portalUserId, orgId]
-  );
-  if (userResult.rows.length === 0) {
-    return errorResponse("User not found", 404);
-  }
-  const userRole = (userResult.rows[0] as any).role;
-  if (userRole !== "admin") {
-    return errorResponse("Admin role required", 403);
+  // GovClerk admins (@govclerkminutes.com) bypass DB role check entirely
+  if (!isGovClerkAdmin(session.email)) {
+    if (!session.portalUserId) {
+      return errorResponse("Admin access required", 403);
+    }
+    const userResult = await conn.execute(
+      "SELECT role FROM gc_portal_users WHERE id = ? AND org_id = ?",
+      [session.portalUserId, orgId]
+    );
+    if (userResult.rows.length === 0) {
+      return errorResponse("User not found", 404);
+    }
+    const userRole = (userResult.rows[0] as any).role;
+    if (userRole !== "admin") {
+      return errorResponse("Admin role required", 403);
+    }
   }
 
   if (req.method === "GET") {

@@ -142,7 +142,7 @@ export function PublicPortalHeader({
                     {session.email ?? "Signed in"}
                   </span>
                   {/* Admin settings link — only for portal admins */}
-                  {session.role === "admin" && slug && (
+                  {(session.role === "admin" || session.isGovClerkAdmin) && slug && (
                     <Link
                       href={`/portal/${slug}/admin`}
                       style={{ color: settings.headerTextColor || "#ffffff" }}
@@ -266,7 +266,7 @@ export function PublicPortalHeader({
                     {session.email ?? "Signed in"}
                   </span>
                   {/* Admin settings link — only for portal admins */}
-                  {session.role === "admin" && slug && (
+                  {(session.role === "admin" || session.isGovClerkAdmin) && slug && (
                     <Link
                       href={`/portal/${slug}/admin`}
                       style={{ color: settings.headerTextColor || "#ffffff" }}

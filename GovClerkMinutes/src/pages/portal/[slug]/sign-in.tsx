@@ -127,9 +127,9 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
             as="img"
             src="/govclerk-logo.svg"
             alt="GovClerk"
-            style={{ height: 36, width: "auto", objectFit: "contain" }}
+            style={{ height: 52, width: "auto", objectFit: "contain" }}
           />
-          <Text fontWeight="bold" fontSize="xl" style={{ color: headerText }}>
+          <Text fontWeight="bold" fontSize="2xl" style={{ color: headerText }}>
             Portal
           </Text>
         </HStack>
