@@ -256,7 +256,7 @@ async function processGrayMessage(
           <p>Best regards,<br/>Gray<br/>GovClerkMinutes Sales</p>
         `.trim(),
         TextBody: `Hi,\n\nYour ${planLabel} payment link: ${authorizationUrl}\n\nReference: ${reference}\n\nBest regards,\nGray\nGovClerkMinutes Sales`,
-        MessageStream: "signup_and_purchase",
+        MessageStream: "transactional",
       });
 
       // Notify admin to prepare onboarding
@@ -274,7 +274,7 @@ async function processGrayMessage(
           <p>Please send them a manual onboarding email with instructions on how to use GovClerk and the short welcome video once payment is confirmed.</p>
         `.trim(),
         TextBody: `New ${planLabel} customer: ${emailFromHistory}\nPayStack reference: ${reference}\n\nPlease send onboarding email with GovClerk instructions and welcome video.`,
-        MessageStream: "signup_and_purchase",
+        MessageStream: "transactional",
       });
 
       const reply = `Perfect! I've sent the ${planLabel} payment link to ${emailFromHistory}. Please check your email and complete the payment. Once confirmed, our team will reach out with onboarding details to get you started with GovClerkMinutes! 🎉`;

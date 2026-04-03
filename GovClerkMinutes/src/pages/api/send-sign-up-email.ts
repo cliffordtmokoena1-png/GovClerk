@@ -1,6 +1,6 @@
 import { capture } from "@/utils/posthog";
 import { assertString } from "@/utils/assert";
-import { sendSignInMagicEmail, sendSignUpMagicEmail } from "@/utils/postmark";
+import { isValidEmailFormat, sendSignInMagicEmail, sendSignUpMagicEmail } from "@/utils/postmark";
 import { NextApiRequest, NextApiResponse } from "next";
 import withErrorReporting from "@/error/withErrorReporting";
 import { serverUri } from "@/utils/server";
@@ -30,6 +30,11 @@ export type ApiSendSignUpEmailResponse = {
 async function handler(req: NextApiRequest, res: NextApiResponse<ApiSendSignUpEmailResponse>) {
   const body = req.body as SendSignUpEmailBody;
   const email = assertString(body.email).trim().toLowerCase();
+
+  if (!isValidEmailFormat(email)) {
+    return res.status(400).json({ error: "Invalid email address" });
+  }
+
   const firstNameForUser = null;
   const adId = body.adId;
   const utmParams = body.utmParams;

@@ -184,6 +184,11 @@ export async function sendPaymentConfirmationEmail(
   });
 }
 
+/** Minimal RFC-5322 email format check. */
+export function isValidEmailFormat(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
 export async function sendSupportEmail({
   toEmail,
   fromUserEmail,

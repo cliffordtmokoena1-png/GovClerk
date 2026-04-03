@@ -91,7 +91,7 @@ GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
     Subject: "Your GovClerk Portal Verification Code",
     HtmlBody: htmlBody,
     TextBody: textBody,
-    MessageStream: "signup_and_purchase",
+    MessageStream: "portal-verification",
   });
 }
 
@@ -184,7 +184,7 @@ GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
     Subject: "Welcome to GovClerk Portal",
     HtmlBody: htmlBody,
     TextBody: textBody,
-    MessageStream: "signup_and_purchase",
+    MessageStream: "portal-transactional",
   });
 }
 
@@ -274,6 +274,6 @@ GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
     Subject: "Reset Your GovClerk Portal Password",
     HtmlBody: htmlBody,
     TextBody: textBody,
-    MessageStream: "signup_and_purchase",
+    MessageStream: "portal-transactional",
   });
 }
