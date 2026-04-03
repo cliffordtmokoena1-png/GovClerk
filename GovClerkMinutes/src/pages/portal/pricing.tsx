@@ -47,7 +47,7 @@ const tiers = [
       "Live meeting streaming",
       "Real-time transcript (live)",
       "Agenda tracking during live meetings",
-      "GovClerkMinutes access (50 tokens / month)",
+      `GovClerkMinutes access (${PORTAL_PAYSTACK_PLANS.professional.minutes_tokens?.toLocaleString("en-ZA") ?? 0} tokens / month)`,
     ],
   },
   {

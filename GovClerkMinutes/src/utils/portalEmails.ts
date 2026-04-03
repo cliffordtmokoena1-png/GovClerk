@@ -277,3 +277,121 @@ GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
     MessageStream: "signup_and_purchase",
   });
 }
+
+/**
+ * Send a cross-sell email when a Professional plan subscription is activated.
+ * Informs the admin about their included GovClerkMinutes tokens and provides
+ * a CTA to sign up or access their GovClerkMinutes dashboard.
+ *
+ * @param email      Recipient email address (organisation's primary admin)
+ * @param firstName  Optional first name to personalise the greeting
+ * @param orgName    Optional organisation name to personalise the body
+ */
+export async function sendPortalProfessionalCrossSellEmail(
+  email: string,
+  firstName?: string,
+  orgName?: string
+): Promise<void> {
+  const greeting = firstName ? `${firstName},` : "Hello,";
+  const orgLabel = orgName ? `for ${orgName}` : "";
+  const dashboardUrl = "https://govclerkminutes.com/dashboard";
+  const signupUrl = "https://govclerkminutes.com";
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color:${PORTAL_GREEN};padding:28px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;letter-spacing:0.5px;">GovClerk Portal</h1>
+        </td>
+      </tr>
+      <!-- Body -->
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#2d3748;">${greeting}</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#4a5568;line-height:1.7;">Great news! Your GovClerk Portal <strong>Professional plan</strong> ${orgLabel} is now active.</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#4a5568;line-height:1.7;">As part of your Professional plan, you have <strong>2,000 GovClerkMinutes tokens included every month</strong>. These tokens let you generate AI-powered meeting minutes, transcriptions, and agendas directly from your recordings.</p>
+          <!-- Token highlight box -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr>
+              <td style="background-color:#f0faf5;border-left:4px solid ${PORTAL_GREEN};border-radius:4px;padding:16px 20px;">
+                <p style="margin:0;font-size:15px;font-weight:600;color:#2d3748;">&#127381;&nbsp; 2,000 GovClerkMinutes tokens/month included</p>
+                <p style="margin:8px 0 0;font-size:14px;color:#4a5568;">Your tokens are automatically credited to a GovClerkMinutes account linked to this email address. Sign in to your dashboard to access them.</p>
+              </td>
+            </tr>
+          </table>
+          <!-- CTA Buttons -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+            <tr>
+              <td align="center" style="padding:8px 0;">
+                <a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;background-color:${PORTAL_GREEN};color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.3px;">Go to GovClerkMinutes Dashboard &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:8px 0;">
+                <p style="margin:0;font-size:13px;color:#718096;">Don&rsquo;t have an account yet? <a href="${signupUrl}" style="color:${PORTAL_GREEN};text-decoration:none;font-weight:600;">Sign up at govclerkminutes.com</a></p>
+              </td>
+            </tr>
+          </table>
+          <!-- What you can do -->
+          <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#2d3748;">What you can do with your tokens:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="padding:6px 0;font-size:14px;color:#4a5568;">&#10003;&nbsp;&nbsp;Generate AI meeting minutes from recordings</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#4a5568;">&#10003;&nbsp;&nbsp;Transcribe audio and video files with speaker identification</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#4a5568;">&#10003;&nbsp;&nbsp;Export minutes in DOCX and PDF formats</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#4a5568;">&#10003;&nbsp;&nbsp;Create and manage meeting agendas</td></tr>
+          </table>
+          <p style="margin:24px 0 0;font-size:15px;color:#2d3748;">Yours in public service,<br/><strong>The GovClerk Portal Team</strong></p>
+        </td>
+      </tr>
+      <!-- Footer -->
+      <tr>
+        <td style="background-color:#f8f9fb;padding:20px 40px;border-top:1px solid #e8ecf0;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#8a94a6;">GovClerk Portal &middot; Powered by GovClerk Minutes &middot; <a href="https://govclerkminutes.com" style="color:${PORTAL_GREEN};text-decoration:none;">govclerkminutes.com</a></p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+  const textBody = `${greeting}
+
+Great news! Your GovClerk Portal Professional plan ${orgLabel} is now active.
+
+As part of your Professional plan, you have 2,000 GovClerkMinutes tokens included every month. These tokens let you generate AI-powered meeting minutes, transcriptions, and agendas directly from your recordings.
+
+🎉 2,000 GovClerkMinutes tokens/month included
+
+Your tokens are automatically credited to a GovClerkMinutes account linked to this email address.
+
+Go to your GovClerkMinutes Dashboard: ${dashboardUrl}
+
+Don't have an account yet? Sign up at: ${signupUrl}
+
+What you can do with your tokens:
+- Generate AI meeting minutes from recordings
+- Transcribe audio and video files with speaker identification
+- Export minutes in DOCX and PDF formats
+- Create and manage meeting agendas
+
+Yours in public service,
+The GovClerk Portal Team
+
+GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
+
+  await sendEmail({
+    From: FROM_PORTAL,
+    To: email,
+    Subject: "Your GovClerk Portal Professional plan is active — claim your GovClerkMinutes tokens",
+    HtmlBody: htmlBody,
+    TextBody: textBody,
+    MessageStream: "signup_and_purchase",
+  });
+}
