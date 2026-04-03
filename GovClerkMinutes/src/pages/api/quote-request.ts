@@ -26,7 +26,7 @@ interface QuoteRequestBody {
   organizationName: string;
   websiteUrl?: string;
   comments?: string;
-  formType?: "demo" | "pricing";
+  formType?: "demo" | "pricing" | "request-pricing";
   hcaptchaToken?: string;
 }
 
@@ -62,46 +62,48 @@ async function handler(req: NextRequest) {
     const trimmedComments = comments?.trim();
     const posthogSessionId = req.headers.get("x-posthog-session-id") ?? undefined;
 
-    if (!hcaptchaToken) {
+    if (formType !== "request-pricing" && !hcaptchaToken) {
       return new Response(JSON.stringify({ error: "Captcha verification required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const hcaptchaSecret = process.env.HCAPTCHA_SECRET_KEY;
-    if (!hcaptchaSecret) {
-      console.error("HCAPTCHA_SECRET_KEY is not configured");
-      return new Response(JSON.stringify({ error: "Server configuration error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    if (formType !== "request-pricing") {
+      const hcaptchaSecret = process.env.HCAPTCHA_SECRET_KEY;
+      if (!hcaptchaSecret) {
+        console.error("HCAPTCHA_SECRET_KEY is not configured");
+        return new Response(JSON.stringify({ error: "Server configuration error" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
-    const hcaptchaVerifyResponse = await fetch("https://hcaptcha.com/siteverify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `secret=${encodeURIComponent(hcaptchaSecret)}&response=${encodeURIComponent(hcaptchaToken)}`,
-    });
-
-    const hcaptchaResult = await hcaptchaVerifyResponse.json();
-
-    if (!hcaptchaResult.success) {
-      await capture(
-        "quote_request_hcaptcha_failed",
-        {
-          formType,
-          errorCodes: hcaptchaResult["error-codes"],
-          $session_id: posthogSessionId,
+      const hcaptchaVerifyResponse = await fetch("https://hcaptcha.com/siteverify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        "anonymous"
-      );
-      return new Response(JSON.stringify({ error: "Captcha verification failed" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
+        body: `secret=${encodeURIComponent(hcaptchaSecret)}&response=${encodeURIComponent(hcaptchaToken!)}`,
       });
+
+      const hcaptchaResult = await hcaptchaVerifyResponse.json();
+
+      if (!hcaptchaResult.success) {
+        await capture(
+          "quote_request_hcaptcha_failed",
+          {
+            formType,
+            errorCodes: hcaptchaResult["error-codes"],
+            $session_id: posthogSessionId,
+          },
+          "anonymous"
+        );
+        return new Response(JSON.stringify({ error: "Captcha verification failed" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Validate required fields
