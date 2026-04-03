@@ -11,6 +11,8 @@ type Props = {
   meetingId: number;
   agendaItems?: AgendaItem[];
   approvedComments: PublicComment[];
+  isAuthenticated?: boolean;
+  userEmail?: string;
 };
 
 type FormState = {
@@ -21,10 +23,17 @@ type FormState = {
   agendaItemId: string;
 };
 
-export function PublicCommentForm({ slug, meetingId, agendaItems = [], approvedComments }: Props) {
+export function PublicCommentForm({
+  slug,
+  meetingId,
+  agendaItems = [],
+  approvedComments,
+  isAuthenticated = false,
+  userEmail,
+}: Props) {
   const [form, setForm] = useState<FormState>({
     speakerName: "",
-    speakerEmail: "",
+    speakerEmail: userEmail ?? "",
     topic: "",
     commentText: "",
     agendaItemId: "",
@@ -42,6 +51,10 @@ export function PublicCommentForm({ slug, meetingId, agendaItems = [], approvedC
     e.preventDefault();
     if (!form.speakerName.trim() || !form.topic.trim()) {
       setError("Speaker name and topic are required.");
+      return;
+    }
+    if (!isAuthenticated && !form.speakerEmail.trim()) {
+      setError("Email is required to submit a public comment.");
       return;
     }
 
@@ -89,7 +102,7 @@ export function PublicCommentForm({ slug, meetingId, agendaItems = [], approvedC
               setSubmitted(false);
               setForm({
                 speakerName: "",
-                speakerEmail: "",
+                speakerEmail: userEmail ?? "",
                 topic: "",
                 commentText: "",
                 agendaItemId: "",
@@ -118,15 +131,27 @@ export function PublicCommentForm({ slug, meetingId, agendaItems = [], approvedC
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email <span className="text-gray-400 text-xs">(optional)</span>
+              Email{" "}
+              {isAuthenticated ? (
+                <span className="text-gray-400 text-xs">(optional)</span>
+              ) : (
+                <span className="text-red-500">*</span>
+              )}
             </label>
             <input
               type="email"
               value={form.speakerEmail}
               onChange={(e) => handleChange("speakerEmail", e.target.value)}
               placeholder="your@email.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+              readOnly={isAuthenticated && !!userEmail}
+              required={!isAuthenticated}
             />
+            {!isAuthenticated && (
+              <p className="mt-1 text-xs text-gray-500">
+                Used for moderation follow-up only — not displayed publicly.
+              </p>
+            )}
           </div>
 
           <div>

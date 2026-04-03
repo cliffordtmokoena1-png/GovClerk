@@ -30,6 +30,8 @@ interface PublicLivePageProps {
   agenda: MgAgendaItemWithRelations[];
   segments: BroadcastTranscriptSegment[];
   slug: string;
+  isAuthenticated: boolean;
+  userEmail: string | null;
 }
 
 type ActiveTab = "agenda" | "motions" | "speakers" | "comment" | "captions";
@@ -71,6 +73,8 @@ export default function PublicLivePage({
   agenda: initialAgenda,
   segments: initialSegments,
   slug,
+  isAuthenticated,
+  userEmail,
 }: PublicLivePageProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("agenda");
   const { data: liveData } = useLiveSession(slug);
@@ -264,6 +268,8 @@ export default function PublicLivePage({
                   meetingId={broadcast.meeting.id}
                   agendaItems={flatAgendaItems}
                   approvedComments={publicCommentQueue}
+                  isAuthenticated={isAuthenticated}
+                  userEmail={userEmail ?? undefined}
                 />
               )}
 
@@ -322,18 +328,12 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
     // Network error — still render shell with defaults
   }
 
-  // Require authentication to view live stream
+  // Attempt to fetch the portal session — page is public, so no redirect on failure
   const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
     () => null
   );
-  if (!session) {
-    return {
-      redirect: {
-        destination: `/portal/${slug}/sign-in?redirect=/portal/${slug}/broadcast`,
-        permanent: false,
-      },
-    };
-  }
+  const isAuthenticated = Boolean(session);
+  const userEmail = session?.email ?? null;
 
   try {
     const broadcastRes = await fetch(`${baseUrl}/api/public/portal/${slug}/live`);
@@ -350,6 +350,8 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
         agenda: broadcastData.agenda || [],
         segments: broadcastData.segments || [],
         slug,
+        isAuthenticated,
+        userEmail,
       },
     };
   } catch (error) {
@@ -361,6 +363,8 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
         agenda: [],
         segments: [],
         slug,
+        isAuthenticated,
+        userEmail,
       },
     };
   }
