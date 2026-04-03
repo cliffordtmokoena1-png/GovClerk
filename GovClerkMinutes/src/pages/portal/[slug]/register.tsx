@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import { GetServerSideProps } from "next";
+import { RESERVED_PORTAL_SLUGS } from "@/pages/api/portal/utils/initializePortalSettings";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
@@ -230,6 +231,11 @@ export default function PortalRegisterPage({ settings, slug }: RegisterPageProps
 
 export const getServerSideProps: GetServerSideProps<RegisterPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
+
+  if (RESERVED_PORTAL_SLUGS.has(slug)) {
+    return { notFound: true };
+  }
+
   const host = context.req.headers.host || "localhost:3000";
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;

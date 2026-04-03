@@ -10,6 +10,7 @@ import { GetServerSideProps } from "next";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { PublicPortalResponse, PublicMeetingsListResponse } from "@/types/portal";
+import { RESERVED_PORTAL_SLUGS } from "@/pages/api/portal/utils/initializePortalSettings";
 import type { PortalAnnouncement } from "@/types/publicRecords";
 import {
   PublicPortalLayout,
@@ -311,6 +312,11 @@ export default function LivePortalPage({
 
 export const getServerSideProps: GetServerSideProps<LivePortalPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
+
+  if (RESERVED_PORTAL_SLUGS.has(slug)) {
+    return { notFound: true };
+  }
+
   const host = context.req.headers.host || "localhost:3000";
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
