@@ -44,45 +44,45 @@ const productItems: MegaMenuItem[] = [
     icon: LuCalendar,
     title: "Agenda Management",
     description: "Create, organize, and distribute meeting agendas to stakeholders digitally",
-    href: "/a/meetings",
+    href: "/product/agenda-management",
     featured: true,
   },
   {
     icon: LuFileText,
     title: "Minutes Generation",
     description: "AI transforms recordings into structured, professional meeting minutes",
-    href: "/a/meetings",
+    href: "/product/minutes-generation",
     featured: true,
   },
   {
     icon: LuMic,
     title: "Transcription",
     description: "Real-time speech-to-text with speaker labels in 96+ languages",
-    href: "/a/broadcast",
+    href: "/product/transcription",
   },
   {
     icon: LuUsers,
     title: "Organization Management",
     description: "Manage boards, committees, departments, and member roles centrally",
-    href: "/a/organization",
+    href: "/product/organization-management",
   },
   {
     icon: LuClipboardCheck,
     title: "Votes & Motions",
     description: "Record, track, and archive motions, votes, and resolutions",
-    href: "/a/meetings",
+    href: "/product/votes-and-motions",
   },
   {
     icon: LuShield,
     title: "Security & Compliance",
     description: "SOC 2 compliant with encryption and role-based access controls",
-    href: "/a/account",
+    href: "/product/security",
   },
   {
     icon: LuZap,
     title: "AI-Powered Artifacts",
     description: "Auto-extract action items, summaries, and key decisions",
-    href: "/a/meetings",
+    href: "/product/ai-artifacts",
   },
 ];
 
@@ -91,27 +91,27 @@ const solutionItems: MegaMenuItem[] = [
     icon: LuLandmark,
     title: "Local Government",
     description: "City councils, county boards, and municipal agencies",
-    href: "/a/boards",
+    href: "/solutions/government",
     featured: true,
   },
   {
     icon: LuGraduationCap,
     title: "School Boards",
     description: "K-12 districts, higher education boards, and academic committees",
-    href: "/a/boards",
+    href: "/solutions/school-boards",
     featured: true,
   },
   {
     icon: LuBuilding2,
     title: "Special Districts",
     description: "Water, fire, transit, and utility districts with public meetings",
-    href: "/a/boards",
+    href: "/solutions/special-districts",
   },
   {
     icon: LuHeart,
     title: "Nonprofits",
     description: "Board governance and volunteer committee management",
-    href: "/a/boards",
+    href: "/solutions/nonprofits",
   },
 ];
 
@@ -120,19 +120,19 @@ const resourceItems: MegaMenuItem[] = [
     icon: LuBookOpen,
     title: "Documentation",
     description: "Guides, API references, and integration documentation",
-    href: "/a/dashboard",
+    href: "/docs",
   },
   {
     icon: LuNewspaper,
     title: "Blog",
     description: "Product updates, best practices, and industry insights",
-    href: "/a/dashboard",
+    href: "/blog",
   },
   {
     icon: LuHelpCircle,
     title: "Help Center",
     description: "FAQs, tutorials, and support resources",
-    href: "/a/dashboard",
+    href: "/help",
   },
   {
     icon: LuMessageSquare,
@@ -146,17 +146,17 @@ const feedItems: FeedItem[] = [
   {
     tag: "Product",
     title: "Introducing AI-powered agenda generation for council meetings",
-    href: "/a/dashboard",
+    href: "/blog",
   },
   {
     tag: "Guide",
     title: "How to migrate from paper minutes to digital in 30 days",
-    href: "/a/dashboard",
+    href: "/blog",
   },
   {
     tag: "Update",
     title: "New SOC 2 Type II certification and compliance dashboard",
-    href: "/a/dashboard",
+    href: "/blog",
   },
 ];
 
@@ -267,7 +267,7 @@ function BentoMenuPanel({ items, dropdownKey }: BentoMenuPanelProps) {
             ))}
           </div>
           <Link
-            href="/a/dashboard"
+            href="/blog"
             className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-cd-blue hover:underline"
           >
             View all updates
