@@ -1,31 +1,25 @@
 /**
- * Public Portal — Demo Page (/portal/[slug]/demo)
+ * Public Portal — Trial Page (/portal/[slug]/trial)
  *
- * Shown for organisations without an active subscription.
- * Authenticated users see the DemoPortalView (upgrade CTAs + sample data).
- * Unauthenticated users see the sign-in prompt.
- *
- * Auto-redirects to /portal/[slug]/live when a subscription is detected.
+ * Shown for authenticated users whose organisation does not have an active
+ * subscription.  Provides a read-only preview of the portal with upgrade
+ * CTAs.  Paying subscribers and GovClerk admins are redirected to the root
+ * portal page.  Unauthenticated visitors are redirected to sign-in.
  */
 
 import { GetServerSideProps } from "next";
-import { useState, useEffect } from "react";
-import Link from "next/link";
 import { RESERVED_PORTAL_SLUGS } from "@/pages/api/portal/utils/initializePortalSettings";
-import { useRouter } from "next/router";
 import type { PublicPortalResponse } from "@/types/portal";
 import type { PortalAnnouncement } from "@/types/publicRecords";
 import { PublicPortalLayout, DemoPortalView } from "@/components/portal/public";
-import { usePortalAuth } from "@/hooks/portal/usePortalAuth";
 import { getPortalSessionFromCookieHeader, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
+import { useState, useEffect } from "react";
 
-interface DemoPortalPageProps {
+interface TrialPortalPageProps {
   settings: PublicPortalResponse["settings"];
   slug: string;
   announcements: PortalAnnouncement[];
-  isAuthenticated: boolean;
-  portalExists: boolean;
 }
 
 function AnnouncementsBanner({
@@ -101,23 +95,11 @@ function AnnouncementsBanner({
   );
 }
 
-export default function DemoPortalPage({
+export default function TrialPortalPage({
   settings,
   slug,
   announcements,
-  isAuthenticated,
-  portalExists,
-}: DemoPortalPageProps) {
-  const router = useRouter();
-  const { portalMode } = usePortalAuth(slug);
-
-  // Auto-redirect to live portal when the org subscribes
-  useEffect(() => {
-    if (portalMode === "live") {
-      router.replace(`/portal/${slug}/live`);
-    }
-  }, [portalMode, slug, router]);
-
+}: TrialPortalPageProps) {
   return (
     <>
       <AnnouncementsBanner announcements={announcements} />
@@ -127,63 +109,13 @@ export default function DemoPortalPage({
         filter={{ sortBy: "newest" }}
         onFilterChange={() => {}}
       >
-        {!isAuthenticated ? (
-          <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
-              <span className="text-3xl" aria-hidden="true">
-                🔒
-              </span>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Sign in to access this portal
-            </h2>
-            <p className="text-gray-500 mb-8 max-w-sm">
-              Sign in with your organisational email to access meetings, documents, and other portal
-              content.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href={`/portal/${slug}/sign-in`}
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href={`/portal/${slug}/register`}
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-white text-gray-700 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              >
-                Create Account
-              </Link>
-            </div>
-          </div>
-        ) : !portalExists ? (
-          <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-              <span className="text-3xl" aria-hidden="true">
-                🏢
-              </span>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Organization Not Found</h2>
-            <p className="text-gray-500 mb-8 max-w-sm">
-              This organization hasn&apos;t been set up on GovClerk yet. Would you like to create
-              it?
-            </p>
-            <Link
-              href="/org/signup"
-              className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-            >
-              Create Organization
-            </Link>
-          </div>
-        ) : (
-          <DemoPortalView slug={slug} accentColor={settings.accentColor} />
-        )}
+        <DemoPortalView slug={slug} accentColor={settings.accentColor} />
       </PublicPortalLayout>
     </>
   );
 }
 
-export const getServerSideProps: GetServerSideProps<DemoPortalPageProps> = async (context) => {
+export const getServerSideProps: GetServerSideProps<TrialPortalPageProps> = async (context) => {
   const { slug } = context.params as { slug: string };
 
   if (RESERVED_PORTAL_SLUGS.has(slug)) {
@@ -194,53 +126,21 @@ export const getServerSideProps: GetServerSideProps<DemoPortalPageProps> = async
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
 
-  // Fetch portal settings
-  let settingsData: { settings: PublicPortalResponse["settings"] } = {
-    settings: makeDefaultPortalSettings(slug),
-  };
-  let portalExists = false;
-
-  try {
-    const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
-    if (settingsRes.ok) {
-      settingsData = await settingsRes.json();
-      portalExists = true;
-    } else if (settingsRes.status !== 404) {
-      console.error(`Failed to fetch portal settings: ${settingsRes.status}`);
-    }
-  } catch (error) {
-    console.error("Error fetching portal settings:", error);
-  }
-
-  // Check if user has a valid portal session
+  // Unauthenticated users must sign in first
   const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
     () => null
   );
 
   if (!session) {
     return {
-      props: {
-        settings: settingsData.settings,
-        slug,
-        announcements: [],
-        isAuthenticated: false,
-        portalExists,
-      },
-    };
-  }
-
-  // GovClerk admins always bypass subscription checks and go directly to the live portal.
-  if (isGovClerkAdmin(session.email)) {
-    return {
       redirect: {
-        destination: `/portal/${slug}/live`,
+        destination: `/portal/${slug}/sign-in`,
         permanent: false,
       },
     };
   }
 
-  // Gate access: if the authenticated user has not verified their email (is_active=0),
-  // redirect them to the verification page.
+  // Gate access: redirect unverified users to email verification
   if (session.portalUserId != null) {
     try {
       const { getPortalDbConnection } = await import("@/utils/portalDb");
@@ -266,37 +166,50 @@ export const getServerSideProps: GetServerSideProps<DemoPortalPageProps> = async
     }
   }
 
-  // Determine portal mode
-  let portalMode: "live" | "demo" = "demo";
+  // GovClerk admins and paying subscribers don't need trial — redirect to full portal
+  let isSubscribed = false;
   if (isGovClerkAdmin(session.email)) {
-    portalMode = "live";
+    isSubscribed = true;
   } else {
     try {
       const { getPortalDbConnection } = await import("@/utils/portalDb");
       const conn = getPortalDbConnection();
       const subResult = await conn.execute(
-        "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+        "SELECT id FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
         [session.orgId]
       );
       if (subResult.rows.length > 0) {
-        portalMode = "live";
+        isSubscribed = true;
       }
     } catch {
-      // DB error — default to demo
+      // DB error — show trial page as fallback
     }
   }
 
-  // If the user actually has a live subscription, redirect to the live portal
-  if (portalMode === "live") {
+  if (isSubscribed) {
     return {
       redirect: {
-        destination: `/portal/${slug}/live`,
+        destination: `/portal/${slug}`,
         permanent: false,
       },
     };
   }
 
-  // Fetch announcements for demo page
+  // Fetch portal settings
+  let settingsData: { settings: PublicPortalResponse["settings"] } = {
+    settings: makeDefaultPortalSettings(slug),
+  };
+
+  try {
+    const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
+    if (settingsRes.ok) {
+      settingsData = await settingsRes.json();
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fetch announcements
   let announcements: PortalAnnouncement[] = [];
   try {
     const announcementsRes = await fetch(`${baseUrl}/api/public/portal/${slug}/announcements`);
@@ -313,8 +226,6 @@ export const getServerSideProps: GetServerSideProps<DemoPortalPageProps> = async
       settings: settingsData.settings,
       slug,
       announcements,
-      isAuthenticated: true,
-      portalExists,
     },
   };
 };

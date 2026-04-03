@@ -28,7 +28,7 @@ export function BroadcastQuickActions({
   isStreamAvailable = true,
 }: Readonly<Props>) {
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
-  const publicUrl = portalSlug ? `/portal/${portalSlug}/live` : null;
+  const publicUrl = portalSlug ? `/portal/${portalSlug}` : null;
 
   const handleOpenPublicView = useCallback(() => {
     if (publicUrl) {

@@ -7,7 +7,6 @@ import type { PortalAnnouncement } from "@/types/publicRecords";
 import {
   PublicPortalLayout,
   PublicMeetingsList,
-  DemoPortalView,
   type MeetingsFilter,
 } from "@/components/portal/public";
 import { usePublicPortalMeetings } from "@/hooks/portal/usePublicPortal";
@@ -163,9 +162,7 @@ export default function PublicPortalPage({
     total,
     page,
     pageSize,
-    filter: hookFilter,
     updateFilter,
-    clearFilters,
     goToPage,
     isLoading,
   } = usePublicPortalMeetings(useClientData ? slug : undefined);
@@ -280,8 +277,6 @@ export default function PublicPortalPage({
               Create Organization
             </Link>
           </div>
-        ) : portalMode === "demo" ? (
-          <DemoPortalView slug={slug} accentColor={settings.accentColor} />
         ) : (
           <>
             {/* Upcoming Meetings */}
@@ -380,24 +375,36 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
     return { notFound: true };
   }
 
-  // Check if user has a valid portal session
+  const host = context.req.headers.host || "localhost:3000";
+  const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${isLocalhost ? "http" : "https"}://${host}`;
+
+  // Fetch portal settings (public — no auth required)
+  let settingsData: { settings: PublicPortalResponse["settings"] } = {
+    settings: makeDefaultPortalSettings(slug),
+  };
+  let portalExists = false;
+
+  try {
+    const settingsRes = await fetch(`${baseUrl}/api/public/portal/${slug}`);
+    if (settingsRes.ok) {
+      settingsData = await settingsRes.json();
+      portalExists = true;
+    } else if (settingsRes.status !== 404) {
+      console.error(`Failed to fetch portal settings: ${settingsRes.status}`);
+    }
+  } catch (error) {
+    console.error("Error fetching portal settings:", error);
+  }
+
+  // Check if user has a valid portal session (optional — public portal is visible without auth)
   const session = await getPortalSessionFromCookieHeader(context.req.headers.cookie).catch(
     () => null
   );
 
-  // Unauthenticated users go to the demo page (shows sign-in prompt)
-  if (!session) {
-    return {
-      redirect: {
-        destination: `/portal/${slug}/demo`,
-        permanent: false,
-      },
-    };
-  }
-
   // Gate access: if the authenticated user has not verified their email (is_active=0),
   // redirect them to the verification page.
-  if (session.portalUserId != null) {
+  if (session?.portalUserId != null) {
     try {
       const { getPortalDbConnection } = await import("@/utils/portalDb");
       const conn = getPortalDbConnection();
@@ -418,36 +425,113 @@ export const getServerSideProps: GetServerSideProps<PublicPortalPageProps> = asy
         };
       }
     } catch {
-      // DB error — do not block access, let the user through
+      // DB error — do not block access
     }
   }
 
-  // Determine portal mode: GovClerk admins and orgs with active/trial subscriptions get "live".
-  // isGovClerkAdmin() handles null/undefined email, so a single call is sufficient.
+  // Determine portal mode: used client-side to show the LiveNowBanner.
+  // "live" = paying subscriber or GovClerk admin (authenticated).
+  // "demo" = unauthenticated visitor (non-paying authenticated users are
+  //           redirected to /trial above and never reach render).
   let portalMode: "live" | "demo" = "demo";
-  if (isGovClerkAdmin(session.email)) {
-    portalMode = "live";
-  } else {
-    try {
-      const { getPortalDbConnection } = await import("@/utils/portalDb");
-      const conn = getPortalDbConnection();
-      const subResult = await conn.execute(
-        "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
-        [session.orgId]
-      );
-      if (subResult.rows.length > 0) {
-        portalMode = "live";
+  if (session) {
+    if (isGovClerkAdmin(session.email)) {
+      portalMode = "live";
+    } else {
+      try {
+        const { getPortalDbConnection } = await import("@/utils/portalDb");
+        const conn = getPortalDbConnection();
+        const subResult = await conn.execute(
+          "SELECT tier, status FROM gc_portal_subscriptions WHERE org_id = ? AND status IN ('active', 'trial') LIMIT 1",
+          [session.orgId]
+        );
+        if (subResult.rows.length > 0) {
+          portalMode = "live";
+        }
+      } catch {
+        // DB error — default to demo
       }
-    } catch {
-      // DB error — default to demo to be safe
+    }
+
+    // Non-paying authenticated users are redirected to the trial preview page
+    if (portalMode === "demo") {
+      return {
+        redirect: {
+          destination: `/portal/${slug}/trial`,
+          permanent: false,
+        },
+      };
     }
   }
 
-  // Redirect to the appropriate URL based on portal mode
-  return {
-    redirect: {
-      destination: `/portal/${slug}/${portalMode}`,
-      permanent: false,
-    },
-  };
+  // Fetch public portal content (for paying/admin users and unauthenticated visitors)
+  try {
+    const [meetingsRes, announcementsRes, upcomingRes, artifactsRes] = await Promise.all([
+      fetch(`${baseUrl}/api/public/portal/${slug}/meetings?page=1&limit=12&sortBy=newest`),
+      fetch(`${baseUrl}/api/public/portal/${slug}/announcements`).catch(() => null),
+      fetch(
+        `${baseUrl}/api/public/portal/${slug}/calendar?month=${new Date().getMonth() + 1}&year=${new Date().getFullYear()}`
+      ).catch(() => null),
+      fetch(`${baseUrl}/api/public/portal/${slug}/records/search?type=artifact&pageSize=5`).catch(
+        () => null
+      ),
+    ]);
+
+    if (!meetingsRes.ok) {
+      throw new Error(`Failed to fetch meetings: ${meetingsRes.status}`);
+    }
+    const meetingsData: PublicMeetingsListResponse = await meetingsRes.json();
+
+    const announcements: PortalAnnouncement[] = announcementsRes?.ok
+      ? (await announcementsRes.json()).announcements || []
+      : [];
+
+    const calendarData = upcomingRes?.ok ? await upcomingRes.json() : null;
+    const upcomingMeetings = calendarData?.meetings
+      ? calendarData.meetings
+          .filter((m: any) => new Date(m.meetingDate) >= new Date())
+          .slice(0, 3)
+          .map((m: any) => ({ id: m.id, title: m.title, meetingDate: m.meetingDate }))
+      : [];
+
+    const artifactsData = artifactsRes?.ok ? await artifactsRes.json() : null;
+    const latestArtifacts = artifactsData?.results
+      ? artifactsData.results.slice(0, 5).map((r: any) => ({
+          id: r.id,
+          fileName: r.title,
+          artifactType: r.artifactType || "",
+          s3Url: r.downloadUrl || "",
+          meetingId: r.meetingId || null,
+        }))
+      : [];
+
+    return {
+      props: {
+        settings: settingsData.settings,
+        initialMeetings: meetingsData,
+        slug,
+        announcements,
+        upcomingMeetings,
+        latestArtifacts,
+        isAuthenticated: !!session,
+        portalExists,
+        portalMode,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching portal data:", error);
+    return {
+      props: {
+        settings: settingsData.settings,
+        initialMeetings: EMPTY_MEETINGS,
+        slug,
+        announcements: [],
+        upcomingMeetings: [],
+        latestArtifacts: [],
+        isAuthenticated: !!session,
+        portalExists,
+        portalMode,
+      },
+    };
+  }
 };

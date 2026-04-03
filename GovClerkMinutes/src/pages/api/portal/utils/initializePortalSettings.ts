@@ -7,9 +7,9 @@ export const DEFAULT_ACCENT_COLOR = "#3182ce";
 
 /**
  * Org slug values that conflict with Next.js portal page routes.
- * Note: "demo" and "live" are NOT listed here — they are fixed sub-path
- * segments in `/portal/[slug]/demo` and `/portal/[slug]/live`, never org
- * slugs, so they create no routing conflict at the [slug] level.
+ * Note: "trial" is NOT listed here — it is handled by SLUG_SUBPATH_NAMES since
+ * it is a sub-directory route (`/portal/[slug]/trial`), not a top-level slug
+ * conflict at the `[slug]` level.
  */
 export const RESERVED_PORTAL_SLUGS = new Set([
   "admin",
@@ -30,11 +30,11 @@ export const RESERVED_PORTAL_SLUGS = new Set([
  * Sub-directory page names that are structurally part of every portal's URL.
  * These differ from RESERVED_PORTAL_SLUGS in that they don't conflict with
  * Next.js page files at `[slug]/X.tsx` — instead they are the directory names
- * used in `/portal/[slug]/demo` and `/portal/[slug]/live`.  An org whose slug
- * were "demo" or "live" would receive the wrong Next.js route, so we block them
- * from ever being assigned as org slugs.
+ * used in `/portal/[slug]/trial`.  An org whose slug were "trial" would
+ * receive the wrong Next.js route, so we block it from being assigned as an
+ * org slug.
  */
-export const SLUG_SUBPATH_NAMES = new Set(["demo", "live"]);
+export const SLUG_SUBPATH_NAMES = new Set(["trial"]);
 
 /**
  * Converts an org display name into a URL-safe slug:

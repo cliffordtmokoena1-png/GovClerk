@@ -58,7 +58,7 @@ export default function PortalHowItWorksSection() {
         <FadeContent direction="up" duration={0.6} delay={0.4}>
           <div className="mt-12 text-center">
             <Link
-              href="/portal/demo"
+              href="/portal/govclerkminutes"
               className="inline-block rounded-lg bg-white px-10 py-3.5 text-base font-semibold text-cd-blue transition-all hover:bg-gray-100"
             >
               See a Live Demo Portal →
