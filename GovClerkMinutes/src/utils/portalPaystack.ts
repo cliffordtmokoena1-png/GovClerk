@@ -13,13 +13,13 @@ export const PORTAL_PAYSTACK_PLANS = {
     ZA: process.env.PAYSTACK_PORTAL_STARTER_PLAN_CODE || "PLN_portal_starter_za",
     monthly_zar: 2500,
     seats: 5,
-    stream_hours: 2,
+    stream_hours: 10,
   },
   professional: {
     ZA: process.env.PAYSTACK_PORTAL_PROFESSIONAL_PLAN_CODE || "PLN_portal_pro_za",
     monthly_zar: 8000,
     seats: 15,
-    stream_hours: 8,
+    stream_hours: 20,
   },
   enterprise: {
     ZA: process.env.PAYSTACK_PORTAL_ENTERPRISE_PLAN_CODE || "PLN_portal_enterprise_za",

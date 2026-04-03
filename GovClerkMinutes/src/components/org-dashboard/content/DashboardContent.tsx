@@ -5,6 +5,7 @@ import { ORG_SIDEBAR_ITEMS } from "../constants";
 import { useWebSocket } from "@/admin/hooks/useWebSocket";
 import { SophonWebSocket } from "@/sophon/types";
 import { getSophonWsUrl } from "@/sophon/config";
+import StreamingHoursBar from "../StreamingHoursBar";
 
 function DashboardContent() {
   const { user } = useUser();
@@ -96,6 +97,7 @@ function DashboardContent() {
         </div>
 
         <div>
+          <StreamingHoursBar />
           <h2 className="text-lg md:text-lg font-semibold text-foreground mb-6">Quick Access</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {quickAccessItems.map((item) => {

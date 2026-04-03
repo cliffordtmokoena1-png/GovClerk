@@ -41,6 +41,7 @@ export type AgentIntent =
   | "sales"
   | "payment"
   | "escalate"
+  | "cross_sell_minutes"
   | "general";
 
 /** Result returned by the AI agent after processing a message. */

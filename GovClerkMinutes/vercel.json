@@ -1,5 +1,11 @@
 {
   "github": {
     "autoJobCancelation": false
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/cross-sell-reengage",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }
