@@ -24,12 +24,9 @@ import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { sendSlackWebhook } from "@/utils/slack";
 import { getPhoneNumberIdFor, WHATSAPP_API_VERSION } from "@/admin/whatsapp/api/consts";
-<<<<<<< copilot/add-preferred-billing-day-system
 import { ordinalSuffix } from "@/utils/portalBillingUtils";
-=======
 import { provisionProfessionalPlanTokens } from "@/utils/portalTokenProvisioning";
 import { sendPortalProfessionalCrossSellEmail } from "@/utils/portalEmails";
->>>>>>> main
 
 const BUSINESS_WHATSAPP_ID = "27664259236";
 
@@ -118,7 +115,7 @@ function isNewFormat(body: QuoteRequestBody): body is NewQuoteBody {
   return (body as NewQuoteBody).formType === "portal-quote";
 }
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailRegex = /^[^\s@]+@[^"]+\.[^\s@]+$/;
 
 export default async function handler(req: NextRequest): Promise<Response> {
   if (req.method !== "POST") {
@@ -197,7 +194,9 @@ export default async function handler(req: NextRequest): Promise<Response> {
     if (customerPhone.length >= MIN_PHONE_LENGTH) {
       const waMessage =
         `Hi ${firstName.trim()}! 👋\n\n` +
-        `Thank you for requesting a quote for *GovClerk Portal* for ${organizationName.trim()}.\n\n` +
+        `Thank you for requesting a quote for *GovClerk Portal* for ${organizationName.trim()}.
+
+` +
         `We've received your inquiry${selectedPlan ? ` for the *${selectedPlan}* plan` : ""}. ` +
         `Samantha from our team will review your requirements and get back to you shortly with a tailored quote.\n\n` +
         `Feel free to ask any questions right here — I'm happy to help! 😊\n\n` +
