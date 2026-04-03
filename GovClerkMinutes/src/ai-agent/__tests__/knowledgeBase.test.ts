@@ -37,8 +37,24 @@ describe("AI Agent Knowledge Base", () => {
       expect(PRODUCT_KNOWLEDGE_BASE).toContain("Board of directors meetings");
     });
 
+    it("includes actual GovClerkMinutes plan prices", () => {
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("R300/month");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("R450/month");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("R600/month");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("R900/month");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("Essential");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("Professional");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("Elite");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("Premium");
+    });
+
+    it("includes correct direct URLs", () => {
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("request-pricing?product=minutes");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("request-pricing?product=portal");
+    });
+
     it("includes pricing plan types", () => {
-      expect(PRODUCT_KNOWLEDGE_BASE).toContain("Month-to-Month");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("Monthly");
       expect(PRODUCT_KNOWLEDGE_BASE).toContain("Annual");
     });
   });
@@ -96,7 +112,7 @@ describe("AI Agent Knowledge Base", () => {
     it("references the plan options", () => {
       const prompt = buildGraySystemPrompt();
       expect(prompt).toContain("Annual");
-      expect(prompt).toContain("Month-to-Month");
+      expect(prompt).toContain("Essential");
     });
 
     it("mentions PayStack payment flow", () => {
