@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#1a3a5c"/>
+
+  <!-- Pegboard background (top panel) -->
+  <rect x="0" y="0" width="400" height="148" fill="#122d4e"/>
+  <!-- Pegboard holes -->
+  <circle cx="30" cy="20" r="2" fill="#0f2540"/>
+  <circle cx="50" cy="20" r="2" fill="#0f2540"/>
+  <circle cx="70" cy="20" r="2" fill="#0f2540"/>
+  <circle cx="350" cy="20" r="2" fill="#0f2540"/>
+  <circle cx="370" cy="20" r="2" fill="#0f2540"/>
+  <!-- Tools on pegboard -->
+  <rect x="340" y="25" width="4" height="30" rx="2" fill="#7cb3e8" opacity="0.5"/>
+  <rect x="352" y="22" width="4" height="35" rx="2" fill="#7cb3e8" opacity="0.4"/>
+  <rect x="364" y="28" width="3" height="25" rx="1" fill="#7cb3e8" opacity="0.35"/>
+  <rect x="376" y="24" width="5" height="32" rx="2" fill="#7cb3e8" opacity="0.5"/>
+
+  <!-- Dividing line between panels -->
+  <rect x="0" y="146" width="400" height="4" fill="#7cb3e8" opacity="0.3"/>
+
+  <!-- Workbench / bottom panel background -->
+  <rect x="0" y="150" width="400" height="150" fill="#0f2540"/>
+
+  <!-- ==== TOP PANEL: Robot at whiteboard ==== -->
+  <!-- Whiteboard -->
+  <rect x="80" y="15" width="200" height="120" rx="4" fill="white" opacity="0.92"/>
+  <rect x="80" y="15" width="200" height="8" rx="4" fill="#e0e0e0"/>
+  <text x="180" y="30" text-anchor="middle" fill="#1a3a5c" font-size="9" font-family="sans-serif" font-weight="bold" letter-spacing="1">PROJECT NOTES</text>
+  <!-- Whiteboard content: equations/algorithms -->
+  <text x="100" y="48" fill="#1a3a5c" font-size="8" font-family="monospace" opacity="0.8">f(x) = Σ aₙxⁿ</text>
+  <text x="180" y="48" fill="#1a3a5c" font-size="8" font-family="monospace" opacity="0.8">O(n log n)</text>
+  <line x1="90" y1="58" x2="270" y2="58" stroke="#1a3a5c" stroke-width="0.5" opacity="0.3"/>
+  <text x="100" y="72" fill="#1a3a5c" font-size="8" font-family="monospace" opacity="0.7">if input &gt; 0:</text>
+  <text x="180" y="72" fill="#1a3a5c" font-size="8" font-family="monospace" opacity="0.7">→ process()</text>
+  <line x1="90" y1="82" x2="270" y2="82" stroke="#1a3a5c" stroke-width="0.5" opacity="0.3"/>
+  <!-- flowchart boxes on whiteboard -->
+  <rect x="95" y="88" width="40" height="16" rx="2" fill="#1a3a5c" opacity="0.15"/>
+  <text x="115" y="100" text-anchor="middle" fill="#1a3a5c" font-size="7" font-family="sans-serif">START</text>
+  <line x1="135" y1="96" x2="150" y2="96" stroke="#1a3a5c" stroke-width="1" opacity="0.4"/>
+  <rect x="150" y="88" width="40" height="16" rx="2" fill="#1a3a5c" opacity="0.15"/>
+  <text x="170" y="100" text-anchor="middle" fill="#1a3a5c" font-size="7" font-family="sans-serif">PARSE</text>
+  <line x1="190" y1="96" x2="205" y2="96" stroke="#1a3a5c" stroke-width="1" opacity="0.4"/>
+  <rect x="205" y="88" width="40" height="16" rx="2" fill="#1a3a5c" opacity="0.15"/>
+  <text x="225" y="100" text-anchor="middle" fill="#1a3a5c" font-size="7" font-family="sans-serif">OUTPUT</text>
+  <line x1="90" y1="114" x2="270" y2="114" stroke="#1a3a5c" stroke-width="0.5" opacity="0.3"/>
+  <text x="100" y="128" fill="#1a3a5c" font-size="8" font-family="monospace" opacity="0.6">model.train(data)</text>
+
+  <!-- Robot at whiteboard (top panel, right side) -->
+  <!-- Body -->
+  <rect x="296" y="68" width="30" height="50" rx="5" fill="#2a5a8c" stroke="#7cb3e8" stroke-width="1"/>
+  <!-- Head -->
+  <rect x="300" y="45" width="22" height="20" rx="4" fill="#2a5a8c" stroke="#7cb3e8" stroke-width="1"/>
+  <!-- Eyes -->
+  <rect x="303" y="50" width="5" height="4" rx="1" fill="#7cb3e8"/>
+  <rect x="313" y="50" width="5" height="4" rx="1" fill="#7cb3e8"/>
+  <!-- Arm reaching to whiteboard -->
+  <line x1="296" y1="85" x2="280" y2="95" stroke="#2a5a8c" stroke-width="6" stroke-linecap="round"/>
+  <!-- Marker in hand -->
+  <rect x="272" y="92" width="12" height="3" rx="1" fill="white" opacity="0.8"/>
+
+  <!-- GovClerk G logo (top panel top-left) -->
+  <circle cx="35" cy="50" r="20" fill="none" stroke="white" stroke-width="2"/>
+  <path d="M49,42 A16,16 0 1,0 49,58 L42,58 L42,50 L49,50" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ==== BOTTOM PANEL: Robots at desks with laptops ==== -->
+  <!-- Desk surface -->
+  <rect x="20" y="230" width="360" height="12" rx="3" fill="#1a3a5c" stroke="#7cb3e8" stroke-width="0.8"/>
+
+  <!-- Robot at desk left -->
+  <!-- Body -->
+  <rect x="55" y="185" width="32" height="42" rx="5" fill="#2a5a8c" stroke="#7cb3e8" stroke-width="1"/>
+  <!-- Head -->
+  <rect x="60" y="162" width="22" height="20" rx="4" fill="#2a5a8c" stroke="#7cb3e8" stroke-width="1"/>
+  <!-- Eyes -->
+  <rect x="63" y="167" width="5" height="4" rx="1" fill="#7cb3e8"/>
+  <rect x="73" y="167" width="5" height="4" rx="1" fill="#7cb3e8"/>
+  <!-- Laptop on desk -->
+  <rect x="45" y="220" width="60" height="12" rx="2" fill="#0f2540" stroke="#7cb3e8" stroke-width="0.8"/>
+  <rect x="50" y="208" width="50" height="14" rx="2" fill="#0d1e35" stroke="#7cb3e8" stroke-width="0.8"/>
+  <rect x="54" y="211" width="42" height="9" rx="1" fill="#1a3a5c" opacity="0.9"/>
+
+  <!-- Foreground robot (prominent, center) -->
+  <!-- Body -->
+  <rect x="170" y="193" width="60" height="42" rx="7" fill="#1e4a7a" stroke="#7cb3e8" stroke-width="1.5"/>
+  <!-- Head -->
+  <rect x="178" y="165" width="44" height="26" rx="6" fill="#1e4a7a" stroke="#7cb3e8" stroke-width="1.5"/>
+  <!-- Eyes (larger) -->
+  <rect x="183" y="172" width="8" height="6" rx="2" fill="#7cb3e8"/>
+  <rect x="199" y="172" width="8" height="6" rx="2" fill="#7cb3e8"/>
+  <!-- Laptop (larger) -->
+  <rect x="155" y="224" width="90" height="10" rx="2" fill="#0f2540" stroke="#7cb3e8" stroke-width="1"/>
+  <rect x="160" y="210" width="80" height="16" rx="2" fill="#0d1e35" stroke="#7cb3e8" stroke-width="1"/>
+  <rect x="165" y="213" width="70" height="11" rx="1" fill="#122d4e"/>
+  <!-- Screen glow lines -->
+  <line x1="170" y1="216" x2="225" y2="216" stroke="#7cb3e8" stroke-width="0.8" opacity="0.6"/>
+  <line x1="170" y1="220" x2="215" y2="220" stroke="#7cb3e8" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Robot at desk right -->
+  <!-- Body -->
+  <rect x="300" y="185" width="32" height="42" rx="5" fill="#2a5a8c" stroke="#7cb3e8" stroke-width="1"/>
+  <!-- Head -->
+  <rect x="305" y="162" width="22" height="20" rx="4" fill="#2a5a8c" stroke="#7cb3e8" stroke-width="1"/>
+  <!-- Eyes -->
+  <rect x="308" y="167" width="5" height="4" rx="1" fill="#7cb3e8"/>
+  <rect x="318" y="167" width="5" height="4" rx="1" fill="#7cb3e8"/>
+  <!-- Notebook on desk -->
+  <rect x="288" y="216" width="38" height="26" rx="2" fill="white" opacity="0.85"/>
+  <line x1="293" y1="222" x2="321" y2="222" stroke="#1a3a5c" stroke-width="0.8" opacity="0.5"/>
+  <line x1="293" y1="228" x2="321" y2="228" stroke="#1a3a5c" stroke-width="0.8" opacity="0.5"/>
+  <line x1="293" y1="234" x2="315" y2="234" stroke="#1a3a5c" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Monitor in background -->
+  <rect x="330" y="165" width="50" height="35" rx="3" fill="#0d1e35" stroke="#7cb3e8" stroke-width="0.8"/>
+  <rect x="334" y="169" width="42" height="27" rx="1" fill="#122d4e"/>
+  <line x1="338" y1="174" x2="372" y2="174" stroke="#7cb3e8" stroke-width="0.7" opacity="0.5"/>
+  <line x1="338" y1="180" x2="365" y2="180" stroke="#7cb3e8" stroke-width="0.7" opacity="0.4"/>
+  <line x1="338" y1="186" x2="370" y2="186" stroke="#7cb3e8" stroke-width="0.7" opacity="0.3"/>
+
+  <!-- Labels -->
+  <text x="200" y="270" text-anchor="middle" fill="white" font-size="14" font-family="sans-serif" font-weight="bold">GovClerk Robot Workshop</text>
+  <text x="200" y="290" text-anchor="middle" fill="#7cb3e8" font-size="11" font-family="sans-serif">Step 1 — Replace with step-robot-workshop.png</text>
+</svg>

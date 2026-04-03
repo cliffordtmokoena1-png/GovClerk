@@ -3,32 +3,11 @@ import { Box } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const STEP_IMAGE_MAP: Record<number, string[]> = {
-  0: [
-    "/steps/waiting-1.svg",
-    "/steps/waiting-2.svg",
-    "/steps/waiting-3.svg",
-    "/steps/waiting-4.svg",
-  ],
-  1: ["/steps/notes-1.svg", "/steps/notes-2.svg", "/steps/notes-3.svg"],
-  2: [
-    "/steps/write-1.svg",
-    "/steps/write-2.svg",
-    "/steps/write-3.svg",
-    "/steps/write-4.svg",
-    "/steps/write-5.svg",
-    "/steps/write-6.svg",
-    "/steps/write-7.svg",
-  ],
-  3: ["/steps/review-1.svg", "/steps/review-2.svg", "/steps/review-3.svg"],
-  4: [
-    "/steps/write-1.svg",
-    "/steps/write-2.svg",
-    "/steps/write-3.svg",
-    "/steps/write-4.svg",
-    "/steps/write-5.svg",
-    "/steps/write-6.svg",
-    "/steps/write-7.svg",
-  ],
+  0: ["/steps/step-robot-meeting.svg"],   // Transcribing your meeting...
+  1: ["/steps/step-robot-workshop.svg"],  // Extracting key points...
+  2: ["/steps/step-robot-notebook.svg"],  // Drafting your minutes...
+  3: ["/steps/step-robot-meeting.svg"],   // Reviewing the draft...
+  4: ["/steps/step-robot-notebook.svg"],  // Finalizing your minutes...
 };
 
 interface AnimatedStepImageProps {
