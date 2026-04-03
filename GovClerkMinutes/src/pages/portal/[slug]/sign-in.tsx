@@ -59,12 +59,12 @@ export default function PortalSignInPage({ settings, slug }: SignInPageProps) {
       const res = await fetch(`/api/public/portal/${slug}/auth-status`);
       if (res.ok) {
         const data = await res.json();
-        if (data.portalMode === "live") return `/portal/${slug}/live`;
+        if (data.portalMode === "live") return `/portal/${slug}/admin`;
       }
     } catch {
-      // ignore — fall back to demo
+      // ignore — fall back to trial
     }
-    return `/portal/${slug}/demo`;
+    return `/portal/${slug}/trial`;
   }
 
   async function handleEmailLogin(e: React.FormEvent) {

@@ -71,8 +71,8 @@ export default function PortalVerifyPage({ settings, slug }: VerifyPageProps) {
         setError(data.error || "Verification failed. Please try again.");
         return;
       }
-      // Verification successful — redirect to demo portal (new registration = unsubscribed)
-      router.push(`/portal/${slug}/demo`);
+      // Verification successful — redirect to trial portal (new registration = unsubscribed)
+      router.push(`/portal/${slug}/trial`);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
