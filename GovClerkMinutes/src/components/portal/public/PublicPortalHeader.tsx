@@ -14,6 +14,7 @@ import {
   LuFolder,
   LuBell,
   LuFileText,
+  LuRss,
 } from "react-icons/lu";
 import { usePortalSession } from "@/hooks/portal/usePortalSession";
 import type { PublicPortalResponse } from "@/types/portal";
@@ -117,6 +118,20 @@ export function PublicPortalHeader({
                     </Link>
                   );
                 })}
+              {/* RSS Feed link */}
+              {slug && (
+                <a
+                  href={`/api/public/portal/${slug}/feed`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Subscribe to RSS Feed"
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  <LuRss className="w-3.5 h-3.5" aria-hidden="true" />
+                  RSS Feed
+                </a>
+              )}
               {/* Additional custom nav links from portal settings */}
               {settings.navLinks?.map((link, index) => (
                 <a
@@ -247,6 +262,21 @@ export function PublicPortalHeader({
                     </Link>
                   );
                 })}
+              {/* RSS Feed link */}
+              {slug && (
+                <a
+                  href={`/api/public/portal/${slug}/feed`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Subscribe to RSS Feed"
+                  style={{ color: settings.headerTextColor || "#ffffff" }}
+                  className="flex items-center gap-2 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <LuRss className="w-3.5 h-3.5" aria-hidden="true" />
+                  RSS Feed
+                </a>
+              )}
               {/* Additional custom nav links */}
               {settings.navLinks?.map((link, index) => (
                 <a
