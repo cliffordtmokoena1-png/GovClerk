@@ -85,7 +85,14 @@ import {
   LuExternalLink,
 } from "react-icons/lu";
 import type { PublicPortalResponse } from "@/types/portal";
-import type { StreamPlatform } from "@/types/liveSession";
+import type {
+  StreamPlatform,
+  AttendanceRecord,
+  Motion,
+  SpeakerQueueEntry,
+  PublicComment,
+} from "@/types/liveSession";
+import { LiveManagementPanel } from "@/components/portal/live/LiveManagementPanel";
 import { makeDefaultPortalSettings } from "@/utils/defaultPortalSettings";
 import { getPortalSessionFromCookieHeader, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { getPortalDbConnection } from "@/utils/portalDb";
@@ -181,6 +188,13 @@ interface AdminPageProps {
 
 const TAB_KEYS = ["overview", "streaming", "broadcast", "members", "appearance", "settings"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
+
+const ACTIVE_BROADCAST_STATUSES = ["live", "paused", "setup"] as const;
+type ActiveBroadcastStatus = (typeof ACTIVE_BROADCAST_STATUSES)[number];
+
+function isActiveBroadcastStatus(status: string): status is ActiveBroadcastStatus {
+  return (ACTIVE_BROADCAST_STATUSES as readonly string[]).includes(status);
+}
 
 const TIER_LABELS: Record<string, string> = {
   starter: "Starter",
@@ -451,6 +465,12 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
   const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
   const hasLoadedBroadcast = useRef(false);
 
+  // ── Live Session State ───────────────────────────────────────────────────
+  const [liveAttendance, setLiveAttendance] = useState<AttendanceRecord[]>([]);
+  const [liveMotions, setLiveMotions] = useState<Motion[]>([]);
+  const [liveSpeakerQueue, setLiveSpeakerQueue] = useState<SpeakerQueueEntry[]>([]);
+  const [livePublicComments, setLivePublicComments] = useState<PublicComment[]>([]);
+
   const fetchSettings = useCallback(async () => {
     setIsLoadingSettings(true);
     setSettingsError(null);
@@ -472,6 +492,43 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
     }
   }, [slug]);
 
+  const fetchLiveSessionData = useCallback(async (broadcastId: number) => {
+    try {
+      const [attendanceRes, motionsRes, queueRes, commentsRes] = await Promise.all([
+        fetch(`/api/portal/live/${broadcastId}/attendance`),
+        fetch(`/api/portal/live/${broadcastId}/motions`),
+        fetch(`/api/portal/live/${broadcastId}/speaker-queue`),
+        fetch(`/api/portal/live/${broadcastId}/public-comments`),
+      ]);
+      if (attendanceRes.ok) {
+        const data = await attendanceRes.json();
+        setLiveAttendance(data.attendance ?? []);
+      } else {
+        console.error("Failed to load attendance:", attendanceRes.status, attendanceRes.statusText);
+      }
+      if (motionsRes.ok) {
+        const data = await motionsRes.json();
+        setLiveMotions(data.motions ?? []);
+      } else {
+        console.error("Failed to load motions:", motionsRes.status, motionsRes.statusText);
+      }
+      if (queueRes.ok) {
+        const data = await queueRes.json();
+        setLiveSpeakerQueue(data.queue ?? []);
+      } else {
+        console.error("Failed to load speaker queue:", queueRes.status, queueRes.statusText);
+      }
+      if (commentsRes.ok) {
+        const data = await commentsRes.json();
+        setLivePublicComments(data.comments ?? []);
+      } else {
+        console.error("Failed to load public comments:", commentsRes.status, commentsRes.statusText);
+      }
+    } catch (err) {
+      console.error("Failed to load live session data:", err);
+    }
+  }, []);
+
   const fetchBroadcast = useCallback(async () => {
     setIsLoadingBroadcast(true);
     setBroadcastError(null);
@@ -479,8 +536,12 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
       const res = await fetch(`/api/public/portal/${slug}/admin/broadcast`);
       if (res.ok) {
         const data = await res.json();
-        setBroadcast(data.broadcast ?? null);
+        const bc: BroadcastData | null = data.broadcast ?? null;
+        setBroadcast(bc);
         setBroadcastMeetings(data.meetings ?? []);
+        if (bc && isActiveBroadcastStatus(bc.status)) {
+          void fetchLiveSessionData(bc.id);
+        }
       } else {
         const data = await res.json();
         setBroadcastError(data.error || "Failed to load broadcast data");
@@ -490,7 +551,7 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
     } finally {
       setIsLoadingBroadcast(false);
     }
-  }, [slug]);
+  }, [slug, fetchLiveSessionData]);
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
@@ -1487,6 +1548,18 @@ export default function PortalAdminPage({ settings, slug }: AdminPageProps) {
                             </Button>
                           </VStack>
                         </Box>
+                      )}
+
+                      {/* Live Management Panel */}
+                      {broadcast && isActiveBroadcastStatus(broadcast.status) && (
+                        <LiveManagementPanel
+                          broadcastId={broadcast.id}
+                          attendance={liveAttendance}
+                          motions={liveMotions}
+                          speakerQueue={liveSpeakerQueue}
+                          publicComments={livePublicComments}
+                          onRefresh={() => void fetchLiveSessionData(broadcast.id)}
+                        />
                       )}
 
                       {/* Public view link */}
