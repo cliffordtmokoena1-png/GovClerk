@@ -40,7 +40,7 @@ async function sendWebinarReminderEmail(email: string, firstName: string, eventU
       <p>See you there,</p>
       <p>Max Sherman</p>`,
     TextBody: `${firstName}, it's finally time!\n\nJoin the livestream: ${eventUrl}\n\nSee you there,\nMax Sherman`,
-    MessageStream: "signup_and_purchase",
+    MessageStream: "outbound",
   });
 }
 

@@ -287,7 +287,8 @@ async function getLabelsToSpeaker(
   transcriptOrgId: string | null,
   options: { fastMode: boolean }
 ): Promise<{ knownSpeakers: string[]; labelsToSpeaker: { [p: string]: Speaker } }> {
-  const rows = transcriptOrgId
+  // Query 1: transcript-specific rows for labelsToSpeaker (filtered by transcriptId)
+  const transcriptRows = transcriptOrgId
     ? await conn
         .execute(
           `SELECT
@@ -301,8 +302,9 @@ async function getLabelsToSpeaker(
            FROM speakers s
            INNER JOIN transcripts t ON s.transcriptId = t.id
            WHERE t.org_id = ?
+             AND s.transcriptId = ?
              AND s.fast_mode = ?`,
-          [transcriptOrgId, options.fastMode ? 1 : 0]
+          [transcriptOrgId, transcriptId, options.fastMode ? 1 : 0]
         )
         .then((result) => result.rows)
     : await conn
@@ -317,6 +319,33 @@ async function getLabelsToSpeaker(
              tags
            FROM speakers
            WHERE userId = ?
+             AND transcriptId = ?
+             AND fast_mode = ?`,
+          [transcriptUserId, transcriptId, options.fastMode ? 1 : 0]
+        )
+        .then((result) => result.rows);
+
+  // Query 2: org/user-wide rows for knownSpeakers autocomplete (broad scope, no transcriptId filter)
+  const broadRows = transcriptOrgId
+    ? await conn
+        .execute(
+          `SELECT
+             s.name,
+             s.tags
+           FROM speakers s
+           INNER JOIN transcripts t ON s.transcriptId = t.id
+           WHERE t.org_id = ?
+             AND s.fast_mode = ?`,
+          [transcriptOrgId, options.fastMode ? 1 : 0]
+        )
+        .then((result) => result.rows)
+    : await conn
+        .execute(
+          `SELECT
+             name,
+             tags
+           FROM speakers
+           WHERE userId = ?
              AND fast_mode = ?`,
           [transcriptUserId, options.fastMode ? 1 : 0]
         )
@@ -324,21 +353,12 @@ async function getLabelsToSpeaker(
 
   const labelsToSpeaker: { [label: string]: Speaker } = {};
 
-  const speakerNames = new Set<string>();
-  for (const row of rows as unknown as (Speaker & {
+  for (const row of transcriptRows as unknown as (Speaker & {
     transcriptId: string;
     label: string;
     suggested_speakers: { suggested_identities: SpeakerIdentity[] };
     tags: string[];
   })[]) {
-    if (!row.tags?.includes("example")) {
-      // speaker names cannot be null in sql as speaker # is automatically assigned.
-      speakerNames.add(row.name);
-    }
-
-    if (parseInt(row.transcriptId, 10) !== transcriptId) {
-      continue;
-    }
     const suggestedSpeakers =
       row.suggested_speakers?.suggested_identities?.map((identity: any) => ({
         id: identity.id,
@@ -352,6 +372,13 @@ async function getLabelsToSpeaker(
       uses: row.uses,
       suggestedSpeakers,
     };
+  }
+
+  const speakerNames = new Set<string>();
+  for (const row of broadRows as unknown as { name: string; tags: string[] }[]) {
+    if (!row.tags?.includes("example")) {
+      speakerNames.add(row.name);
+    }
   }
 
   const speakerNamesArray = Array.from(speakerNames);

@@ -104,7 +104,7 @@ async function handler(req: NextRequest) {
         Bcc: [OUTGOING_BCC_EMAIL],
         HtmlBody,
         TextBody,
-        MessageStream: "signup_and_purchase",
+        MessageStream: "transactional",
       });
     }
 
