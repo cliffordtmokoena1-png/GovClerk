@@ -62,13 +62,14 @@ async function resolveAdminOrgId(req: NextRequest): Promise<{ orgId: string } | 
     return errorResponse("Portal not found", 404);
   }
   const orgId = (settingsResult.rows[0] as any).org_id;
-  if (orgId !== session.orgId) {
-    return errorResponse("Forbidden", 403);
-  }
 
-  // GovClerk admins (@govclerkminutes.com) bypass DB role check entirely
+  // GovClerk admins bypass all org and role checks
   if (isGovClerkAdmin(session.email)) {
     return { orgId };
+  }
+
+  if (orgId !== session.orgId) {
+    return errorResponse("Forbidden", 403);
   }
 
   if (!session.portalUserId) {

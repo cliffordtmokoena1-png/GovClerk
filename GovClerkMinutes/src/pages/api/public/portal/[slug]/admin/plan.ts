@@ -9,7 +9,7 @@
 
 import { NextRequest } from "next/server";
 import { getPortalDbConnection } from "@/utils/portalDb";
-import { getPortalSession } from "@/portal-auth/portalAuth";
+import { getPortalSession, isGovClerkAdmin } from "@/portal-auth/portalAuth";
 import { jsonResponse, errorResponse } from "@/utils/apiHelpers";
 import { PORTAL_PAYSTACK_PLANS } from "@/utils/portalPaystack";
 
@@ -49,23 +49,27 @@ export default async function handler(req: NextRequest): Promise<Response> {
     return errorResponse("Portal not found", 404);
   }
   const orgId = (settingsResult.rows[0] as any).org_id;
-  if (orgId !== session.orgId) {
-    return errorResponse("Forbidden", 403);
-  }
 
-  // Check that the requesting portal user has admin role
-  if (!session.portalUserId) {
-    return errorResponse("Admin access required", 403);
-  }
-  const userResult = await conn.execute(
-    "SELECT role FROM gc_portal_users WHERE id = ? AND org_id = ?",
-    [session.portalUserId, orgId]
-  );
-  if (userResult.rows.length === 0) {
-    return errorResponse("User not found", 404);
-  }
-  if ((userResult.rows[0] as any).role !== "admin") {
-    return errorResponse("Admin role required", 403);
+  // GovClerk admins bypass all org and role checks
+  if (!isGovClerkAdmin(session.email)) {
+    if (orgId !== session.orgId) {
+      return errorResponse("Forbidden", 403);
+    }
+
+    // Check that the requesting portal user has admin role
+    if (!session.portalUserId) {
+      return errorResponse("Admin access required", 403);
+    }
+    const userResult = await conn.execute(
+      "SELECT role FROM gc_portal_users WHERE id = ? AND org_id = ?",
+      [session.portalUserId, orgId]
+    );
+    if (userResult.rows.length === 0) {
+      return errorResponse("User not found", 404);
+    }
+    if ((userResult.rows[0] as any).role !== "admin") {
+      return errorResponse("Admin role required", 403);
+    }
   }
 
   // Fetch subscription details; fall back to Starter defaults if no row exists
