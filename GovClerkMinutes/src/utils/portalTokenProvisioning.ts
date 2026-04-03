@@ -59,10 +59,11 @@ export async function provisionProfessionalPlanTokens(
     const userId = userRows[0].user_id;
 
     // Credit tokens via the payments table (same pattern used across the codebase).
+    // org_id is stored for traceability — it carries the portal org / reference ID.
     try {
       await conn.execute(
-        'INSERT INTO payments (user_id, org_id, credit, action) VALUES (?, NULL, ?, "add")',
-        [userId, tokensToCredit]
+        'INSERT INTO payments (user_id, org_id, credit, action) VALUES (?, ?, ?, "add")',
+        [userId, orgId, tokensToCredit]
       );
     } catch (insertErr: unknown) {
       // Fallback for DB branches that don't yet have the 'action' column (errno 1054).
