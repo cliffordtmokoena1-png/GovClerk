@@ -9,6 +9,11 @@ import {
   LuLogIn,
   LuLogOut,
   LuUser,
+  LuHome,
+  LuCalendar,
+  LuFolder,
+  LuBell,
+  LuFileText,
 } from "react-icons/lu";
 import { usePortalSession } from "@/hooks/portal/usePortalSession";
 import type { PublicPortalResponse } from "@/types/portal";
@@ -36,12 +41,11 @@ function getLogoUrl(settings: PublicPortalResponse["settings"]): string | null {
 
 // Phase 3 portal navigation links
 const PORTAL_NAV_LINKS = [
-  { label: "Home", hrefSuffix: "" },
-  { label: "Meetings", hrefSuffix: "" },
-  { label: "Calendar", hrefSuffix: "/calendar" },
-  { label: "Public Records", hrefSuffix: "/records" },
-  { label: "Notices", hrefSuffix: "/notices" },
-  { label: "Request Records", hrefSuffix: "/request-records" },
+  { label: "Home", hrefSuffix: "", icon: LuHome },
+  { label: "Calendar", hrefSuffix: "/calendar", icon: LuCalendar },
+  { label: "Public Records", hrefSuffix: "/records", icon: LuFolder },
+  { label: "Notices", hrefSuffix: "/notices", icon: LuBell },
+  { label: "Request Records", hrefSuffix: "/request-records", icon: LuFileText },
 ];
 
 export function PublicPortalHeader({
@@ -68,52 +72,49 @@ export function PublicPortalHeader({
 
   return (
     <header className="sticky top-0 z-40 print:static print:shadow-none">
-      {/* Main Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-20 py-3">
-            {/* Logo + Organization Name */}
-            <div className="flex items-center gap-4">
-              {getLogoUrl(settings) && (
-                <img
-                  src={getLogoUrl(settings)!}
-                  alt=""
-                  className="h-14 w-auto object-contain"
-                  loading="eager"
-                />
-              )}
-              <div className="flex flex-col">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight leading-tight">
-                  {settings.pageTitle ?? "Public Records Portal"}
-                </h1>
-                <p className="text-sm text-gray-500">Public Records Portal</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Navigation Bar */}
+      {/* Single dark navbar */}
       <div
         style={{ backgroundColor: settings.headerBgColor || "#1e3a5f" }}
         className="border-b border-black/10"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-11">
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
+          <div className="flex items-center justify-between min-h-[64px] py-3">
+            {/* Left: Logo + Org Name */}
+            <div className="flex items-center gap-3 shrink-0">
+              {getLogoUrl(settings) && (
+                <img
+                  src={getLogoUrl(settings)!}
+                  alt=""
+                  className="h-10 w-auto object-contain"
+                  loading="eager"
+                />
+              )}
+              <span
+                style={{ color: settings.headerTextColor || "#ffffff" }}
+                className="font-bold text-base leading-tight"
+              >
+                {settings.pageTitle ?? "Public Records Portal"}
+              </span>
+            </div>
+
+            {/* Center/Left: Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-1 ml-6" aria-label="Main navigation">
               {/* Phase 3 built-in portal nav links */}
               {slug &&
-                PORTAL_NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={`/portal/${slug}${link.hrefSuffix}`}
-                    style={{ color: settings.headerTextColor || "#ffffff" }}
-                    className="px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                PORTAL_NAV_LINKS.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.label}
+                      href={`/portal/${slug}${link.hrefSuffix}`}
+                      style={{ color: settings.headerTextColor || "#ffffff" }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                    >
+                      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
               {/* Additional custom nav links from portal settings */}
               {settings.navLinks?.map((link, index) => (
                 <a
@@ -129,9 +130,8 @@ export function PublicPortalHeader({
               ))}
             </nav>
 
-            {/* Desktop: right-side actions */}
-            <div className="hidden lg:flex items-center gap-2">
-              {/* Portal session: signed-in state */}
+            {/* Right: Desktop auth actions */}
+            <div className="hidden lg:flex items-center gap-2 ml-auto">
               {session?.isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   <span
@@ -172,11 +172,10 @@ export function PublicPortalHeader({
                   Sign In
                 </Link>
               )}
-
             </div>
 
             {/* Mobile: Filter + Hamburger buttons side by side */}
-            <div className="lg:hidden flex items-center gap-2">
+            <div className="lg:hidden flex items-center gap-2 ml-auto">
               {/* Filter button */}
               <button
                 type="button"
@@ -231,17 +230,21 @@ export function PublicPortalHeader({
             <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
               {/* Phase 3 built-in portal nav links */}
               {slug &&
-                PORTAL_NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={`/portal/${slug}${link.hrefSuffix}`}
-                    style={{ color: settings.headerTextColor || "#ffffff" }}
-                    className="px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                PORTAL_NAV_LINKS.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.label}
+                      href={`/portal/${slug}${link.hrefSuffix}`}
+                      style={{ color: settings.headerTextColor || "#ffffff" }}
+                      className="flex items-center gap-2 px-4 py-3 text-xs font-medium rounded hover:bg-white/10 transition-colors uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-white/50"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
               {/* Additional custom nav links */}
               {settings.navLinks?.map((link, index) => (
                 <a
