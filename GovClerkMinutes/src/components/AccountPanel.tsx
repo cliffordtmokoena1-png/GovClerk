@@ -8,12 +8,14 @@ import {
   AlertIcon,
   AlertDescription,
   Progress,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { BsQuestionCircle } from "react-icons/bs";
 import { LayoutKind, ModalType } from "@/pages/dashboard/[[...slug]]";
 import { ApiGetCustomerDetailsResponse } from "@/pages/api/get-customer-details";
 import { useSession } from "@clerk/nextjs";
 import { getPrettyPlanName, isPlanBasic, isPlanPro } from "@/utils/price";
+import TopUpModal from "@/components/TopUpModal";
 
 type AccountPanelProps = {
   layoutKind: LayoutKind;
@@ -24,6 +26,7 @@ type AccountPanelProps = {
 
 const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: AccountPanelProps) => {
   const { session, isLoaded } = useSession();
+  const { isOpen: isTopUpOpen, onOpen: onTopUpOpen, onClose: onTopUpClose } = useDisclosure();
 
   const plan =
     customerDetails?.subscriptionStatus === "cancel_at_period_end"
@@ -52,7 +55,7 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
       px="4"
       flexDir="column"
       justifyContent="end"
-      gap={3}
+      gap={2}
     >
       {layoutKind === "desktop" && (
         <>
@@ -129,6 +132,19 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
                 {plan || getPrettyPlanName("Free")}
               </Text>
             </Flex>
+            {customerDetails != null && (
+              <Button
+                size="xs"
+                colorScheme="green"
+                variant="solid"
+                w="full"
+                mt={1}
+                onClick={onTopUpOpen}
+                leftIcon={<span>⚡</span>}
+              >
+                Top Up Tokens
+              </Button>
+            )}
           </>
         ) : (
           <>
@@ -156,6 +172,18 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
             </Text>
           </AlertDescription>
         </Alert>
+      )}
+      {customerDetails != null && tokenData != null && (
+        <TopUpModal
+          isOpen={isTopUpOpen}
+          onClose={onTopUpClose}
+          customerDetails={customerDetails}
+          country={customerDetails.country ?? null}
+          onOpenPricing={() => {
+            onTopUpClose();
+            onOpen("pricing");
+          }}
+        />
       )}
     </Flex>
   );
