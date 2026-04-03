@@ -333,7 +333,7 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
     () => null
   );
   const isAuthenticated = Boolean(session);
-  const userEmail = session?.email ?? undefined;
+  const userEmail = session?.email ?? null;
 
   try {
     const broadcastRes = await fetch(`${baseUrl}/api/public/portal/${slug}/live`);
@@ -351,7 +351,7 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
         segments: broadcastData.segments || [],
         slug,
         isAuthenticated,
-        userEmail: userEmail ?? null,
+        userEmail,
       },
     };
   } catch (error) {
@@ -364,7 +364,7 @@ export const getServerSideProps: GetServerSideProps<PublicLivePageProps> = async
         segments: [],
         slug,
         isAuthenticated,
-        userEmail: userEmail ?? null,
+        userEmail,
       },
     };
   }

@@ -144,7 +144,7 @@ export function PublicCommentForm({
               onChange={(e) => handleChange("speakerEmail", e.target.value)}
               placeholder="your@email.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-              readOnly={isAuthenticated && Boolean(userEmail)}
+              readOnly={isAuthenticated && !!userEmail}
               required={!isAuthenticated}
             />
             {!isAuthenticated && (
