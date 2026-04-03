@@ -30,11 +30,11 @@ export interface Migration {
 import { migration001 } from "./001_create_migrations_table";
 import { migration002 } from "./002_add_settings_email_domain";
 import { migration003 } from "./003_add_tiktok_stream_support";
-// import { migration004 } from "./004_add_stream_hours_tracking";
+import { migration004 } from "./004_add_changes_versioning";
 
 export const MIGRATIONS: Migration[] = [
   migration001,
   migration002,
   migration003,
-  // migration004,
+  migration004,
 ];

@@ -3,6 +3,7 @@ import { connect } from "@planetscale/database";
 import { NextRequest } from "next/server";
 import withErrorReporting from "@/error/withErrorReporting";
 import { diffChars } from "diff";
+import { isUnknownColumnOrMissingTableError } from "@/utils/dbErrors";
 
 export const config = {
   runtime: "edge",
@@ -63,14 +64,28 @@ async function handler(req: NextRequest) {
     )
     .then((res) => res.rows);
 
-  const changes = await conn
-    .execute(
-      "SELECT base_version FROM changes WHERE transcript_id = ? AND revision_id = ? AND fast_mode = ? ORDER BY created_at DESC",
-      [transcriptId, version, fastMode]
-    )
-    .then((res) => res.rows);
+  let changes: { base_version: number }[] = [];
+  let schemaSupportsVersioning = true;
 
-  const now = new Date();
+  try {
+    changes = await conn
+      .execute(
+        "SELECT base_version FROM changes WHERE transcript_id = ? AND revision_id = ? AND fast_mode = ? ORDER BY created_at DESC",
+        [transcriptId, version, fastMode]
+      )
+      .then((res) => res.rows as { base_version: number }[]);
+  } catch (err) {
+    if (isUnknownColumnOrMissingTableError(err)) {
+      console.warn(
+        "[save-minutes] base_version/new_version columns missing from changes table " +
+          "(schema migration pending). Skipping changes INSERT."
+      );
+      schemaSupportsVersioning = false;
+    } else {
+      throw err;
+    }
+  }
+
   const newVersion = changes.length > 0 ? changes[0].base_version + 1 : 1;
   const baseVersion = changes.length > 0 ? changes[0].base_version : 0;
   const oldContent = currentMinutes?.minutes || "";
@@ -85,11 +100,13 @@ async function handler(req: NextRequest) {
       [content, transcriptId, userId, version, fastMode]
     );
 
-    await tx.execute(
-      `INSERT INTO changes (transcript_id, revision_id, user_id, created_at, change_type, diff_content, base_version, new_version, fast_mode)
-       VALUES (?, ?, ?, NOW(), 'update', ?, ?, ?, ?)`,
-      [transcriptId, version, userId, diffContent, baseVersion, newVersion, fastMode]
-    );
+    if (schemaSupportsVersioning) {
+      await tx.execute(
+        `INSERT INTO changes (transcript_id, revision_id, user_id, created_at, change_type, diff_content, base_version, new_version, fast_mode)
+         VALUES (?, ?, ?, NOW(), 'update', ?, ?, ?, ?)`,
+        [transcriptId, version, userId, diffContent, baseVersion, newVersion, fastMode]
+      );
+    }
   });
 
   return new Response(JSON.stringify({ message: "Minutes saved successfully", version: version }), {
