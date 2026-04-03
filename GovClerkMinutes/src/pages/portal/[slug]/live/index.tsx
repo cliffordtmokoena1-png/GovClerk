@@ -222,52 +222,6 @@ export default function LivePortalPage({
         filter={sidebarFilter}
         onFilterChange={handleSidebarFilterChange}
       >
-        {/* Quick Access Links */}
-        <nav aria-label="Quick access links" className="mb-6">
-          <ul className="grid grid-cols-2 sm:grid-cols-5 gap-3 list-none">
-            {[
-              { href: `/portal/${slug}/records`, icon: "🗂️", label: "Public Records" },
-              { href: `/portal/${slug}/calendar`, icon: "📅", label: "Meeting Calendar" },
-              { href: `/portal/${slug}/request-records`, icon: "📄", label: "Request Records" },
-              { href: `/portal/${slug}/notices`, icon: "📢", label: "Notices" },
-              {
-                href: `/api/public/portal/${slug}/feed`,
-                icon: "📡",
-                label: "RSS Feed",
-                external: true,
-              },
-            ].map((link) => (
-              <li key={link.label}>
-                {link.external ? (
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={link.label}
-                    className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center w-full"
-                  >
-                    <span className="text-xl" aria-hidden="true">
-                      {link.icon}
-                    </span>
-                    <span className="text-xs font-medium text-gray-700">{link.label}</span>
-                  </a>
-                ) : (
-                  <Link
-                    href={link.href}
-                    aria-label={link.label}
-                    className="flex flex-col items-center gap-1 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-center"
-                  >
-                    <span className="text-xl" aria-hidden="true">
-                      {link.icon}
-                    </span>
-                    <span className="text-xs font-medium text-gray-700">{link.label}</span>
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        </nav>
-
         {/* Upcoming Meetings */}
         {upcomingMeetings.length > 0 && (
           <section
