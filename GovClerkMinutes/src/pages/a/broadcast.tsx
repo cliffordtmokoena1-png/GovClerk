@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { LuRadio, LuCalendar, LuLoader2 } from "react-icons/lu";
+import { LuRadio, LuCalendar, LuLoader2, LuTriangleAlert } from "react-icons/lu";
 import MgHead from "@/components/MgHead";
 import { OrgDashboardLayout } from "@/components/org-dashboard/OrgDashboardLayout";
 import { ContentSpinner } from "@/components/org-dashboard/content/ContentSpinner";
@@ -11,10 +11,15 @@ import { useBroadcast } from "@/hooks/broadcast/useBroadcast";
 import { useOrgContext } from "@/contexts/OrgContext";
 import useSWR from "swr";
 import type { PortalMeeting } from "@/types/portal";
+import type { StreamConfig } from "@/types/liveSession";
 
 interface MeetingsResponse {
   meetings: PortalMeeting[];
   total: number;
+}
+
+interface StreamConfigResponse {
+  streamConfig: StreamConfig | null;
 }
 
 const meetingsFetcher = async (url: string): Promise<MeetingsResponse> => {
@@ -25,8 +30,16 @@ const meetingsFetcher = async (url: string): Promise<MeetingsResponse> => {
   return response.json();
 };
 
+const streamConfigFetcher = async (url: string): Promise<StreamConfigResponse> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    return { streamConfig: null };
+  }
+  return response.json();
+};
+
 function SelectMeetingView() {
-  const { orgId } = useOrgContext();
+  const { orgId, orgSlug } = useOrgContext();
   const { startBroadcast, checkExistingSegments } = useBroadcast();
   const [isStarting, setIsStarting] = useState<number | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -37,6 +50,13 @@ function SelectMeetingView() {
     orgId ? `/api/portal/meetings?orgId=${orgId}&pageSize=50` : null,
     meetingsFetcher
   );
+
+  const { data: streamConfigData } = useSWR<StreamConfigResponse>(
+    orgId ? "/api/portal/admin/stream-config" : null,
+    streamConfigFetcher
+  );
+
+  const hasStreamConfig = Boolean(streamConfigData?.streamConfig);
 
   const upcomingMeetings = useMemo(() => {
     if (!meetingsData?.meetings) {
@@ -129,6 +149,29 @@ function SelectMeetingView() {
     <>
       <div className="h-full flex items-center justify-center p-6">
         <div className="max-w-lg w-full">
+          {!hasStreamConfig && streamConfigData !== undefined && (
+            <div className="mb-6 flex items-start gap-3 px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-xl">
+              <LuTriangleAlert className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-yellow-800">
+                  No streaming platform configured
+                </p>
+                <p className="text-sm text-yellow-700 mt-0.5">
+                  Your broadcast won&apos;t be visible to public viewers without a streaming
+                  platform.
+                </p>
+                {orgSlug && (
+                  <Link
+                    href={`/portal/${orgSlug}/admin`}
+                    className="inline-block mt-2 text-sm font-medium text-yellow-800 underline hover:text-yellow-900"
+                  >
+                    Configure Stream Settings →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <LuRadio className="w-8 h-8 text-muted-foreground" />
