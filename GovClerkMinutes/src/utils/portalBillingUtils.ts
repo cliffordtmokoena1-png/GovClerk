@@ -84,6 +84,16 @@ export function calculateProRataTokens(
 }
 
 /**
+ * Return the ordinal suffix for a day number (e.g. 1 → "st", 2 → "nd", 3 → "rd", 4+ → "th").
+ */
+export function ordinalSuffix(day: number): string {
+  if (day === 1 || day === 21 || day === 31) return "st";
+  if (day === 2 || day === 22) return "nd";
+  if (day === 3 || day === 23) return "rd";
+  return "th";
+}
+
+/**
  * Format a ZAR amount for display: "R2 666,67" (South African locale).
  */
 export function formatZarAmount(amountZar: number): string {
@@ -114,7 +124,7 @@ export function buildBillingPreviewText(
 
   if (daysRemaining === daysInMonth) {
     // Same day — charge full month
-    return `Your first charge will be ${fullFormatted} today, then ${fullFormatted}/month from the ${billingDay}th.`;
+    return `Your first charge will be ${fullFormatted} today, then ${fullFormatted}/month from the ${billingDay}${ordinalSuffix(billingDay)}.`;
   }
 
   const billingDateStr = firstBillingDate.toLocaleDateString("en-ZA", {

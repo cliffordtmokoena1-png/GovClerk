@@ -30,11 +30,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const conn = getPortalDbConnection();
 
   const result = await conn.execute(
-    `SELECT org_id, paystack_plan_code, paystack_authorization_code
-     FROM gc_portal_subscriptions
-     WHERE preferred_billing_day = ?
-       AND status = 'pending_activation'
-       AND prorata_paid_at IS NOT NULL`,
+    `SELECT s.org_id, s.paystack_plan_code, s.paystack_authorization_code, u.email AS admin_email
+     FROM gc_portal_subscriptions s
+     JOIN gc_portal_users u ON u.org_id = s.org_id AND u.role = 'admin'
+     WHERE s.preferred_billing_day = ?
+       AND s.status = 'pending_activation'
+       AND s.prorata_paid_at IS NOT NULL
+     LIMIT 100`,
     [todayDay]
   );
 
@@ -42,18 +44,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     org_id: string;
     paystack_plan_code: string | null;
     paystack_authorization_code: string | null;
+    admin_email: string | null;
   }>;
 
   let processed = 0;
   let errors = 0;
 
   for (const row of rows) {
-    const { org_id: orgId, paystack_plan_code: planCode, paystack_authorization_code: authCode } =
-      row;
+    const {
+      org_id: orgId,
+      paystack_plan_code: planCode,
+      paystack_authorization_code: authCode,
+      admin_email: adminEmail,
+    } = row;
 
-    if (!planCode || !authCode) {
+    if (!planCode || !authCode || !adminEmail) {
       console.warn(
-        `[activate-pending] Skipping org=${orgId}: missing planCode or authorizationCode`
+        `[activate-pending] Skipping org=${orgId}: missing planCode, authorizationCode, or adminEmail`
       );
       errors++;
       continue;
@@ -62,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const startDate = new Date();
       const { subscriptionCode } = await createPaystackSubscription({
-        customerEmail: orgId,
+        customerEmail: adminEmail,
         planCode,
         authorizationCode: authCode,
         startDate,
@@ -78,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       console.log(
-        `[activate-pending] Activated subscription for org=${orgId} code=${subscriptionCode}`
+        `[activate-pending] Activated subscription for org=${orgId} email=${adminEmail} code=${subscriptionCode}`
       );
       processed++;
     } catch (err) {

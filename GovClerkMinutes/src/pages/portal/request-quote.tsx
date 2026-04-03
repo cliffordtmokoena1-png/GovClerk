@@ -17,6 +17,7 @@ import {
   ALLOWED_BILLING_DAYS,
   calculateProRata,
   formatZarAmount,
+  ordinalSuffix,
 } from "@/utils/portalBillingUtils";
 import type { BillingDay } from "@/utils/portalBillingUtils";
 import { PORTAL_PAYSTACK_PLANS } from "@/utils/portalPaystack";
@@ -100,7 +101,7 @@ export default function RequestQuotePage() {
     const proRataFormatted = formatZarAmount(proRataAmountZar);
 
     if (daysRemaining === daysInMonth) {
-      return `Your first charge will be ${fullFormatted} today, then ${fullFormatted}/month from the ${billingDay}${billingDay === 1 ? "st" : "th"}.`;
+      return `Your first charge will be ${fullFormatted} today, then ${fullFormatted}/month from the ${billingDay}${ordinalSuffix(billingDay)}.`;
     }
 
     const billingDateStr = firstBillingDate.toLocaleDateString("en-ZA", {

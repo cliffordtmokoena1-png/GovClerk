@@ -24,6 +24,7 @@ import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { sendSlackWebhook } from "@/utils/slack";
 import { getPhoneNumberIdFor, WHATSAPP_API_VERSION } from "@/admin/whatsapp/api/consts";
+import { ordinalSuffix } from "@/utils/portalBillingUtils";
 
 const BUSINESS_WHATSAPP_ID = "27664259236";
 
@@ -220,7 +221,7 @@ export default async function handler(req: NextRequest): Promise<Response> {
             { title: "Organization", value: organizationName.trim(), short: true },
             { title: "Website", value: websiteUrl?.trim() || "Not provided", short: true },
             { title: "Selected Plan", value: selectedPlan || "Not specified", short: true },
-            { title: "Preferred Billing Day", value: billingDay ? `${billingDay}${billingDay === 1 ? "st" : "th"} of the month` : "Not specified", short: true },
+            { title: "Preferred Billing Day", value: billingDay ? `${billingDay}${ordinalSuffix(billingDay)} of the month` : "Not specified", short: true },
             { title: "Est. Seats", value: estimatedSeats?.toString() || "Not specified", short: true },
             { title: "Est. Streaming Hours", value: estimatedStreamingHours?.toString() || "Not specified", short: true },
             { title: "Comments", value: comments?.trim() || "None", short: false },
