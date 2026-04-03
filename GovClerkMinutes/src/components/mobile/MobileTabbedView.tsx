@@ -149,13 +149,13 @@ export default function MobileTabbedView({
             gap={1.5}
             px={3}
             py={1.5}
-            bg="blue.500"
+            bg="#1a365d"
             color="white"
             borderRadius="md"
             fontSize="sm"
             fontWeight="medium"
             onClick={onExport}
-            _active={{ bg: "blue.600" }}
+            _active={{ bg: "#1e3a5f" }}
             transition="all 0.2s ease"
           >
             <Icon as={HiArrowUpTray} boxSize={4} />
@@ -191,11 +191,11 @@ export default function MobileTabbedView({
             return (
               <Button
                 key={mode}
-                bg={isActive ? "blue.500" : "white"}
+                bg={isActive ? "#1a365d" : "white"}
                 color={isActive ? "white" : "gray.600"}
                 borderColor="gray.300"
                 borderWidth="1px"
-                _hover={{ bg: isActive ? "blue.600" : "gray.50" }}
+                _hover={{ bg: isActive ? "#1e3a5f" : "gray.50" }}
                 onClick={() => setViewMode(mode)}
               >
                 {labels[mode]}
@@ -260,9 +260,9 @@ export default function MobileTabbedView({
                   fontWeight="medium"
                   color="gray.600"
                   _selected={{
-                    color: "blue.500",
+                    color: "#1a365d",
                     borderBottom: "2px solid",
-                    borderColor: "blue.500",
+                    borderColor: "#1a365d",
                   }}
                   py={3}
                   flexShrink={0}
