@@ -20,6 +20,7 @@ export const PORTAL_PAYSTACK_PLANS = {
     monthly_zar: 8000,
     seats: 15,
     stream_hours: 20,
+    minutes_tokens: 2000,
   },
   enterprise: {
     ZA: process.env.PAYSTACK_PORTAL_ENTERPRISE_PLAN_CODE || "PLN_portal_enterprise_za",

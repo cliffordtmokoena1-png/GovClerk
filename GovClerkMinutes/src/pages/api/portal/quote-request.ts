@@ -24,6 +24,8 @@ import { getPortalDbConnection } from "@/utils/portalDb";
 import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { sendSlackWebhook } from "@/utils/slack";
 import { getPhoneNumberIdFor, WHATSAPP_API_VERSION } from "@/admin/whatsapp/api/consts";
+import { provisionProfessionalPlanTokens } from "@/utils/portalTokenProvisioning";
+import { sendPortalProfessionalCrossSellEmail } from "@/utils/portalEmails";
 
 const BUSINESS_WHATSAPP_ID = "27664259236";
 
@@ -225,6 +227,33 @@ export default async function handler(req: NextRequest): Promise<Response> {
       ]);
     } catch (slackErr) {
       console.error("[portal/quote-request] Slack notification failed:", slackErr);
+    }
+
+    // When the selected plan is Professional, kick off token provisioning and
+    // send the cross-sell email so the admin knows about their included tokens.
+    // NOTE: Once a Paystack webhook handler for portal subscriptions is wired up,
+    // move these calls to the point where gc_portal_subscriptions.status is set
+    // to 'active' and tier = 'professional', rather than at quote-request time.
+    if (selectedPlan === "Professional" && normalizedEmail) {
+      const quoteRequestRows = await conn
+        .execute(
+          "SELECT id FROM gc_portal_quote_requests WHERE contact_email = ? ORDER BY created_at DESC LIMIT 1",
+          [normalizedEmail]
+        )
+        .then((r) => r.rows as { id: string }[])
+        .catch(() => [] as { id: string }[]);
+
+      const quoteRequestId = quoteRequestRows[0]?.id?.toString() ?? `quote_${Date.now()}`;
+
+      // Fire off provisioning and cross-sell email; both catch their own errors internally.
+      await Promise.allSettled([
+        provisionProfessionalPlanTokens(quoteRequestId, normalizedEmail),
+        sendPortalProfessionalCrossSellEmail(
+          normalizedEmail,
+          firstName?.trim(),
+          organizationName?.trim()
+        ),
+      ]);
     }
   } else {
     // Legacy format
