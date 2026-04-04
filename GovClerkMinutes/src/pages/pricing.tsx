@@ -25,6 +25,7 @@ import { Footer } from "@/components/landing/Footer";
 import { GradientBackground } from "@/components/GradientBackground";
 import MgHead from "@/components/MgHead";
 import { safeCapture } from "@/utils/safePosthog";
+import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 
 type BillingPeriod = "monthly" | "annual";
 
@@ -43,6 +44,24 @@ interface Plan {
 }
 
 const PLANS: Plan[] = [
+  {
+    name: "Free Trial",
+    basePlan: "Free",
+    monthlyPrice: 0,
+    annualPrice: 0,
+    effectiveMonthly: 0,
+    annualSavings: 0,
+    tokens: 30,
+    hoursApprox: "~30 min",
+    features: [
+      "30 tokens (~30 minutes of audio)",
+      "Basic AI transcription",
+      "1 test meeting upload",
+      "Preview minutes output",
+      "No credit card required",
+    ],
+    ctaLabel: "Try Free",
+  },
   {
     name: "Essential",
     basePlan: "Essential",
@@ -173,10 +192,11 @@ function PlanCard({
   plan: Plan;
   billing: BillingPeriod;
 }) {
+  const isFree = plan.monthlyPrice === 0;
   const isAnnual = billing === "annual";
   const price = isAnnual ? plan.effectiveMonthly : plan.monthlyPrice;
   const planKey = isAnnual ? `${plan.basePlan}_Annual` : plan.basePlan;
-  const href = `/subscribe/ZA?plan=${planKey}`;
+  const href = isFree ? "/sign-up" : `/subscribe/ZA?plan=${planKey}`;
 
   return (
     <Box
@@ -216,23 +236,31 @@ function PlanCard({
         <Text fontSize="xl" fontWeight="bold" color="gray.900">
           {plan.name}
         </Text>
-        <HStack align="baseline" spacing={1}>
-          <Text fontSize="4xl" fontWeight="bold" color="gray.900" lineHeight="1">
-            R{price}
+        {isFree ? (
+          <Text fontSize="4xl" fontWeight="bold" color="green.500" lineHeight="1">
+            Free
           </Text>
-          <Text fontSize="sm" color="gray.500">
-            /month
-          </Text>
-        </HStack>
-        {isAnnual && (
-          <Text fontSize="xs" color="gray.400">
-            R{plan.annualPrice}/year · Save R{plan.annualSavings}
-          </Text>
-        )}
-        {!isAnnual && (
-          <Text fontSize="xs" color="gray.400">
-            Or R{plan.effectiveMonthly}/mo billed annually
-          </Text>
+        ) : (
+          <>
+            <HStack align="baseline" spacing={1}>
+              <Text fontSize="4xl" fontWeight="bold" color="gray.900" lineHeight="1">
+                R{price}
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                /month
+              </Text>
+            </HStack>
+            {isAnnual && (
+              <Text fontSize="xs" color="gray.400">
+                R{plan.annualPrice}/year · Save R{plan.annualSavings}
+              </Text>
+            )}
+            {!isAnnual && (
+              <Text fontSize="xs" color="gray.400">
+                Or R{plan.effectiveMonthly}/mo billed annually
+              </Text>
+            )}
+          </>
         )}
       </VStack>
 
@@ -254,15 +282,15 @@ function PlanCard({
         href={href}
         size="md"
         w="full"
-        bg={plan.popular ? "blue.500" : "white"}
-        color={plan.popular ? "white" : "gray.700"}
+        bg={isFree ? "#FF6B35" : plan.popular ? "blue.500" : "white"}
+        color={isFree || plan.popular ? "white" : "gray.700"}
         border="1px solid"
-        borderColor={plan.popular ? "blue.500" : "gray.300"}
+        borderColor={isFree ? "#FF6B35" : plan.popular ? "blue.500" : "gray.300"}
         borderRadius="lg"
         fontWeight="semibold"
         transition="all 0.2s"
         _hover={{
-          bg: plan.popular ? "blue.600" : "gray.50",
+          bg: isFree ? "#e85e28" : plan.popular ? "blue.600" : "gray.50",
           boxShadow: "md",
         }}
         onClick={() =>
@@ -319,7 +347,7 @@ function PricingHero({
           <BillingToggle value={billing} onChange={onBillingChange} />
 
           <Grid
-            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }}
+            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(5, 1fr)" }}
             gap={6}
             w="full"
             alignItems="start"
@@ -345,6 +373,7 @@ export default function PricingPage() {
 
   return (
     <>
+      <ExitIntentPopup />
       <MgHead
         title="Pricing - GovClerkMinutes | Affordable AI Meeting Minutes Plans"
         description="Choose the perfect plan for your meeting minutes needs. From Essential to Premium, get AI-powered transcription and professional minutes at transparent prices."
