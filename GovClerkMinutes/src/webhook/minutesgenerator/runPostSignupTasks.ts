@@ -65,7 +65,7 @@ export async function runPostSignupTasks(): Promise<void> {
       await sendCompleteRegistrationConversionEvent(lead.user_id);
 
       // Add contact to Brevo signup email list
-      await addSignupLead(lead, conn);
+      await addSignupLead(lead);
 
       // If the lead didn't message us on WhatsApp, message them
       if (lead.has_whatsapp_inbound === 0 && lead.phone && lead.first_name) {

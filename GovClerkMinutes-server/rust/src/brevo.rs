@@ -36,12 +36,12 @@ pub async fn add_brevo_contact(
     }
   };
 
-  if response.status() != 201 && response.status() != 204 {
+  if response.status() != 200 && response.status() != 201 && response.status() != 204 {
     let status = response.status();
     let body = response.text().await.unwrap_or_default();
-    error!("failed to get 201/204 from Brevo: {} - {}", status, body);
+    error!("failed to get 200/201/204 from Brevo: {} - {}", status, body);
     return Err(anyhow::anyhow!(
-      "failed to get 201/204 from Brevo: {} - {}",
+      "failed to get 200/201/204 from Brevo: {} - {}",
       status,
       body
     ));
