@@ -9,7 +9,7 @@ const HOW_TO_GET_BACK_GUIDE_URL =
   "https://help.GovClerkMinutes.com/en/articles/9176366-how-to-get-back-to-GovClerkMinutes-com";
 
 const FROM_ADMIN = '"GovClerk Minutes" <admin@govclerkminutes.com>';
-const FROM_SALES = '"GovClerk Minutes" <sales@govclerkminutes.com>';
+export const FROM_SALES = '"GovClerk Minutes Sales" <sales@govclerkminutes.com>';
 const FROM_SUPPORT = '"GovClerk Minutes Support" <support@govclerkminutes.com>';
 
 export type SendEmailParams = {
