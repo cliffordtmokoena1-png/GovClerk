@@ -64,7 +64,7 @@ export async function runPostSignupTasks(): Promise<void> {
       // Send meta conversion event
       await sendCompleteRegistrationConversionEvent(lead.user_id);
 
-      // Add lead to instantly signup email sequence
+      // Add contact to Brevo signup email list
       await addSignupLead(lead, conn);
 
       // If the lead didn't message us on WhatsApp, message them

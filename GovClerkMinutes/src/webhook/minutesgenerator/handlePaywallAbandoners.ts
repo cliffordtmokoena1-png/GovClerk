@@ -1,11 +1,11 @@
 import { connect, type Connection } from "@planetscale/database";
 import { createSignInToken } from "@/utils/clerk";
-import { CAMPAIGNS } from "@/instantly/campaigns";
+import { BREVO_LISTS } from "@/brevo/lists";
 import {
-  getLeadByInstantlyId,
-  moveLeadByInstantlyId,
-  updateLeadByInstantlyId,
-} from "@/instantly/leads";
+  getContactByEmail,
+  addContactToList,
+  updateContact,
+} from "@/brevo/contacts";
 import { capture, GC_WEBHOOK_ANONYMOUS_ID } from "@/utils/posthog";
 import { getLeadFromDb, MgLead } from "@/crm/leads";
 
@@ -45,40 +45,48 @@ async function startPaywallAbandonmentEmailSequence(
     return;
   }
 
-  console.warn(`adding lead to paywall_abandonment campaign: ${lead.email}`);
+  console.warn(`adding lead to paywall_abandonment list: ${lead.email}`);
+
+  if (!lead.email) {
+    console.warn(`No email for user ${lead.userId}, skipping Brevo update`);
+    return;
+  }
 
   const leadInfo = await conn
     .execute<{
       first_name: string | null;
       phone: string | null;
-      instantly_id: string | null;
-    }>("SELECT first_name, phone, instantly_id FROM gc_leads WHERE user_id = ?", [lead.userId])
+    }>("SELECT first_name, phone FROM gc_leads WHERE user_id = ?", [lead.userId])
     .then((r) => r.rows?.[0] ?? null);
 
-  if (!leadInfo || !leadInfo.instantly_id) {
-    console.warn(`instantly_id not found for user ${lead.userId}`);
+  if (!leadInfo) {
+    console.warn(`Lead info not found for user ${lead.userId}`);
     return;
   }
 
-  const instantlyId = leadInfo.instantly_id;
+  // Fetch existing contact attributes from Brevo
+  let existingAttributes: Record<string, any> = {};
+  try {
+    const brevoContact = await getContactByEmail(lead.email);
+    existingAttributes = brevoContact?.attributes ?? {};
+  } catch {
+    // Contact may not exist yet; we'll create/update it below
+  }
 
-  // Fetch existing payload/custom variables from Instantly
-  const leadJson = await getLeadByInstantlyId(instantlyId);
-  const variables: Record<string, any> = leadJson?.payload ?? {};
-  const currentCampaign = leadJson?.campaign;
+  const attributes: Record<string, any> = { ...existingAttributes };
 
   // Ensure signInToken exists
-  if (variables.signInToken == null) {
+  if (attributes.SIGN_IN_TOKEN == null) {
     const signInToken = await createSignInToken(lead.userId);
     if (!signInToken) {
       throw new Error(
         `[handlePaywallAbandoners] Failed to create Clerk sign-in token for userId=${lead.userId}`
       );
     }
-    variables.signInToken = signInToken;
+    attributes.SIGN_IN_TOKEN = signInToken;
   }
 
-  variables.transcriptId = String(transcriptId);
+  attributes.TRANSCRIPT_ID = String(transcriptId);
 
   // Add recording length snippet and uploadName if available
   const transcriptRow = await conn
@@ -92,24 +100,22 @@ async function startPaywallAbandonmentEmailSequence(
     .then((r) => r.rows?.[0]);
 
   if (transcriptRow) {
-    variables.recordingLengthSnippet = formatRecordingLength(
+    attributes.RECORDING_LENGTH_SNIPPET = formatRecordingLength(
       Number(transcriptRow.credits_required)
     );
-    variables.uploadName = transcriptRow.title;
+    attributes.UPLOAD_NAME = transcriptRow.title;
   }
 
-  await updateLeadByInstantlyId({
-    instantlyId,
-    firstName: leadInfo.first_name,
-    phone: leadInfo.phone,
-    customVariables: variables,
+  await updateContact(lead.email, {
+    attributes: {
+      ...attributes,
+      FIRSTNAME: leadInfo.first_name,
+      SMS: leadInfo.phone,
+    },
+    listIds: [BREVO_LISTS.PAYWALL_ABANDONERS],
   });
 
-  await moveLeadByInstantlyId({
-    instantlyId,
-    campaignId: currentCampaign,
-    toCampaignId: CAMPAIGNS.PAYWALL_ABANDONERS,
-  });
+  await addContactToList(lead.email, BREVO_LISTS.PAYWALL_ABANDONERS);
 }
 
 async function sendPaywallAbandonmentWhatsapp(lead: MgLead): Promise<void> {
@@ -181,14 +187,14 @@ export async function handlePaywallAbandoners(): Promise<void> {
         GC_WEBHOOK_ANONYMOUS_ID
       );
     } catch (e) {
-      console.error("failed to move lead to instantly:", e);
+      console.error("failed to add contact to Brevo:", e);
       await capture(
         "email_lead_add_failed",
         {
           transcript_id: emailInfo.transcript_id,
           user_id: emailInfo.user_id,
           email: emailInfo.email,
-          instantly_err: String(e),
+          brevo_err: String(e),
         },
         GC_WEBHOOK_ANONYMOUS_ID
       );

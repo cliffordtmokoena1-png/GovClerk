@@ -1,11 +1,11 @@
 import { Connection } from "@planetscale/database";
-import { createLead } from "@/instantly/leads";
-import { CAMPAIGNS } from "@/instantly/campaigns";
+import { createOrUpdateContact } from "@/brevo/contacts";
+import { BREVO_LISTS } from "@/brevo/lists";
 import { createSignInToken } from "@/utils/clerk";
-import hubspot from "@/crm/hubspot";
 import { PostSignupLead } from "./runPostSignupTasks";
 
-export async function addSignupLead(lead: PostSignupLead, conn: Connection): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function addSignupLead(lead: PostSignupLead, _conn: Connection): Promise<string> {
   // eslint-disable-next-line no-console
   console.log(`Adding lead to ${lead.campaign} campaign: ${lead.email}`);
 
@@ -23,28 +23,26 @@ export async function addSignupLead(lead: PostSignupLead, conn: Connection): Pro
     variables["minutesDue"] = lead.minutes_due;
   }
 
-  const instantlyResponse = await createLead({
+  const attributes: Record<string, any> = {
+    FIRSTNAME: lead.first_name,
+    SMS: lead.phone,
+    SIGN_IN_TOKEN: variables.signInToken,
+  };
+  if (variables.minutesFreq) {
+    attributes.MINUTES_FREQ = variables.minutesFreq;
+  }
+  if (variables.minutesDue) {
+    attributes.MINUTES_DUE = variables.minutesDue;
+  }
+
+  await createOrUpdateContact({
     email: lead.email,
-    campaign: CAMPAIGNS.SIGNUP_URGENT,
-    firstName: lead.first_name,
-    phone: lead.phone,
-    customVariables: variables,
-  });
-
-  await conn.execute("UPDATE gc_leads SET instantly_id = ? WHERE user_id = ?", [
-    instantlyResponse.id,
-    lead.user_id,
-  ]);
-
-  await hubspot.updateContact({
-    filter: { propertyName: "user_id", value: lead.user_id },
-    properties: {
-      instantlyId: instantlyResponse.id,
-    },
+    listIds: [BREVO_LISTS.SIGNUP_URGENT],
+    attributes,
   });
 
   // eslint-disable-next-line no-console
-  console.log(`Added lead to instantly: ${lead.email} (ID: ${instantlyResponse.id})`);
+  console.log(`Added contact to Brevo: ${lead.email}`);
 
-  return instantlyResponse.id;
+  return lead.email;
 }
