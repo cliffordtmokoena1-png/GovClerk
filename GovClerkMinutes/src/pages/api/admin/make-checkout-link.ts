@@ -1,7 +1,6 @@
 import { getAuth } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
 import withErrorReporting from "@/error/withErrorReporting";
-import { withServiceAccountOrAdminAuth } from "@/utils/serviceAccountAuth";
 import { assertString } from "@/utils/assert";
 import { assertEnvironment } from "@/utils/environment";
 import { getUserIdFromEmail } from "@/auth/getUserIdFromEmail";
@@ -44,13 +43,10 @@ const VALID_PLANS = new Set<PaidSubscriptionPlan | "Lite">([
 ]);
 
 async function handler(req: NextRequest) {
-  const persona = req.headers.get("x-service-account-persona");
-  if (persona) {
-    console.log(`[admin/make-checkout-link] Called by service account: ${persona}`);
+  const { userId: adminUserId, sessionClaims } = getAuth(req);
+  if (!adminUserId || !sessionClaims?.metadata?.role || sessionClaims.metadata.role !== "admin") {
+    return new Response(null, { status: 401 });
   }
-
-  // Get admin user ID — may be null when called via service account
-  const { userId: adminUserId } = getAuth(req);
 
   try {
     const body = (await req.json()) as RequestBody;
@@ -93,12 +89,9 @@ async function handler(req: NextRequest) {
       });
       const customerName = contact?.properties.firstname ?? "there";
 
-      let fromEmail = operator.email;
-      if (adminUserId) {
-        const fetchedEmail = (await getPrimaryEmail(adminUserId, site)) ?? operator.email;
-        if (fetchedEmail.includes("@GovClerkMinutes.com")) {
-          fromEmail = fetchedEmail;
-        }
+      let fromEmail = (await getPrimaryEmail(adminUserId, site)) ?? operator.email;
+      if (!fromEmail.includes("@GovClerkMinutes.com")) {
+        fromEmail = operator.email;
       }
 
       const HtmlBody = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head><body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 0;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);"><tr><td style="background-color:#1a3c6e;padding:28px 40px;text-align:center;"><h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;letter-spacing:0.5px;">GovClerk Minutes</h1></td></tr><tr><td style="padding:40px 40px 32px;"><p style="margin:0 0 16px;font-size:16px;color:#2d3748;">Hi ${customerName},</p><p style="margin:0 0 16px;font-size:15px;color:#4a5568;line-height:1.7;">Thank you for your interest in GovClerk Minutes. I have prepared your personalised subscription link — please use the button below to complete your plan activation at your convenience.</p><p style="text-align:center;margin:0 0 28px;"><a href="${url}" style="display:inline-block;padding:14px 32px;background-color:#1a3c6e;color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.3px;">Activate My Subscription →</a></p><p style="margin:0 0 16px;font-size:15px;color:#4a5568;line-height:1.7;">Once your subscription is active, you will have full access to our AI-powered transcription and meeting minutes generation tools — purpose-built for government and municipal professionals.</p><p style="margin:0 0 8px;font-size:15px;color:#4a5568;line-height:1.7;">If the button above does not work, you can copy and paste this link directly into your browser:<br/><a href="${url}" style="color:#1a3c6e;word-break:break-all;">${url}</a></p><p style="margin:0 0 8px;font-size:15px;color:#4a5568;">Please feel free to reply to this email if you have any questions — I am happy to assist.</p><p style="margin:24px 0 0;font-size:15px;color:#2d3748;">Kind regards,<br/><strong>${operator.firstname}</strong><br/><span style="color:#8a94a6;font-size:13px;">Sales, GovClerk Minutes</span></p></td></tr><tr><td style="background-color:#f8f9fb;padding:20px 40px;border-top:1px solid #e8ecf0;text-align:center;"><p style="margin:0;font-size:12px;color:#8a94a6;">GovClerk Minutes · <a href="https://govclerkminutes.com" style="color:#1a3c6e;text-decoration:none;">govclerkminutes.com</a><br/>Questions? Email us at <a href="mailto:support@govclerkminutes.com" style="color:#1a3c6e;text-decoration:none;">support@govclerkminutes.com</a></p></td></tr></table></td></tr></table></body></html>`;
@@ -130,4 +123,4 @@ function json(payload: unknown, status = 200) {
   });
 }
 
-export default withErrorReporting(withServiceAccountOrAdminAuth(handler));
+export default withErrorReporting(handler);

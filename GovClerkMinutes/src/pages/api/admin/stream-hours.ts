@@ -1,6 +1,6 @@
+import { getAuth } from "@clerk/nextjs/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import withErrorReporting from "@/error/withErrorReporting";
-import { withServiceAccountOrAdminAuth } from "@/utils/serviceAccountAuth";
 import { getPortalDbConnection } from "@/utils/portalDb";
 
 type StreamHoursAdminResponse = {
@@ -17,9 +17,9 @@ async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const persona = req.headers["x-service-account-persona"];
-  if (persona) {
-    console.log(`[admin/stream-hours] Called by service account: ${persona}`);
+  const { userId, sessionClaims } = getAuth(req);
+  if (!userId || sessionClaims?.metadata?.role !== "admin") {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { orgId, hours } = req.body as { orgId?: string; hours?: number };
@@ -59,4 +59,4 @@ async function handler(
   return res.status(200).json({ orgId, hoursAdded: hours, newStreamHoursIncluded });
 }
 
-export default withErrorReporting(withServiceAccountOrAdminAuth(handler));
+export default withErrorReporting(handler);

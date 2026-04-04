@@ -1,7 +1,7 @@
+import { getAuth } from "@clerk/nextjs/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import withErrorReporting from "@/error/withErrorReporting";
-import { withServiceAccountOrAdminAuth } from "@/utils/serviceAccountAuth";
 import { sendSignInMagicEmail, sendSignUpMagicEmail } from "@/utils/postmark";
 import { createSignInToken } from "@/utils/clerk";
 import { getUserIdFromEmail } from "@/auth/getUserIdFromEmail";
@@ -18,9 +18,10 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse<LoginLinkResponse | { error: string }>
 ) {
-  const persona = req.headers["x-service-account-persona"];
-  if (persona) {
-    console.log(`[admin/login-link] Called by service account: ${persona}`);
+  const { userId, sessionClaims } = getAuth(req);
+
+  if (!userId || !sessionClaims?.metadata?.role || sessionClaims.metadata.role !== "admin") {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { email } = req.body;
@@ -72,4 +73,4 @@ async function handler(
   }
 }
 
-export default withErrorReporting(withServiceAccountOrAdminAuth(handler));
+export default withErrorReporting(handler);
