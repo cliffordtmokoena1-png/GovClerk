@@ -54,8 +54,8 @@ export type LayoutConfig = {
 export const LAYOUT_CONSTANTS = {
   EXPANDED_HEIGHT: { base: "70vh", md: "500px" },
   EXPANDED_MIN_HEIGHT: { base: "400px", md: "500px" },
-  CARD_HEIGHT: { base: "240px", md: "400px" },
-  DESKTOP_CARD_HEIGHT: "400px",
+  CARD_HEIGHT: { base: "220px", md: "min(400px, 55vh)" },
+  DESKTOP_CARD_HEIGHT: "min(400px, 55vh)",
   ICON_SIZES: {
     upload: { base: 10, md: 10 },
     uploadExpanded: { base: 16, md: 16 },

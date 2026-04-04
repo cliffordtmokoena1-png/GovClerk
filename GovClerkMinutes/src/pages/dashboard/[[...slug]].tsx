@@ -205,21 +205,23 @@ const Home = ({
               filePickerTrigger={transcriptId == null ? filePickerTriggerRef : undefined}
             >
               {transcriptId == null ? (
-                <Flex direction="column" w="full" bg="gray.50" minH="100%">
+                <Flex direction="column" w="full" bg="gray.50" minH="100%" flex={1}>
                   <HeroBanner
                     badge="AI-POWERED"
                     heading="Meeting Minutes Dashboard"
                     subtitle="Upload audio recordings and generate professional meeting minutes with AI"
                   />
-                  <ProductPage
-                    key={transcriptId}
-                    transcriptId={transcriptId}
-                    initialTranscriptStatus={transcriptStatus}
-                    layoutKind="desktop"
-                    setHighlightGetMinutesButton={setHighlightGetMinutesButton}
-                    country={country}
-                    onFilePickerTrigger={filePickerTriggerRef}
-                  />
+                  <Flex flex={1} w="full" alignItems="center" justifyContent="center" py={6}>
+                    <ProductPage
+                      key={transcriptId}
+                      transcriptId={transcriptId}
+                      initialTranscriptStatus={transcriptStatus}
+                      layoutKind="desktop"
+                      setHighlightGetMinutesButton={setHighlightGetMinutesButton}
+                      country={country}
+                      onFilePickerTrigger={filePickerTriggerRef}
+                    />
+                  </Flex>
                 </Flex>
               ) : (
                 <ProductPage
