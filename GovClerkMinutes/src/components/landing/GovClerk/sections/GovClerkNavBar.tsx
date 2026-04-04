@@ -34,6 +34,10 @@ type MegaMenuItem = {
   destination?: "govclerkminutes" | "portal";
 };
 
+const GOVCLERK_SIGN_IN_URL = "https://govclerkminutes.com/sign-in";
+const GOVCLERK_DASHBOARD_URL = "https://govclerkminutes.com/dashboard";
+const GOVCLERK_PORTAL_SIGN_IN_URL = "https://govclerkminutes.com/portal/govclerkminutes/sign-in";
+
 type FeedItem = {
   tag: string;
   title: string;
@@ -45,7 +49,7 @@ const productItems: MegaMenuItem[] = [
     icon: LuCalendar,
     title: "Agenda Management",
     description: "Create, organize, and distribute meeting agendas to stakeholders digitally",
-    href: "https://govclerkminutes.com/sign-in",
+    href: GOVCLERK_SIGN_IN_URL,
     featured: true,
     destination: "govclerkminutes",
   },
@@ -53,7 +57,7 @@ const productItems: MegaMenuItem[] = [
     icon: LuFileText,
     title: "Minutes Generation",
     description: "AI transforms recordings into structured, professional meeting minutes",
-    href: "https://govclerkminutes.com/sign-in",
+    href: GOVCLERK_SIGN_IN_URL,
     featured: true,
     destination: "govclerkminutes",
   },
@@ -61,21 +65,21 @@ const productItems: MegaMenuItem[] = [
     icon: LuMic,
     title: "Transcription",
     description: "Real-time speech-to-text with speaker labels in 96+ languages",
-    href: "https://govclerkminutes.com/sign-in",
+    href: GOVCLERK_SIGN_IN_URL,
     destination: "govclerkminutes",
   },
   {
     icon: LuUsers,
     title: "Organization Management",
     description: "Manage boards, committees, departments, and member roles centrally",
-    href: "https://govclerkminutes.com/portal/govclerkminutes/sign-in",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     destination: "portal",
   },
   {
     icon: LuClipboardCheck,
     title: "Votes & Motions",
     description: "Record, track, and archive motions, votes, and resolutions",
-    href: "https://govclerkminutes.com/portal/govclerkminutes/sign-in",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     destination: "portal",
   },
   {
@@ -88,7 +92,7 @@ const productItems: MegaMenuItem[] = [
     icon: LuZap,
     title: "AI-Powered Artifacts",
     description: "Auto-extract action items, summaries, and key decisions",
-    href: "https://govclerkminutes.com/sign-in",
+    href: GOVCLERK_SIGN_IN_URL,
     destination: "govclerkminutes",
   },
 ];
@@ -98,7 +102,7 @@ const solutionItems: MegaMenuItem[] = [
     icon: LuLandmark,
     title: "Local Government",
     description: "City councils, county boards, and municipal agencies",
-    href: "https://govclerkminutes.com/portal/govclerkminutes/sign-in",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     featured: true,
     destination: "portal",
   },
@@ -106,7 +110,7 @@ const solutionItems: MegaMenuItem[] = [
     icon: LuGraduationCap,
     title: "School Boards",
     description: "K-12 districts, higher education boards, and academic committees",
-    href: "https://govclerkminutes.com/portal/govclerkminutes/sign-in",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     featured: true,
     destination: "portal",
   },
@@ -114,14 +118,14 @@ const solutionItems: MegaMenuItem[] = [
     icon: LuBuilding2,
     title: "Special Districts",
     description: "Water, fire, transit, and utility districts with public meetings",
-    href: "https://govclerkminutes.com/portal/govclerkminutes/sign-in",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     destination: "portal",
   },
   {
     icon: LuHeart,
     title: "Nonprofits",
     description: "Board governance and volunteer committee management",
-    href: "https://govclerkminutes.com/portal/govclerkminutes/sign-in",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     destination: "portal",
   },
 ];
@@ -343,9 +347,7 @@ export default function GovClerkNavBar() {
 
   const getItemHref = (item: MegaMenuItem): string => {
     if (item.destination === "govclerkminutes") {
-      return isLoaded && userId
-        ? "https://govclerkminutes.com/dashboard"
-        : "https://govclerkminutes.com/sign-in";
+      return isLoaded && userId ? GOVCLERK_DASHBOARD_URL : GOVCLERK_SIGN_IN_URL;
     }
     return item.href;
   };
