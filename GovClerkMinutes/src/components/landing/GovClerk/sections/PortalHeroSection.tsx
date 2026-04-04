@@ -30,10 +30,10 @@ export default function PortalHeroSection() {
               Request a Quote →
             </Link>
             <Link
-              href="/portal/govclerkminutes/sign-in"
+              href="/portal/govclerkminutes"
               className="rounded-lg border border-gray-300 px-8 py-3.5 text-base font-semibold text-gray-700 transition-all hover:border-gray-400 hover:bg-gray-50"
             >
-              Sign In &amp; Create Account →
+              Visit Public Portal →
             </Link>
           </div>
         </FadeContent>
