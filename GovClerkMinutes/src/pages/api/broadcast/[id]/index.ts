@@ -218,6 +218,22 @@ async function handlePut(
             console.error("[broadcast] Error updating stream_hours_used:", err);
           })
       );
+
+      // Also upsert into gc_org_stream_usage so legacy readers stay roughly consistent
+      const now = new Date();
+      const billingMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+      waitUntil(
+        conn
+          .execute(
+            `INSERT INTO gc_org_stream_usage (org_id, billing_month, minutes_used)
+             VALUES (?, ?, TIMESTAMPDIFF(SECOND, ?, NOW()) / 60)
+             ON DUPLICATE KEY UPDATE minutes_used = minutes_used + VALUES(minutes_used)`,
+            [orgId, billingMonth, wentLiveAt]
+          )
+          .catch((err) => {
+            console.error("[broadcast] Error upserting gc_org_stream_usage:", err);
+          })
+      );
     }
   }
 

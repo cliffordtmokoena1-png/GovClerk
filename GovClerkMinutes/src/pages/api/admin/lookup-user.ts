@@ -4,13 +4,23 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getClerkKeysFromEnv, ClerkEnvironment } from "@/utils/clerk";
 import withErrorReporting from "@/error/withErrorReporting";
 import { getCurrentBalance } from "../get-tokens";
+import { getPortalDbConnection } from "@/utils/portalDb";
 import type { Site } from "@/utils/site";
+
+export type PortalOrgInfo = {
+  orgId: string;
+  tier: string | null;
+  status: string;
+  streamHoursIncluded: number;
+  streamHoursUsed: number;
+};
 
 export type LookupUserApiResponse = {
   userId: string;
   email: string;
   displayName?: string;
   tokens: number;
+  portalOrg?: PortalOrgInfo;
 };
 
 async function tryClient(
@@ -95,11 +105,62 @@ async function handler(
 
     const tokens = (await getCurrentBalance(user.id)) || 0;
 
+    // Look up portal org membership by email
+    const email = user.emailAddresses[0]?.emailAddress || "";
+    const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || undefined;
+    let portalOrg: PortalOrgInfo | undefined;
+
+    try {
+      const portalConn = getPortalDbConnection();
+
+      const portalUserRows = await portalConn
+        .execute(
+          "SELECT org_id FROM gc_portal_users WHERE email = ? AND role = 'admin' LIMIT 1",
+          [email]
+        )
+        .then((r) => r.rows as { org_id: string }[]);
+
+      if (portalUserRows.length > 0) {
+        const orgId = portalUserRows[0].org_id;
+
+        const subRows = await portalConn
+          .execute(
+            "SELECT tier, status, stream_hours_included, stream_hours_used FROM gc_portal_subscriptions WHERE org_id = ? ORDER BY created_at DESC LIMIT 1",
+            [orgId]
+          )
+          .then(
+            (r) =>
+              r.rows as {
+                tier: string;
+                status: string;
+                stream_hours_included: number;
+                stream_hours_used: number;
+              }[]
+          );
+
+        if (subRows.length > 0) {
+          const sub = subRows[0];
+          portalOrg = {
+            orgId,
+            tier: sub.tier ?? null,
+            status: sub.status,
+            streamHoursIncluded: Number(sub.stream_hours_included),
+            streamHoursUsed: Number(sub.stream_hours_used),
+          };
+        } else {
+          portalOrg = { orgId, tier: null, status: "none", streamHoursIncluded: 0, streamHoursUsed: 0 };
+        }
+      }
+    } catch (e) {
+      console.warn("[admin/lookup-user] Could not fetch portal org info:", e);
+    }
+
     return res.status(200).json({
       userId: user.id,
-      email: user.emailAddresses[0]?.emailAddress || "",
-      displayName: [user.firstName, user.lastName].filter(Boolean).join(" ") || undefined,
-      tokens: tokens,
+      email,
+      displayName,
+      tokens,
+      portalOrg,
     });
   } catch (error) {
     console.error("[admin/lookup-user] Handler error:", error);

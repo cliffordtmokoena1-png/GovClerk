@@ -5,6 +5,7 @@ import {
   Flex,
   FormControl,
   FormLabel,
+  Heading,
   HStack,
   Input,
   NumberInput,
@@ -40,6 +41,8 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
   const [isLookingUp, setIsLookingUp] = useState(Boolean(initialWhatsappId));
   const [userInfo, setUserInfo] = useState<LookupUserApiResponse | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [streamHoursToAdd, setStreamHoursToAdd] = useState<number>(1);
+  const [isAddingStreamHours, setIsAddingStreamHours] = useState(false);
 
   const toast = useToast();
 
@@ -121,6 +124,32 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
 
   const handleModifyToken = async (amount: number) => {
     await submitTokenOperation(amount, "add");
+  };
+
+  const handleAddStreamHours = async () => {
+    if (!userInfo?.portalOrg) return;
+    setIsAddingStreamHours(true);
+    try {
+      const res = await fetch("/api/admin/stream-hours", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId: userInfo.portalOrg.orgId, hours: streamHoursToAdd }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      toast({
+        status: "success",
+        title: "Streaming hours added",
+        description: `Added ${streamHoursToAdd}h. New total: ${data.newStreamHoursIncluded}h`,
+        duration: 4000,
+      });
+      // Refresh the lookup so the UI reflects the new values
+      await handleLookupUser(userInfo.userId);
+    } catch (err) {
+      toast({ status: "error", title: "Failed", description: (err as Error).message });
+    } finally {
+      setIsAddingStreamHours(false);
+    }
   };
 
   type SubmitOpts = { resetAfter?: boolean; successDescription?: string };
@@ -325,6 +354,49 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
           tokens={userInfo.tokens}
           onModifyToken={handleModifyToken}
         />
+      )}
+
+      {userInfo?.portalOrg && (
+        <Box mt={4} p={3} borderWidth={1} borderRadius="md" borderColor="purple.200" bg="purple.50">
+          <Heading size="xs" mb={2} color="purple.700">Portal Org</Heading>
+          <Text fontSize="sm">Org ID: <strong>{userInfo.portalOrg.orgId}</strong></Text>
+          <Text fontSize="sm">Tier: <strong>{userInfo.portalOrg.tier ?? "none"}</strong></Text>
+          <Text fontSize="sm">Status: <strong>{userInfo.portalOrg.status}</strong></Text>
+          <Text fontSize="sm">
+            Streaming hours:{" "}
+            <strong>
+              {userInfo.portalOrg.streamHoursUsed.toFixed(2)} / {userInfo.portalOrg.streamHoursIncluded.toFixed(2)}
+            </strong>{" "}
+            hrs used this period
+          </Text>
+          <Box mt={3} pt={3} borderTopWidth={1} borderColor="purple.200">
+            <Heading size="xs" mb={2} color="purple.700">Add Streaming Hours</Heading>
+            <HStack>
+              <NumberInput
+                size="sm"
+                value={streamHoursToAdd}
+                onChange={(_, val) => setStreamHoursToAdd(val)}
+                min={1}
+                max={100}
+                w="100px"
+              >
+                <NumberInputField />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+              <Button
+                size="sm"
+                colorScheme="purple"
+                isLoading={isAddingStreamHours}
+                onClick={handleAddStreamHours}
+              >
+                Add Hours
+              </Button>
+            </HStack>
+          </Box>
+        </Box>
       )}
     </Stack>
   );
