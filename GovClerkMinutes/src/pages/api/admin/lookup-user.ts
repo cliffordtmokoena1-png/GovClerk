@@ -1,8 +1,8 @@
 import { createClerkClient, User } from "@clerk/backend";
-import { getAuth } from "@clerk/nextjs/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getClerkKeysFromEnv, ClerkEnvironment } from "@/utils/clerk";
 import withErrorReporting from "@/error/withErrorReporting";
+import { withServiceAccountOrAdminAuth } from "@/utils/serviceAccountAuth";
 import { getCurrentBalance } from "../get-tokens";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import type { Site } from "@/utils/site";
@@ -82,10 +82,9 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse<LookupUserApiResponse | { error: string }>
 ) {
-  const { userId, sessionClaims } = getAuth(req);
-
-  if (!userId || !sessionClaims?.metadata?.role || sessionClaims.metadata.role !== "admin") {
-    return res.status(401).json({ error: "Unauthorized" });
+  const persona = req.headers["x-service-account-persona"];
+  if (persona) {
+    console.log(`[admin/lookup-user] Called by service account: ${persona}`);
   }
 
   const { identifier } = req.body;
@@ -169,4 +168,4 @@ async function handler(
   }
 }
 
-export default withErrorReporting(handler);
+export default withErrorReporting(withServiceAccountOrAdminAuth(handler));

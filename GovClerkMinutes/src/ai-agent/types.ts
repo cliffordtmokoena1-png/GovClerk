@@ -15,7 +15,10 @@ export const ADMIN_EMAIL = "cliff@govclerkminutes.com";
 export type AgentChannel = "whatsapp" | "facebook";
 
 /** Active persona handling the conversation. */
-export type PersonaType = "samantha" | "gray";
+export type PersonaType = "samantha" | "gray" | "gabriella";
+
+/** Admin action endpoint for AI agent server-to-server calls. */
+export const AGENT_ADMIN_ACTION_URL = "/api/agent/admin-action";
 
 /** Available subscription plan options. */
 export type PlanType = "annual" | "month-to-month";
