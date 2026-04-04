@@ -3,7 +3,6 @@ import { createSignInToken } from "@/utils/clerk";
 import { BREVO_LISTS } from "@/brevo/lists";
 import {
   getContactByEmail,
-  addContactToList,
   updateContact,
 } from "@/brevo/contacts";
 import { capture, GC_WEBHOOK_ANONYMOUS_ID } from "@/utils/posthog";
@@ -106,16 +105,18 @@ async function startPaywallAbandonmentEmailSequence(
     attributes.UPLOAD_NAME = transcriptRow.title;
   }
 
+  if (leadInfo.first_name != null) {
+    attributes.FIRSTNAME = leadInfo.first_name;
+  }
+
+  if (leadInfo.phone != null) {
+    attributes.SMS = leadInfo.phone;
+  }
+
   await updateContact(lead.email, {
-    attributes: {
-      ...attributes,
-      FIRSTNAME: leadInfo.first_name,
-      SMS: leadInfo.phone,
-    },
+    attributes,
     listIds: [BREVO_LISTS.PAYWALL_ABANDONERS],
   });
-
-  await addContactToList(lead.email, BREVO_LISTS.PAYWALL_ABANDONERS);
 }
 
 async function sendPaywallAbandonmentWhatsapp(lead: MgLead): Promise<void> {

@@ -1,10 +1,21 @@
+function getBrevoListId(name: string): number {
+  const value = process.env[name];
+  const parsed = Number(value);
+
+  if (!value || !Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Missing or invalid required Brevo list id environment variable: ${name}`);
+  }
+
+  return parsed;
+}
+
 export const BREVO_LISTS = {
-  POST_PURCHASE: Number(process.env.BREVO_LIST_POST_PURCHASE ?? "0"),
-  SIGNUP_URGENT: Number(process.env.BREVO_LIST_SIGNUP_URGENT ?? "0"),
-  WEBINAR_01: Number(process.env.BREVO_LIST_WEBINAR ?? "0"),
-  AFTER_WEBINAR: Number(process.env.BREVO_LIST_AFTER_WEBINAR ?? "0"),
-  PAYWALL_ABANDONERS: Number(process.env.BREVO_LIST_PAYWALL_ABANDONERS ?? "0"),
-  APOLLO_LEADS: Number(process.env.BREVO_LIST_APOLLO_LEADS ?? "0"),
+  POST_PURCHASE: getBrevoListId("BREVO_LIST_POST_PURCHASE"),
+  SIGNUP_URGENT: getBrevoListId("BREVO_LIST_SIGNUP_URGENT"),
+  WEBINAR_01: getBrevoListId("BREVO_LIST_WEBINAR"),
+  AFTER_WEBINAR: getBrevoListId("BREVO_LIST_AFTER_WEBINAR"),
+  PAYWALL_ABANDONERS: getBrevoListId("BREVO_LIST_PAYWALL_ABANDONERS"),
+  APOLLO_LEADS: getBrevoListId("BREVO_LIST_APOLLO_LEADS"),
 } as const;
 
 export type BrevoListId = (typeof BREVO_LISTS)[keyof typeof BREVO_LISTS];
