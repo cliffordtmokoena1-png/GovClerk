@@ -24,7 +24,7 @@ const plans: Plan[] = [
       "Perfect for small town councils, community boards, and local government bodies getting started with digital transparency.",
     features: [
       "Up to 5 admin seats",
-      "2 hours live streaming/month",
+      "10 hours live streaming/month",
       "Branded public meeting portal",
       "Document uploads & archives",
       "Meeting calendar",
@@ -43,11 +43,11 @@ const plans: Plan[] = [
     features: [
       "Everything in Starter, plus:",
       "Up to 15 admin seats",
-      "8 hours live streaming/month",
+      "20 hours live streaming/month",
       "Live meeting broadcasting",
       "Real-time transcription",
       "Agenda tracking during broadcasts",
-      "GovClerkMinutes access (10,000 tokens/month)",
+      "GovClerkMinutes access (2,000 tokens/month)",
     ],
     cta: "Select Professional",
   },
