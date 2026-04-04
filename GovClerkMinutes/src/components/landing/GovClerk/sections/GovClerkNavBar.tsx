@@ -31,7 +31,12 @@ type MegaMenuItem = {
   description: string;
   href: string;
   featured?: boolean;
+  destination?: "govclerkminutes" | "portal";
 };
+
+const GOVCLERK_SIGN_IN_URL = "https://govclerkminutes.com/sign-in";
+const GOVCLERK_DASHBOARD_URL = "https://govclerkminutes.com/dashboard";
+const GOVCLERK_PORTAL_SIGN_IN_URL = "https://govclerkminutes.com/portal/govclerkminutes/sign-in";
 
 type FeedItem = {
   tag: string;
@@ -44,33 +49,38 @@ const productItems: MegaMenuItem[] = [
     icon: LuCalendar,
     title: "Agenda Management",
     description: "Create, organize, and distribute meeting agendas to stakeholders digitally",
-    href: "/product/agenda-management",
+    href: GOVCLERK_SIGN_IN_URL,
     featured: true,
+    destination: "govclerkminutes",
   },
   {
     icon: LuFileText,
     title: "Minutes Generation",
     description: "AI transforms recordings into structured, professional meeting minutes",
-    href: "/product/minutes-generation",
+    href: GOVCLERK_SIGN_IN_URL,
     featured: true,
+    destination: "govclerkminutes",
   },
   {
     icon: LuMic,
     title: "Transcription",
     description: "Real-time speech-to-text with speaker labels in 96+ languages",
-    href: "/product/transcription",
+    href: GOVCLERK_SIGN_IN_URL,
+    destination: "govclerkminutes",
   },
   {
     icon: LuUsers,
     title: "Organization Management",
     description: "Manage boards, committees, departments, and member roles centrally",
-    href: "/product/organization-management",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
+    destination: "portal",
   },
   {
     icon: LuClipboardCheck,
     title: "Votes & Motions",
     description: "Record, track, and archive motions, votes, and resolutions",
-    href: "/product/votes-and-motions",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
+    destination: "portal",
   },
   {
     icon: LuShield,
@@ -82,7 +92,8 @@ const productItems: MegaMenuItem[] = [
     icon: LuZap,
     title: "AI-Powered Artifacts",
     description: "Auto-extract action items, summaries, and key decisions",
-    href: "/product/ai-artifacts",
+    href: GOVCLERK_SIGN_IN_URL,
+    destination: "govclerkminutes",
   },
 ];
 
@@ -91,27 +102,31 @@ const solutionItems: MegaMenuItem[] = [
     icon: LuLandmark,
     title: "Local Government",
     description: "City councils, county boards, and municipal agencies",
-    href: "/solutions/government",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     featured: true,
+    destination: "portal",
   },
   {
     icon: LuGraduationCap,
     title: "School Boards",
     description: "K-12 districts, higher education boards, and academic committees",
-    href: "/solutions/school-boards",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
     featured: true,
+    destination: "portal",
   },
   {
     icon: LuBuilding2,
     title: "Special Districts",
     description: "Water, fire, transit, and utility districts with public meetings",
-    href: "/solutions/special-districts",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
+    destination: "portal",
   },
   {
     icon: LuHeart,
     title: "Nonprofits",
     description: "Board governance and volunteer committee management",
-    href: "/solutions/nonprofits",
+    href: GOVCLERK_PORTAL_SIGN_IN_URL,
+    destination: "portal",
   },
 ];
 
@@ -175,9 +190,10 @@ const navDropdowns: NavDropdown[] = [
 type BentoMenuPanelProps = {
   items: MegaMenuItem[];
   dropdownKey: string;
+  getItemHref: (item: MegaMenuItem) => string;
 };
 
-function BentoMenuPanel({ items, dropdownKey }: BentoMenuPanelProps) {
+function BentoMenuPanel({ items, dropdownKey, getItemHref }: BentoMenuPanelProps) {
   const featured = items.filter((item) => item.featured);
   const standard = items.filter((item) => !item.featured);
   const showFeed = dropdownKey === "product" || dropdownKey === "resources";
@@ -196,7 +212,7 @@ function BentoMenuPanel({ items, dropdownKey }: BentoMenuPanelProps) {
               return (
                 <Link
                   key={item.title}
-                  href={item.href}
+                  href={getItemHref(item)}
                   className="group flex gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-6 transition-all hover:border-blue-100 hover:bg-blue-50/30 hover:shadow-sm"
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-cd-blue/10">
@@ -223,7 +239,7 @@ function BentoMenuPanel({ items, dropdownKey }: BentoMenuPanelProps) {
               return (
                 <Link
                   key={item.title}
-                  href={item.href}
+                  href={getItemHref(item)}
                   className="group flex gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-gray-50"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
@@ -328,6 +344,13 @@ export default function GovClerkNavBar() {
   }, []);
 
   const navTopOffset = GovClerk_ANNOUNCEMENT_BAR_HEIGHT;
+
+  const getItemHref = (item: MegaMenuItem): string => {
+    if (item.destination === "govclerkminutes") {
+      return isLoaded && userId ? GOVCLERK_DASHBOARD_URL : GOVCLERK_SIGN_IN_URL;
+    }
+    return item.href;
+  };
 
   return (
     <>
@@ -523,7 +546,7 @@ export default function GovClerkNavBar() {
             onMouseLeave={handleDropdownLeave}
           >
             <div className="mx-auto max-w-7xl px-6 py-8">
-              <BentoMenuPanel items={dropdown.items} dropdownKey={dropdown.key} />
+              <BentoMenuPanel items={dropdown.items} dropdownKey={dropdown.key} getItemHref={getItemHref} />
             </div>
           </div>
         ))}
@@ -636,7 +659,7 @@ export default function GovClerkNavBar() {
                     return (
                       <Link
                         key={item.title}
-                        href={item.href}
+                        href={getItemHref(item)}
                         onClick={handleClose}
                         className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-gray-50"
                       >
