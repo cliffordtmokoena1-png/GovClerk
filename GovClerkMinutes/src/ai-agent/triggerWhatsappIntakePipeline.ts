@@ -6,7 +6,7 @@ import { Connection } from "@planetscale/database";
  *
  * This inserts a gc_emails row with campaign='signup_urgent' so that
  * runPostSignupTasks() picks it up within 5 minutes and:
- * - Adds them to the Instantly signup_urgent email sequence
+ * - Adds them to the Brevo signup_urgent email list
  * - Sends the Meta CompleteRegistration conversion event
  */
 export async function triggerWhatsappIntakePipeline({

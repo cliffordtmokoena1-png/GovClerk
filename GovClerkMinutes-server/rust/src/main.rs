@@ -42,7 +42,7 @@ use tracing_subscriber::{EnvFilter, Layer, Registry};
 use transcript::Transcript;
 
 use crate::create_minutes::get_speakers;
-use crate::instantly::add_instantly_lead;
+use crate::brevo::add_brevo_contact;
 use crate::posthog::PostHogEventType;
 use regenerate_minutes::regenerate_minutes_handler;
 
@@ -54,7 +54,7 @@ mod get_current_balance;
 mod get_diarization;
 mod get_pending_tasks;
 mod get_required_tokens;
-mod instantly;
+mod brevo;
 mod monitor;
 mod mysql;
 mod posthog;
@@ -214,16 +214,18 @@ async fn add_signup_no_upload_leads(conn: &mut mysql_async::Conn, state: &Arc<Sh
       let sign_in_token = create_signin_token(user_id.clone(), state.clone()).await?;
       variables.insert("signInToken".to_string(), sign_in_token.to_string());
       
-      let campaign_id = std::env::var("INSTANTLY_CAMPAIGN_SIGNUP_NO_UPLOAD")
-          .expect("Bad INSTANTLY_CAMPAIGN_SIGNUP_NO_UPLOAD");
+      let list_id: u64 = std::env::var("BREVO_LIST_SIGNUP_URGENT")
+          .expect("Bad BREVO_LIST_SIGNUP_URGENT")
+          .parse()
+          .expect("BREVO_LIST_SIGNUP_URGENT must be a number");
       
-      let response = match add_instantly_lead(email.clone(), campaign_id.clone(), variables).await {
+      let response = match add_brevo_contact(email.clone(), list_id, variables).await {
           Ok(r) => r,
           Err(e) => {
-              error!("failed to add lead to instantly: {:?}", e);
+              error!("failed to add contact to Brevo: {:?}", e);
               PostHogEventType::EmailLeadAddFailed.capture(
                   user_id.to_string(),
-                  json!({ "email": email, "instantly_err": e.to_string() })
+                  json!({ "email": email, "brevo_err": e.to_string() })
               );
               continue;
           }
@@ -231,7 +233,7 @@ async fn add_signup_no_upload_leads(conn: &mut mysql_async::Conn, state: &Arc<Sh
       
       PostHogEventType::EmailLeadAdded.capture(
           user_id.to_string(),
-          json!({ "email": email, "instantly_response": response, "campaign": campaign })
+          json!({ "email": email, "brevo_response": response, "campaign": campaign })
       );
   }
   
@@ -258,8 +260,10 @@ async fn add_paywall_abandonment_leads(conn: &mut mysql_async::Conn, state: &Arc
       let sign_in_token = create_signin_token(user_id.clone(), state.clone()).await?;
       variables.insert("signInToken".to_string(), sign_in_token.to_string());
       
-      let campaign_id = std::env::var("INSTANTLY_CAMPAIGN_PAYWALL_ABANDONERS")
-          .expect("Bad INSTANTLY_CAMPAIGN_PAYWALL_ABANDONERS");
+      let list_id: u64 = std::env::var("BREVO_LIST_PAYWALL_ABANDONERS")
+          .expect("Bad BREVO_LIST_PAYWALL_ABANDONERS")
+          .parse()
+          .expect("BREVO_LIST_PAYWALL_ABANDONERS must be a number");
       
       let rows: Vec<i32> = conn.exec(r"SELECT credits_required FROM transcripts WHERE id = :transcript_id AND userId = :user_id", params! { "transcript_id" => transcript_id, "user_id" => user_id.clone() }).await?;
       
@@ -268,13 +272,13 @@ async fn add_paywall_abandonment_leads(conn: &mut mysql_async::Conn, state: &Arc
           variables.insert("recordingLengthSnippet".to_string(), recording_length_snippet);
       }
       
-      let response = match add_instantly_lead(email.clone(), campaign_id.clone(), variables).await {
+      let response = match add_brevo_contact(email.clone(), list_id, variables).await {
           Ok(r) => r,
           Err(e) => {
-              error!("failed to add lead to instantly: {:?}", e);
+              error!("failed to add contact to Brevo: {:?}", e);
               PostHogEventType::EmailLeadAddFailed.capture(
                   user_id.to_string(),
-                  json!({ "email": email, "instantly_err": e.to_string() })
+                  json!({ "email": email, "brevo_err": e.to_string() })
               );
               continue;
           }
@@ -282,7 +286,7 @@ async fn add_paywall_abandonment_leads(conn: &mut mysql_async::Conn, state: &Arc
       
       PostHogEventType::EmailLeadAdded.capture(
           user_id.to_string(),
-          json!({ "email": email, "instantly_response": response, "campaign": campaign })
+          json!({ "email": email, "brevo_response": response, "campaign": campaign })
       );
   }
   

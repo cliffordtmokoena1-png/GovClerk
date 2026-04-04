@@ -7,7 +7,8 @@ import {
   makeOutlookDeeplinkForSouthAfrica,
 } from "@/utils/calendar";
 import { getIcsString } from "@/utils/ics";
-import { createLead } from "@/instantly/leads";
+import { createOrUpdateContact } from "@/brevo/contacts";
+import { BREVO_LISTS } from "@/brevo/lists";
 import { getUserIdFromEmail } from "@/auth/getUserIdFromEmail";
 import { sendConversionEvent } from "@/meta/sendConversionEvent";
 import { sendEmail } from "@/utils/postmark";
@@ -20,9 +21,9 @@ export const config = {
   runtime: "edge",
 };
 
-const WEBINAR_DRIP_CAMPAIGN_ID = "83a3797b-bb09-430c-a858-d6894650d2e9";
+const WEBINAR_DRIP_LIST_ID = BREVO_LISTS.WEBINAR_01;
 
-async function addInstantlyLeadToCampaign(
+async function addBrevoContactToWebinarList(
   email: string,
   firstName: string,
   url: string,
@@ -37,17 +38,16 @@ async function addInstantlyLeadToCampaign(
     end: new Date(new Date(eventTime).getTime() + 30 * 60 * 1000), // 30 minutes later
   };
 
-  const data = await createLead({
+  const data = await createOrUpdateContact({
     email,
-    campaign: WEBINAR_DRIP_CAMPAIGN_ID,
-    firstName,
-    ltInterestStatus: 1, // Interested
-    customVariables: {
-      event_url: url,
-      event_time: prettyEventTime,
-      gcal_deeplink: makeGcalDeeplink(makeDeeplinkParams),
-      outlook_deeplink: makeOutlookDeeplinkForSouthAfrica(makeDeeplinkParams),
-      ical_deeplink: makeIcalDeeplink(makeDeeplinkParams),
+    listIds: [WEBINAR_DRIP_LIST_ID],
+    attributes: {
+      FIRSTNAME: firstName,
+      EVENT_URL: url,
+      EVENT_TIME: prettyEventTime,
+      GCAL_DEEPLINK: makeGcalDeeplink(makeDeeplinkParams),
+      OUTLOOK_DEEPLINK: makeOutlookDeeplinkForSouthAfrica(makeDeeplinkParams),
+      ICAL_DEEPLINK: makeIcalDeeplink(makeDeeplinkParams),
     },
   });
 
@@ -76,7 +76,7 @@ async function handler(req: NextRequest) {
     isReminded: false,
   });
 
-  await addInstantlyLeadToCampaign(email, firstName, url, eventTime, prettyEventTime);
+  await addBrevoContactToWebinarList(email, firstName, url, eventTime, prettyEventTime);
 
   sendEmail({
     From: '"Max from GovClerkMinutes" <max@mail.GovClerkMinutes.com>',

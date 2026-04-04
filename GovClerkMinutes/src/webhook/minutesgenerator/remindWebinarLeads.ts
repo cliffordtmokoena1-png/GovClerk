@@ -1,5 +1,5 @@
-import { CAMPAIGNS } from "@/instantly/campaigns";
-import { getLeadsForCampaign } from "@/instantly/leads";
+import { BREVO_LISTS } from "@/brevo/lists";
+import { getContactsFromList } from "@/brevo/contacts";
 import { assertString } from "@/utils/assert";
 import { asUtcDate } from "@/utils/date";
 import { connect } from "@planetscale/database";
@@ -45,11 +45,11 @@ async function sendWebinarReminderEmail(email: string, firstName: string, eventU
 }
 
 type WebinarLead = {
-  id: string;
+  id: number;
   email: string;
-  first_name?: string;
-  payload?: {
-    event_url?: string;
+  attributes?: {
+    FIRSTNAME?: string;
+    EVENT_URL?: string;
   };
 };
 
@@ -65,7 +65,7 @@ export async function remindWebinarLeads(): Promise<void> {
     return;
   }
 
-  const leads = await getLeadsForCampaign<WebinarLead>(CAMPAIGNS.WEBINAR_01);
+  const leads = await getContactsFromList<WebinarLead>(BREVO_LISTS.WEBINAR_01);
 
   for (const lead of leads) {
     // Check to make sure we only email once.
@@ -79,12 +79,13 @@ export async function remindWebinarLeads(): Promise<void> {
       isReminded: true,
     });
 
-    const { first_name: firstName, payload } = lead;
-    if (!firstName || !payload?.event_url) {
+    const firstName = lead.attributes?.FIRSTNAME;
+    const eventUrl = lead.attributes?.EVENT_URL;
+    if (!firstName || !eventUrl) {
       continue;
     }
 
-    await sendWebinarReminderEmail(lead.email, firstName, payload.event_url);
-    // await moveLeadByInstantlyId(lead.id, CAMPAIGNS.AFTER_WEBINAR);
+    await sendWebinarReminderEmail(lead.email, firstName, eventUrl);
+    // await removeContactFromList(lead.email, BREVO_LISTS.WEBINAR_01);
   }
 }
