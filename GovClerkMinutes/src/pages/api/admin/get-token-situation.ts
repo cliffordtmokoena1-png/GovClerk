@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
 import withErrorReporting from "@/error/withErrorReporting";
+import { withServiceAccountOrAdminAuth } from "@/utils/serviceAccountAuth";
 import { assertString } from "@/utils/assert";
 import { connect } from "@planetscale/database";
 import { convertIsoTimestampFromMysql } from "@/utils/date";
@@ -26,12 +26,9 @@ type Row = {
 };
 
 async function handler(req: NextRequest) {
-  const { userId: adminUserId, sessionClaims } = getAuth(req);
-  if (!adminUserId || !sessionClaims?.metadata?.role || sessionClaims.metadata.role !== "admin") {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+  const persona = req.headers.get("x-service-account-persona");
+  if (persona) {
+    console.log(`[admin/get-token-situation] Called by service account: ${persona}`);
   }
 
   try {
@@ -86,4 +83,4 @@ async function handler(req: NextRequest) {
   }
 }
 
-export default withErrorReporting(handler);
+export default withErrorReporting(withServiceAccountOrAdminAuth(handler));

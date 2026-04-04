@@ -1,6 +1,6 @@
-import { getAuth } from "@clerk/nextjs/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import withErrorReporting from "@/error/withErrorReporting";
+import { withServiceAccountOrAdminAuth } from "@/utils/serviceAccountAuth";
 import { connect } from "@planetscale/database";
 
 type TokenResponse = {
@@ -85,10 +85,9 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse<TokenResponse | { error: string }>
 ) {
-  const { userId, sessionClaims } = getAuth(req);
-
-  if (!userId || !sessionClaims?.metadata?.role || sessionClaims.metadata.role !== "admin") {
-    return res.status(401).json({ error: "Unauthorized" });
+  const persona = req.headers["x-service-account-persona"];
+  if (persona) {
+    console.log(`[admin/token] Called by service account: ${persona}`);
   }
 
   const { userId: targetUserId, amount, action, orgId: targetOrgId } = req.body;
@@ -130,4 +129,4 @@ async function handler(
   }
 }
 
-export default withErrorReporting(handler);
+export default withErrorReporting(withServiceAccountOrAdminAuth(handler));
