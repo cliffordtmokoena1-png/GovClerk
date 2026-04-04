@@ -19,9 +19,10 @@ export const getServerSideProps: GetServerSideProps = withGsspErrorHandling(asyn
   const { userId } = getAuth(context.req);
 
   if (!userId) {
+    const redirectPath = encodeURIComponent(`/subscribe/${country}?plan=${plan}`);
     return {
       redirect: {
-        destination: `/sign-in?redirect=/subscribe/${country}?plan=${plan}`,
+        destination: `/sign-in?redirect=${redirectPath}`,
         permanent: false,
       },
     };
