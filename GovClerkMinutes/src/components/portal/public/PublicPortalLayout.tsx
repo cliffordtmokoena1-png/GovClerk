@@ -3,6 +3,7 @@ import Head from "next/head";
 import type { PublicPortalResponse, PublicMeetingsListResponse } from "@/types/portal";
 import { PublicPortalHeader } from "./PublicPortalHeader";
 import { PublicPortalSidebar, type MeetingsFilter } from "./PublicPortalSidebar";
+import { MinutesCrossSellBanner } from "./MinutesCrossSellBanner";
 
 type Meeting = PublicMeetingsListResponse["meetings"][number];
 
@@ -76,6 +77,8 @@ export function PublicPortalLayout({
             </div>
           </div>
         </div>
+
+        <MinutesCrossSellBanner />
 
         {/* Footer */}
         <footer className="flex-shrink-0 border-t border-gray-200 bg-white py-4">

@@ -13,6 +13,7 @@ import { assertString } from "@/utils/assert";
 import Image from "next/image";
 import { BlogPost } from "@/blog/blogUtils";
 import { CtaSection } from "@/components/landing/GovClerk/GovClerkCtaSection";
+import { BlogCtaBanner } from "./BlogCtaBanner";
 
 type Props = BlogPost;
 
@@ -248,6 +249,7 @@ export const BlogArticle = (props: Props) => {
                 <ReactMarkdown components={markdownComponents} skipHtml>
                   {props.content}
                 </ReactMarkdown>
+                <BlogCtaBanner />
               </Box>
             </Box>
 
