@@ -365,7 +365,7 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
           <Text fontSize="sm">
             Streaming hours:{" "}
             <strong>
-              {userInfo.portalOrg.streamHoursUsed.toFixed(2)} / {userInfo.portalOrg.streamHoursIncluded}
+              {userInfo.portalOrg.streamHoursUsed.toFixed(2)} / {userInfo.portalOrg.streamHoursIncluded.toFixed(2)}
             </strong>{" "}
             hrs used this period
           </Text>
