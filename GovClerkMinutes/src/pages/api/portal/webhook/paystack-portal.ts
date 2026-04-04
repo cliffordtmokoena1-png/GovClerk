@@ -19,6 +19,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import crypto from "crypto";
 import { connect } from "@planetscale/database";
 import { getPortalDbConnection } from "@/utils/portalDb";
+import { isUnknownColumnOrMissingTableError } from "@/utils/dbErrors";
 import {
   sendPortalWelcomeEmail,
   sendPortalPaymentFailedEmail,
@@ -105,8 +106,13 @@ async function creditTokensToUser(email: string, tokens: number): Promise<void> 
     password: process.env.PLANETSCALE_DB_PASSWORD,
   });
 
-  const result = await conn.execute("SELECT id FROM users WHERE email = ? LIMIT 1", [email]);
-  if (result.rows.length === 0) {
+  // Look up Clerk user_id via the gc_emails mapping table
+  const userRows = await conn
+    .execute("SELECT user_id FROM gc_emails WHERE email = ? LIMIT 1", [email.toLowerCase()])
+    .then((r) => r.rows as { user_id: string }[])
+    .catch(() => [] as { user_id: string }[]);
+
+  if (userRows.length === 0) {
     console.warn(
       `[paystack-portal] No GovClerkMinutes user found for email=${email}. Tokens not credited. ` +
         `User needs to sign up at govclerkminutes.com first.`
@@ -114,8 +120,26 @@ async function creditTokensToUser(email: string, tokens: number): Promise<void> 
     return;
   }
 
-  await conn.execute("UPDATE users SET tokens = tokens + ? WHERE email = ?", [tokens, email]);
-  console.log(`[paystack-portal] Credited ${tokens} tokens to user email=${email}`);
+  const userId = userRows[0].user_id;
+
+  try {
+    await conn.execute(
+      'INSERT INTO payments (user_id, org_id, credit, action) VALUES (?, NULL, ?, "add")',
+      [userId, tokens]
+    );
+  } catch (err: unknown) {
+    // Fallback for DB branches without the 'action' column (errno 1054)
+    if (isUnknownColumnOrMissingTableError(err)) {
+      await conn.execute(
+        "INSERT INTO payments (user_id, org_id, credit) VALUES (?, NULL, ?)",
+        [userId, tokens]
+      );
+    } else {
+      throw err;
+    }
+  }
+
+  console.log(`[paystack-portal] Credited ${tokens} tokens to user_id=${userId} (${email}) via payments table`);
 }
 
 // ---------------------------------------------------------------------------
