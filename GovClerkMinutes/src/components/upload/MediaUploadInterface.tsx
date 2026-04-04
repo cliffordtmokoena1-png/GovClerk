@@ -71,9 +71,9 @@ export default function MediaUploadInterface({
 
   return (
     <Box
-      w={{ base: "full", md: "2xl", lg: "4xl" }}
+      w="full"
       maxW="100%"
-      px={{ base: 4, md: 0 }}
+      px={{ base: 4, md: 8, lg: 12 }}
       role="region"
       aria-label="Media upload interface"
     >
@@ -104,7 +104,7 @@ export default function MediaUploadInterface({
 
       {/* Desktop / Tablet Layout */}
       <Box display={{ base: "none", md: "block" }} w="full">
-        <Grid templateColumns="1fr 1fr" gap={{ md: 4, lg: 6 }} w="full">
+        <Grid templateColumns="repeat(2, 1fr)" gap={{ md: 6, lg: 8 }} w="full">
           <GridItem>
             <UploadCard
               config={layout.uploadCard}
