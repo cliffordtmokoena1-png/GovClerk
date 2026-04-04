@@ -1,9 +1,17 @@
 const BREVO_BASE_URL = "https://api.brevo.com/v3";
 
+function getBrevoApiKey(): string {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (typeof apiKey !== "string" || apiKey.trim() === "") {
+    throw new Error("BREVO_API_KEY is not configured");
+  }
+  return apiKey;
+}
+
 function brevoHeaders() {
   return {
     "Content-Type": "application/json",
-    "api-key": process.env.BREVO_API_KEY ?? "",
+    "api-key": getBrevoApiKey(),
   };
 }
 
