@@ -1,7 +1,7 @@
 ---
 title: "The Hidden Power of Transcripts for Video Editors"
 description: "This article discusses how transcripts can be a vital tool for video editors, offering solutions to language barriers, enhancing SEO for video content, and streamlining the editing process."
-author: "GovClerk"
+author: "Cliff Mokoena"
 date: "July 29, 2023"
 imgUri: "/blog/images/videographer-saying-cut-592x400.jpg"
 ---

@@ -1,7 +1,7 @@
 ---
 title: "Revolutionizing Legal work with AI-Powered Meeting Minutes"
 description: "This blog post discusses the role of GovClerkMinutes.com, an AI-powered tool, in transforming legal transcriptions and meeting minutes for law firms. It highlights the advantages such as time efficiency, cost-effectiveness, and enhanced accuracy brought by AI technology in the legal field."
-author: "GovClerk"
+author: "Cliff Mokoena"
 date: "July 27, 2023"
 imgUri: "/blog/images/lawyers-hi-fiving-950x634.jpg"
 ---

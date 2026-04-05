@@ -1,7 +1,7 @@
 ---
 title: "Context Switching Costs in the Modern Office"
 description: "This article highlights how context switching and multitasking harm productivity, and advocates for single-tasking and productivity tools to improve efficiency."
-author: "GovClerk"
+author: "Cliff Mokoena"
 date: "July 31, 2023"
 imgUri: "/blog/images/conference-meeting-600x400.jpg"
 ---

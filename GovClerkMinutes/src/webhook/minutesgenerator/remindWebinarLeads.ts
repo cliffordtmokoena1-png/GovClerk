@@ -38,8 +38,8 @@ async function sendWebinarReminderEmail(email: string, firstName: string, eventU
     HtmlBody: `<p>${firstName}, it's finally time!</p>
       <p><a href="${eventUrl}">Click this to join the livestream!</a></p>
       <p>See you there,</p>
-      <p>GovClerk</p>`,
-    TextBody: `${firstName}, it's finally time!\n\nJoin the livestream: ${eventUrl}\n\nSee you there,\nGovClerk`,
+      <p>Cliff Mokoena</p>`,
+    TextBody: `${firstName}, it's finally time!\n\nJoin the livestream: ${eventUrl}\n\nSee you there,\nCliff Mokoena`,
     MessageStream: "outbound",
   });
 }
