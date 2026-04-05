@@ -82,7 +82,7 @@ export default function UsageDetails({
         <Flex justify="space-between" align="center" mb={2}>
           <Text fontSize="sm" fontWeight="bold">
             {isFreeUser
-              ? "Trial Plan"
+              ? "Starter Tokens"
               : subscriptionPaused || subscriptionCanceled
                 ? "Previous"
                 : "Current"}{" "}
@@ -90,7 +90,7 @@ export default function UsageDetails({
           </Text>
           <Text fontSize="sm">
             {isFreeUser
-              ? `${subscriptionData.remainingToken} of ${subscriptionData.tokensPerMonth} tokens remaining`
+              ? `${subscriptionData.remainingToken} tokens remaining`
               : `${currentUsage} of ${subscriptionData.tokensPerMonth} used`}
           </Text>
         </Flex>
