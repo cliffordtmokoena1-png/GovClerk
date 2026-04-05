@@ -86,14 +86,6 @@ export default function ExportButton({
 
   const [selectedExportVersion, setSelectedExportVersion] = useState<number | undefined>(undefined);
 
-  useEffect(() => {
-    if (minutesData?.minutes && minutesData.minutes.length > 1) {
-      setSelectedExportVersion(minutesData.minutes.length - 1);
-    } else {
-      setSelectedExportVersion(selectedTabIndex);
-    }
-  }, [selectedTabIndex, minutesData?.minutes]);
-
   // Share via Email state
   const { isOpen: isShareOpen, onOpen: onShareOpen, onClose: onShareClose } = useDisclosure();
   const [shareEmails, setShareEmails] = useState<string[]>([]);

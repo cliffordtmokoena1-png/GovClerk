@@ -5,7 +5,7 @@ import { connect } from "@planetscale/database";
 import { sendEmail, isValidEmailFormat } from "@/utils/postmark";
 import { serverUri } from "@/utils/server";
 import { getSpeakerMap, substituteSpeakerLabels } from "@/utils/speakers";
-import getPrimaryEmail from "@/utils/email";
+import { getClerkKeys } from "@/utils/clerk";
 
 export const config = {
   runtime: "nodejs",
@@ -185,9 +185,33 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
   const transcript = transcriptResult.rows[0] as { id: number; userId: string; title: string };
   const meetingTitle = transcript.title || `Meeting #${transcriptId}`;
 
-  // Get sender's name/email for personalisation
-  const senderEmail = await getPrimaryEmail(userId);
-  const senderName = senderEmail ? senderEmail.split("@")[0] : "A colleague";
+  // Get sender's display name from Clerk for personalisation
+  let senderName = "A colleague";
+  try {
+    const clerkKeys = getClerkKeys();
+    const userRes = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: { Authorization: `Bearer ${clerkKeys.secretKey}` },
+    });
+    if (userRes.ok) {
+      const clerkUser = await userRes.json();
+      const firstName = clerkUser?.first_name;
+      const lastName = clerkUser?.last_name;
+      if (firstName || lastName) {
+        senderName = [firstName, lastName].filter(Boolean).join(" ");
+      } else {
+        // Fallback to email prefix if no display name set
+        const emailAddresses: Array<{ id: string; email_address: string }> =
+          clerkUser?.email_addresses ?? [];
+        const primaryEmailId = clerkUser?.primary_email_address_id;
+        const primaryAddr = emailAddresses.find((e) => e.id === primaryEmailId);
+        if (primaryAddr?.email_address) {
+          senderName = primaryAddr.email_address.split("@")[0];
+        }
+      }
+    }
+  } catch {
+    // Keep fallback "A colleague" if Clerk fetch fails
+  }
 
   const attachments: Array<{ Name: string; Content: string; ContentType: string }> = [];
 
