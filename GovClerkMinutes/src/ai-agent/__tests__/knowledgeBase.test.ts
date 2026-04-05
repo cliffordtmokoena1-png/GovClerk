@@ -50,7 +50,7 @@ describe("AI Agent Knowledge Base", () => {
 
     it("includes correct direct URLs", () => {
       expect(PRODUCT_KNOWLEDGE_BASE).toContain("request-pricing?product=minutes");
-      expect(PRODUCT_KNOWLEDGE_BASE).toContain("request-pricing?product=portal");
+      expect(PRODUCT_KNOWLEDGE_BASE).toContain("govclerkpartners.org/request-quote");
     });
 
     it("includes pricing plan types", () => {
