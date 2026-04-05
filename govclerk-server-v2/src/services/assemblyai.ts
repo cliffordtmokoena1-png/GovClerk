@@ -80,7 +80,7 @@ export async function transcribeAndDiarize(
   // 4. Format utterances with speaker labels like the old system used (A, B, C...)
   const rawUtterances = (transcript.utterances ?? []).map(u => ({
     speaker: u.speaker,   // already "A", "B", "C" format from AssemblyAI
-    text: u.text,
+    text: u.text ?? '',
     start: u.start ?? 0,
     end: u.end ?? 0,
   }));
@@ -94,7 +94,7 @@ export async function transcribeAndDiarize(
   const utterances = shouldSynthesizeUtterance
     ? [{
         speaker: 'A',
-        text: transcript.text,
+        text: transcript.text ?? '',
         start: 0,
         end: (transcript.audio_duration ?? 0) * 1000, // convert seconds to ms
       }]
