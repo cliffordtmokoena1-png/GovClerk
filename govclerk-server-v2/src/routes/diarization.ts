@@ -223,7 +223,7 @@ export async function processTranscription(
 
     // 7. Auto-trigger minutes generation (only if transcript has content)
     if (!formattedTranscript.trim()) {
-      console.error(`[diarization] Transcript is empty for ${transcriptId} — skipping minutes generation and marking as failed`);
+      console.error(`[diarization] Transcript is empty for ${transcriptId} — raw text was: "${result.transcript?.slice(0, 200)}"`);
       await execute(
         'UPDATE transcripts SET transcribe_failed = 1 WHERE id = ?',
         [transcriptId]
