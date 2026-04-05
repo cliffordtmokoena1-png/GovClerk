@@ -82,8 +82,8 @@ async function handler(req: NextRequest) {
     From: '"Cliff from GovClerk" <admin@govclerkminutes.com>',
     To: email,
     Subject: `See you Thursday, ${firstName}!`,
-    HtmlBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.<br /><br />Add this to your calendar!<br /><br />Here's the <a href=${url}>FB event for our free training.</a><br /><br />It will go live at ${prettyEventTime}.<br /><br />See you there!<br />GovClerk`,
-    TextBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.\n\nAdd this to your calendar!\n\nHere's the FB event for our free training: ${url}\n\nIt will go live at ${prettyEventTime}.\n\nSee you there!\nGovClerk`,
+    HtmlBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.<br /><br />Add this to your calendar!<br /><br />Here's the <a href=${url}>FB event for our free training.</a><br /><br />It will go live at ${prettyEventTime}.<br /><br />See you there!<br />Cliff Mokoena`,
+    TextBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.\n\nAdd this to your calendar!\n\nHere's the FB event for our free training: ${url}\n\nIt will go live at ${prettyEventTime}.\n\nSee you there!\nCliff Mokoena`,
     MessageStream: "outbound",
     Attachments: [
       {

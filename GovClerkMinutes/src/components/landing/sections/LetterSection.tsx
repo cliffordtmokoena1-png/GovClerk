@@ -136,7 +136,7 @@ export const LetterSection = () => {
                   fontFamily="Georgia, serif"
                   mt={2}
                 >
-                  GovClerk
+                  Cliff Mokoena
                 </Text>
                 <Text
                   fontSize="md"
