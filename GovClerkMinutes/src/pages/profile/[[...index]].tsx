@@ -16,6 +16,7 @@ import SubscriptionInfo from "@/components/SubscriptionInfo";
 import UsageDetails from "@/components/UsageDetails";
 import PaymentInfo from "@/components/PaymentInfo";
 import GeneralSettings from "@/components/profile/GeneralSettings";
+import MembersSettings from "@/components/profile/MembersSettings";
 import { isDev } from "@/utils/dev";
 import { ApiGetCustomerDetailsResponse, getCustomerDetails } from "../api/get-customer-details";
 import { GetServerSideProps } from "next";
@@ -272,6 +273,9 @@ export default function Profile({ initialSubscriptionData }: ProfileProps) {
           <UserProfile.Page label="security" />
           <UserProfile.Page label="General" labelIcon={<MdSettings size={16} />} url="general">
             <GeneralSettings />
+          </UserProfile.Page>
+          <UserProfile.Page label="Members" labelIcon={<MdGroup size={16} />} url="members">
+            <MembersSettings subscriptionData={subscriptionData} />
           </UserProfile.Page>
           <UserProfile.Page
             label="Billing"
