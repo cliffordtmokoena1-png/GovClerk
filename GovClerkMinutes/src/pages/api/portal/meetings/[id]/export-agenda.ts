@@ -334,14 +334,33 @@ async function handlePost(
     };
 
     // Step 6: Distribute agenda notifications to all org members (fire-and-forget)
+    // Guards: only on first publish (no prior agenda_pdf artifacts) and portal must be enabled.
+    // The dedup check runs after artifact creation and counts other artifacts for this meeting,
+    // preventing re-export notifications when an agenda has been published before.
     (async () => {
       try {
+        const dedupResult = await conn.execute(
+          "SELECT COUNT(*) as cnt FROM gc_artifacts WHERE meeting_id = ? AND org_id = ? AND artifact_type = 'agenda_pdf' AND id != ?",
+          [id, orgId, artifactId]
+        );
+        const hasOtherArtifacts =
+          Number((dedupResult.rows[0] as { cnt: number }).cnt) > 0;
+        if (hasOtherArtifacts) {
+          return;
+        }
         const settingsResult = await conn.execute(
-          "SELECT slug, page_title FROM gc_portal_settings WHERE id = ?",
+          "SELECT slug, page_title, is_enabled FROM gc_portal_settings WHERE id = ?",
           [portalSettingsId]
         );
         if (settingsResult.rows.length > 0) {
-          const settings = settingsResult.rows[0] as { slug: string; page_title: string | null };
+          const settings = settingsResult.rows[0] as {
+            slug: string;
+            page_title: string | null;
+            is_enabled: number;
+          };
+          if (settings.is_enabled !== 1) {
+            return;
+          }
           const orgName = settings.page_title || orgId;
           await distributeAgendaToOrgMembers(
             orgId,

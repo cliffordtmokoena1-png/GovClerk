@@ -660,18 +660,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
     }
 
     // Distribute minutes notifications to all org members (fire-and-forget)
-    if (artifacts.minutesDocx || artifacts.minutesPdf) {
+    // Only notify on the first publish; skip if portal is disabled or minutes were already published.
+    const isFirstMinutesPublish = !existingTypes.has("minutes");
+    if ((artifacts.minutesDocx || artifacts.minutesPdf) && isFirstMinutesPublish) {
       (async () => {
         try {
           const settingsResult = await conn.execute(
-            "SELECT slug, page_title FROM gc_portal_settings WHERE id = ?",
+            "SELECT slug, page_title, is_enabled FROM gc_portal_settings WHERE id = ?",
             [portalSettingsId]
           );
           if (settingsResult.rows.length > 0) {
             const settings = settingsResult.rows[0] as {
               slug: string;
               page_title: string | null;
+              is_enabled: number;
             };
+            if (settings.is_enabled !== 1) {
+              return;
+            }
             const meetingDateResult = await conn.execute(
               "SELECT meeting_date FROM gc_meetings WHERE id = ? AND org_id = ?",
               [meetingId, orgId]
