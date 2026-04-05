@@ -32,14 +32,14 @@ async function getMostRecentWebinarEventTime(): Promise<Date> {
 
 async function sendWebinarReminderEmail(email: string, firstName: string, eventUrl: string) {
   await sendEmail({
-    From: '"Max from GovClerkMinutes" <max@mail.GovClerkMinutes.com>',
+    From: '"Cliff from GovClerk" <admin@govclerkminutes.com>',
     To: email,
     Subject: "Free training starting NOW!",
     HtmlBody: `<p>${firstName}, it's finally time!</p>
       <p><a href="${eventUrl}">Click this to join the livestream!</a></p>
       <p>See you there,</p>
-      <p>Max Sherman</p>`,
-    TextBody: `${firstName}, it's finally time!\n\nJoin the livestream: ${eventUrl}\n\nSee you there,\nMax Sherman`,
+      <p>GovClerk</p>`,
+    TextBody: `${firstName}, it's finally time!\n\nJoin the livestream: ${eventUrl}\n\nSee you there,\nGovClerk`,
     MessageStream: "outbound",
   });
 }

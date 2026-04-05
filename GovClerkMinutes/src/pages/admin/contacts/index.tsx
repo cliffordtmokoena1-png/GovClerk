@@ -22,7 +22,7 @@ import { Device, Call } from "@twilio/voice-sdk";
 
 // Dummy contacts data
 const DUMMY_CONTACTS = [
-  { id: "1", name: "Max Sherman", phone: "+14254423410" },
+  { id: "1", name: "Test User", phone: "+15555550100" },
   { id: "2", name: "Diana Majano", phone: "+15712054752" },
 ] as const;
 

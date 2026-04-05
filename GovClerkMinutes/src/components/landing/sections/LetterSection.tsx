@@ -136,7 +136,7 @@ export const LetterSection = () => {
                   fontFamily="Georgia, serif"
                   mt={2}
                 >
-                  Max Sherman
+                  GovClerk
                 </Text>
                 <Text
                   fontSize="md"
@@ -145,7 +145,7 @@ export const LetterSection = () => {
                   fontStyle="italic"
                   fontWeight="light"
                 >
-                  CEO, GovClerkMinutes
+                  Founder, GovClerk Minutes
                 </Text>
               </VStack>
 
