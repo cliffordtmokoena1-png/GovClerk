@@ -31,10 +31,12 @@ import { migration001 } from "./001_create_migrations_table";
 import { migration002 } from "./002_add_settings_email_domain";
 import { migration003 } from "./003_add_tiktok_stream_support";
 import { migration004 } from "./004_add_changes_versioning";
+import { migration005 } from "./005_create_team_members_table";
 
 export const MIGRATIONS: Migration[] = [
   migration001,
   migration002,
   migration003,
   migration004,
+  migration005,
 ];
