@@ -282,16 +282,35 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
                   ID: {userInfo.userId}
                 </Text>
               </Box>
-              <Box textAlign="right">
-                <Text fontWeight="bold">Current Tokens:</Text>
-                <Text
-                  fontSize="xl"
-                  fontWeight="bold"
-                  color={userInfo.tokens && userInfo.tokens > 0 ? "green.500" : "red.500"}
-                >
-                  {userInfo.tokens !== undefined ? userInfo.tokens.toLocaleString() : "--"}
-                </Text>
-              </Box>
+              <Stack spacing={2} textAlign="right">
+                {/* User ID Tokens */}
+                <Box>
+                  <Text fontSize="xs" color="gray.600" fontWeight="semibold">
+                    User ID Tokens:
+                  </Text>
+                  <Text
+                    fontSize="xl"
+                    fontWeight="bold"
+                    color={userInfo.tokens && userInfo.tokens > 0 ? "green.500" : "red.500"}
+                  >
+                    {userInfo.tokens !== undefined ? userInfo.tokens.toLocaleString() : "--"}
+                  </Text>
+                </Box>
+                {/* Org Hours — only shown if the user has a portal org */}
+                {userInfo.portalOrg && (
+                  <Box>
+                    <Text fontSize="xs" color="gray.600" fontWeight="semibold">
+                      Org Hours:
+                    </Text>
+                    <Text fontSize="xl" fontWeight="bold" color="purple.500">
+                      {(userInfo.portalOrg.streamHoursIncluded - userInfo.portalOrg.streamHoursUsed).toFixed(1)}h remaining
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      {userInfo.portalOrg.streamHoursUsed.toFixed(1)} / {userInfo.portalOrg.streamHoursIncluded.toFixed(1)}h used
+                    </Text>
+                  </Box>
+                )}
+              </Stack>
             </Flex>
           </Stack>
         </Alert>
