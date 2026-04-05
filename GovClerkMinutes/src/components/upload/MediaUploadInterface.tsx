@@ -1,5 +1,15 @@
-import React from "react";
-import { Text, Spinner, VStack, Box, Grid, GridItem } from "@chakra-ui/react";
+import React, { useState } from "react";
+import {
+  Text,
+  Spinner,
+  VStack,
+  Box,
+  Grid,
+  GridItem,
+  FormControl,
+  FormLabel,
+  Select,
+} from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { useDropzoneLayout } from "@/hooks/useDropzoneLayout";
 import DragDropOverlay from "./DragDropOverlay";
@@ -11,7 +21,7 @@ import UpgradeRequiredWall from "@/components/paywall/UpgradeRequiredWall";
 
 type Props = {
   isTransitioning: boolean;
-  onDrop: (files: File[]) => Promise<void>;
+  onDropWithLanguage: (files: File[], language: string) => Promise<void>;
   isSupported: boolean;
   layoutKind: LayoutKind;
   tokenBalance?: number | null;
@@ -20,16 +30,19 @@ type Props = {
 
 export default function MediaUploadInterface({
   isTransitioning,
-  onDrop,
+  onDropWithLanguage,
   isSupported,
   layoutKind,
   tokenBalance,
   onUpgradeClick,
 }: Props) {
+  const [selectedLanguage, setSelectedLanguage] = useState("");
   const isTokenInsufficient = tokenBalance != null && tokenBalance <= 0;
 
+  const handleDrop = (files: File[]) => onDropWithLanguage(files, selectedLanguage);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: handleDrop,
     disabled: isTokenInsufficient,
   });
 
@@ -81,6 +94,32 @@ export default function MediaUploadInterface({
         <UpgradeRequiredWall onUpgradeClick={onUpgradeClick} />
       )}
 
+      {/* Language selector */}
+      <Box w="full" maxW="sm" mx="auto" mb={4}>
+        <FormControl>
+          <FormLabel fontSize="sm" fontWeight="medium" color="gray.600">
+            Meeting language (optional)
+          </FormLabel>
+          <Select
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            size="sm"
+            borderRadius="md"
+            isDisabled={isTokenInsufficient}
+          >
+            <option value="">Auto-detect</option>
+            <option value="en">English</option>
+            <option value="af">Afrikaans</option>
+            <option value="zu">Zulu</option>
+            <option value="xh">Xhosa</option>
+            <option value="nso">Sepedi (Northern Sotho)</option>
+            <option value="st">Sesotho (Southern Sotho)</option>
+            <option value="tn">Setswana</option>
+            <option value="ts">Xitsonga</option>
+          </Select>
+        </FormControl>
+      </Box>
+
       {/* Mobile Layout */}
       <Box display={{ base: "block", md: "none" }} w="full">
         <VStack spacing={4} w="full">
@@ -98,6 +137,7 @@ export default function MediaUploadInterface({
             isSupported={isSupported}
             layoutKind={layoutKind}
             disabled={isTokenInsufficient}
+            selectedLanguage={selectedLanguage}
           />
         </VStack>
       </Box>
@@ -120,6 +160,7 @@ export default function MediaUploadInterface({
               isSupported={isSupported}
               layoutKind={layoutKind}
               disabled={isTokenInsufficient}
+              selectedLanguage={selectedLanguage}
             />
           </GridItem>
         </Grid>

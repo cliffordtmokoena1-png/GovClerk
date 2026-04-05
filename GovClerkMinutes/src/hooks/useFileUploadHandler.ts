@@ -22,6 +22,7 @@ type UseFileUploadHandlerParams = {
 
 type FileUploadHandlerResult = {
   onDrop: (acceptedFiles: File[]) => Promise<void>;
+  onDropWithLanguage: (acceptedFiles: File[], language: string) => Promise<void>;
   isTransitioning: boolean;
   showWarningModal: boolean;
   onWarningAccepted: () => void;
@@ -41,10 +42,10 @@ export default function useFileUploadHandler({
   const { orgId } = useOrgContext();
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
-  const pendingFilesRef = useRef<File[] | null>(null);
+  const pendingFilesRef = useRef<{ files: File[]; language: string } | null>(null);
 
   const executeUpload = useCallback(
-    async (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[], language: string = "") => {
       try {
         const timer = getTimer({ clearTimer: true });
         timer.start("on_drop");
@@ -73,7 +74,7 @@ export default function useFileUploadHandler({
         const createIdUrl = impersonatedUserId ? "/api/admin/create-id" : "/api/create-id";
         const requestBody = impersonatedUserId
           ? { userId: impersonatedUserId, title, uploadKind, fileSize, region }
-          : { title, uploadKind, fileSize, region, orgId };
+          : { title, uploadKind, fileSize, region, orgId, language: language !== "" ? language : undefined };
 
         const createIdResponse: ApiCreateIdResponse = await fetch(createIdUrl, {
           method: "POST",
@@ -297,32 +298,40 @@ export default function useFileUploadHandler({
     if (typeof window !== "undefined") {
       sessionStorage.setItem("upload-warning-accepted", "1");
     }
-    const files = pendingFilesRef.current;
+    const pending = pendingFilesRef.current;
     pendingFilesRef.current = null;
-    if (files) {
-      executeUpload(files);
+    if (pending) {
+      executeUpload(pending.files, pending.language);
     }
   }, [executeUpload]);
 
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
+  const onDropWithLanguage = useCallback(
+    async (acceptedFiles: File[], language: string) => {
       // For regular (non-admin) uploads, show the warning modal once per session
       if (
         !impersonatedUserId &&
         typeof window !== "undefined" &&
         !sessionStorage.getItem("upload-warning-accepted")
       ) {
-        pendingFilesRef.current = acceptedFiles;
+        pendingFilesRef.current = { files: acceptedFiles, language };
         setShowWarningModal(true);
         return;
       }
-      await executeUpload(acceptedFiles);
+      await executeUpload(acceptedFiles, language);
     },
     [impersonatedUserId, executeUpload]
   );
 
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      await onDropWithLanguage(acceptedFiles, "");
+    },
+    [onDropWithLanguage]
+  );
+
   return {
     onDrop,
+    onDropWithLanguage,
     isTransitioning,
     showWarningModal,
     onWarningAccepted,
