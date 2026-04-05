@@ -13,6 +13,7 @@ import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
 import { getPortalDbConnection } from "@/utils/portalDb";
 import type { PortalArtifact } from "@/types/portal";
 import { serverUri } from "@/utils/server";
+import { distributeAgendaToOrgMembers } from "@/utils/portalEmails";
 
 export const config = {
   runtime: "nodejs",
@@ -231,7 +232,7 @@ async function handlePost(
 
   // Verify meeting exists and get portal settings ID
   const meetingResult = await conn.execute(
-    "SELECT id, portal_settings_id FROM gc_meetings WHERE id = ? AND org_id = ?",
+    "SELECT id, portal_settings_id, title, meeting_date FROM gc_meetings WHERE id = ? AND org_id = ?",
     [id, orgId]
   );
 
@@ -239,7 +240,12 @@ async function handlePost(
     return errorResponse("Meeting not found", 404);
   }
 
-  const meeting = meetingResult.rows[0] as { id: number; portal_settings_id: number };
+  const meeting = meetingResult.rows[0] as {
+    id: number;
+    portal_settings_id: number;
+    title: string;
+    meeting_date: string;
+  };
   const portalSettingsId = meeting.portal_settings_id;
 
   try {
@@ -326,6 +332,30 @@ async function handlePost(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Step 6: Distribute agenda notifications to all org members (fire-and-forget)
+    (async () => {
+      try {
+        const settingsResult = await conn.execute(
+          "SELECT slug, page_title FROM gc_portal_settings WHERE id = ?",
+          [portalSettingsId]
+        );
+        if (settingsResult.rows.length > 0) {
+          const settings = settingsResult.rows[0] as { slug: string; page_title: string | null };
+          const orgName = settings.page_title || orgId;
+          await distributeAgendaToOrgMembers(
+            orgId,
+            orgName,
+            settings.slug,
+            id,
+            meeting.title || meetingTitle,
+            meeting.meeting_date || meetingDate
+          );
+        }
+      } catch (distErr) {
+        console.error("[export-agenda] Failed to distribute agenda notifications:", distErr);
+      }
+    })();
 
     return jsonResponse({
       success: true,
