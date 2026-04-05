@@ -7,6 +7,19 @@ import { SubscriptionPlan, isPlanAnnual } from "@/utils/price";
 import { resolveRequestContext } from "@/utils/resolveRequestContext";
 import { getPlanFromPlanCode, getTokensForPlan } from "@/utils/paystack";
 import { isUnknownColumnOrMissingTableError } from "@/utils/dbErrors";
+import getPrimaryEmail from "@/utils/email";
+
+/** One-time starter credit granted to new free/trial users. */
+const STARTER_TOKEN_GRANT = 30;
+
+/**
+ * Checks whether the given email belongs to a privileged GovClerk domain.
+ * Users with these emails are treated as Premium plan members regardless of
+ * payment status (covers cliff@, admin@, sales@, support@ etc.).
+ */
+function isPrivilegedDomain(email: string): boolean {
+  return email.toLowerCase().endsWith("@govclerkminutes.com");
+}
 
 /** @deprecated kept for backward-compat; use isUnknownColumnOrMissingTableError from @/utils/dbErrors */
 function isActionColumnMissing(error: unknown): boolean {
@@ -130,7 +143,7 @@ export async function getCustomerDetails(
 
   let planName: SubscriptionPlan = "Free";
   let subscriptionStatus: ApiGetCustomerDetailsResponse["subscriptionStatus"] = "free";
-  let tokensPerMonth = 30;
+  let tokensPerMonth = STARTER_TOKEN_GRANT;
   let interval: BillingInterval = null;
   let nextBillDate = "";
   let remainingToken = 0;
@@ -138,7 +151,19 @@ export async function getCustomerDetails(
   let country = null;
   let billingModel: BillingModel = "self_service";
 
-  if (customerRows.length > 0) {
+  // Check if the user belongs to a privileged domain (@govclerkminutes.com).
+  // These users are treated as Premium plan members regardless of payment status.
+  const userEmail = await getPrimaryEmail(userId).catch((err: unknown) => {
+    console.warn("[get-customer-details] Failed to fetch primary email for user", userId, err);
+    return null;
+  });
+  if (userEmail && isPrivilegedDomain(userEmail)) {
+    planName = "Premium";
+    subscriptionStatus = "active";
+    isFreeUser = false;
+    tokensPerMonth = getTokensForPlan("Premium");
+    interval = "month";
+  } else if (customerRows.length > 0) {
     const customerRow = customerRows[customerRows.length - 1];
     billingModel = customerRow["billing_model"];
     const paystackSubscriptionCode: string | null =
@@ -175,6 +200,13 @@ export async function getCustomerDetails(
     remainingToken = await autoGrantTrialTokens(conn, userId);
   } else {
     remainingToken = balance ?? 0;
+  }
+
+  // For free/trial users, set tokensPerMonth to the actual balance so the
+  // progress bar and token display render correctly. The 30-token grant is a
+  // one-time starter credit, not a recurring monthly quota.
+  if (isFreeUser) {
+    tokensPerMonth = remainingToken > STARTER_TOKEN_GRANT ? remainingToken : STARTER_TOKEN_GRANT;
   }
 
   return {

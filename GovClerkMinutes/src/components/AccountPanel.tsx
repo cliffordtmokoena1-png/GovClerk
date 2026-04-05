@@ -35,6 +35,7 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
   const tokenCount = tokenData?.tokens ?? 0;
   const tokensPerMonth = customerDetails?.tokensPerMonth ?? 30;
   const tokenPercentage = Math.min(100, Math.max(0, (tokenCount / tokensPerMonth) * 100));
+  const tokenDisplay = customerDetails?.isFreeUser ? `${tokenCount}` : `${tokenCount} / ${tokensPerMonth}`;
 
   const getTokenColorScheme = () => {
     if (tokenCount <= 0 || tokenPercentage < 20) return "red";
@@ -112,7 +113,7 @@ const AccountPanel = ({ layoutKind, customerDetails, tokenData, onOpen }: Accoun
                 fontWeight="bold"
                 color={getTokenCountColor()}
               >
-                {tokenCount} / {tokensPerMonth}
+                {tokenDisplay}
               </Text>
             </Flex>
             <Progress
