@@ -263,6 +263,29 @@ describe("detectPlanChoice", () => {
     expect(detectPlanChoice("per month")).toBe("month-to-month");
   });
 
+  it("returns 'month-to-month' for named GovClerkMinutes plan tier names", () => {
+    expect(detectPlanChoice("I want the Essential plan")).toBe("month-to-month");
+    expect(detectPlanChoice("Professional plan please")).toBe("month-to-month");
+    expect(detectPlanChoice("Elite")).toBe("month-to-month");
+    expect(detectPlanChoice("Premium sounds great")).toBe("month-to-month");
+  });
+
+  it("returns 'month-to-month' for GovClerk Portal plan tier names", () => {
+    expect(detectPlanChoice("I'd like the Starter plan")).toBe("month-to-month");
+    expect(detectPlanChoice("Enterprise option")).toBe("month-to-month");
+  });
+
+  it("returns 'month-to-month' for price references", () => {
+    expect(detectPlanChoice("the R300 plan")).toBe("month-to-month");
+    expect(detectPlanChoice("R450 option")).toBe("month-to-month");
+    expect(detectPlanChoice("I'll go with R600")).toBe("month-to-month");
+    expect(detectPlanChoice("R900 plan please")).toBe("month-to-month");
+  });
+
+  it("annual takes precedence over named tier in the same message", () => {
+    expect(detectPlanChoice("I want the Essential plan billed annually")).toBe("annual");
+  });
+
   it("returns null when no plan is mentioned", () => {
     expect(detectPlanChoice("Hello there")).toBeNull();
     expect(detectPlanChoice("What are my options?")).toBeNull();
