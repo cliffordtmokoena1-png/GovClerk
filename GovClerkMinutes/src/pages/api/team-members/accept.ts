@@ -60,8 +60,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
   } catch (err) {
-    console.warn("[team-members/accept] Could not verify user email:", err);
-    // If we can't verify, still allow acceptance (fail-open for availability)
+    console.error("[team-members/accept] Could not verify user email:", err);
+    return res.status(503).json({
+      error: "Unable to verify your account email. Please try again in a moment.",
+    });
   }
 
   if (row.status === "active") {
