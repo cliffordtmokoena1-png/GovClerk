@@ -1,55 +1,35 @@
-import withErrorReporting from "@/error/withErrorReporting";
+import { NextApiRequest, NextApiResponse } from "next";
 import { getAuth } from "@clerk/nextjs/server";
 import { connect } from "@planetscale/database";
-import { NextRequest } from "next/server";
-import { errorResponse, jsonResponse } from "@/utils/apiHelpers";
+import withErrorReporting from "@/error/withErrorReporting";
+import { getCustomerDetails } from "@/pages/api/get-customer-details";
+import { getMaxMembers } from "@/utils/teamMembers";
+import { getPrettyPlanName } from "@/utils/price";
 import { isUnknownColumnOrMissingTableError } from "@/utils/dbErrors";
-
-export const config = {
-  runtime: "edge",
-};
 
 export type TeamMemberRole = "admin" | "member";
 export type TeamMemberStatus = "pending" | "active" | "revoked";
 
-export interface TeamMember {
+export type TeamMember = {
   id: number;
-  ownerUserId: string;
-  memberEmail: string;
-  memberUserId: string | null;
+  member_email: string;
+  member_user_id: string | null;
   role: TeamMemberRole;
   status: TeamMemberStatus;
-  inviteToken: string | null;
-  invitedAt: string;
-  acceptedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+  invited_at: string;
+  accepted_at: string | null;
+};
 
-export interface TeamMembersListResponse {
+export type ApiGetTeamMembersResponse = {
   members: TeamMember[];
-}
+  maxMembers: number;
+  planName: string;
+};
 
-export interface AddTeamMemberRequest {
+export type AddTeamMemberRequest = {
   email: string;
   role?: TeamMemberRole;
-}
-
-function rowToTeamMember(row: Record<string, unknown>): TeamMember {
-  return {
-    id: Number(row.id),
-    ownerUserId: String(row.owner_user_id),
-    memberEmail: String(row.member_email),
-    memberUserId: row.member_user_id != null ? String(row.member_user_id) : null,
-    role: String(row.role) as TeamMemberRole,
-    status: String(row.status) as TeamMemberStatus,
-    inviteToken: row.invite_token != null ? String(row.invite_token) : null,
-    invitedAt: String(row.invited_at),
-    acceptedAt: row.accepted_at != null ? String(row.accepted_at) : null,
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-  };
-}
+};
 
 function getConnection() {
   return connect({
@@ -67,113 +47,130 @@ function generateInviteToken(): string {
     .join("");
 }
 
-async function handleGet(userId: string): Promise<Response> {
-  const conn = getConnection();
-
-  try {
-    const result = await conn.execute(
-      `SELECT id, owner_user_id, member_email, member_user_id, role, status,
-              invite_token, invited_at, accepted_at, created_at, updated_at
-       FROM gc_team_members
-       WHERE owner_user_id = ?
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-
-    const members = (result.rows as Record<string, unknown>[]).map(rowToTeamMember);
-    const response: TeamMembersListResponse = { members };
-    return jsonResponse(response);
-  } catch (err) {
-    if (isUnknownColumnOrMissingTableError(err)) {
-      return jsonResponse<TeamMembersListResponse>({ members: [] });
-    }
-    throw err;
-  }
-}
-
-async function handlePost(userId: string, body: AddTeamMemberRequest): Promise<Response> {
-  const { email, role = "member" } = body;
-
-  if (!email || typeof email !== "string") {
-    return errorResponse("Email is required", 400);
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return errorResponse("Invalid email address", 400);
-  }
-
-  if (role !== "admin" && role !== "member") {
-    return errorResponse("Role must be 'admin' or 'member'", 400);
-  }
-
-  const conn = getConnection();
-
-  try {
-    // Check for duplicate
-    const existing = await conn.execute(
-      "SELECT id, status FROM gc_team_members WHERE owner_user_id = ? AND member_email = ?",
-      [userId, email.toLowerCase()]
-    );
-
-    if (existing.rows.length > 0) {
-      const row = existing.rows[0] as Record<string, unknown>;
-      if (String(row.status) !== "revoked") {
-        return errorResponse("A team member with this email already exists", 409);
-      }
-      // Re-invite a previously revoked member
-      const token = generateInviteToken();
-      await conn.execute(
-        `UPDATE gc_team_members
-         SET role = ?, status = 'pending', invite_token = ?, invited_at = NOW(),
-             accepted_at = NULL, member_user_id = NULL, updated_at = NOW()
-         WHERE id = ?`,
-        [role, token, Number(row.id)]
-      );
-
-      const updated = await conn.execute("SELECT * FROM gc_team_members WHERE id = ?", [
-        Number(row.id),
-      ]);
-      return jsonResponse({ member: rowToTeamMember(updated.rows[0] as Record<string, unknown>) }, 200);
-    }
-
-    const token = generateInviteToken();
-    const insert = await conn.execute(
-      `INSERT INTO gc_team_members (owner_user_id, member_email, role, status, invite_token)
-       VALUES (?, ?, ?, 'pending', ?)`,
-      [userId, email.toLowerCase(), role, token]
-    );
-
-    const newId = Number((insert as unknown as { insertId: string | number }).insertId);
-    const row = await conn.execute("SELECT * FROM gc_team_members WHERE id = ?", [newId]);
-    return jsonResponse({ member: rowToTeamMember(row.rows[0] as Record<string, unknown>) }, 201);
-  } catch (err) {
-    if (isUnknownColumnOrMissingTableError(err)) {
-      return errorResponse(
-        "Team members table is not yet available. Please run database migrations.",
-        503
-      );
-    }
-    throw err;
-  }
-}
-
-async function handler(req: NextRequest): Promise<Response> {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = getAuth(req);
   if (!userId) {
-    return errorResponse("Unauthorized", 401);
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
+  const conn = getConnection();
+
   if (req.method === "GET") {
-    return handleGet(userId);
+    let members: TeamMember[] = [];
+    try {
+      const result = await conn.execute<TeamMember>(
+        `SELECT id, member_email, member_user_id, role, status, invited_at, accepted_at
+         FROM gc_team_members
+         WHERE owner_user_id = ?
+         ORDER BY invited_at DESC`,
+        [userId]
+      );
+      members = result.rows;
+    } catch (err) {
+      if (isUnknownColumnOrMissingTableError(err)) {
+        console.warn("[team-members] gc_team_members table not found (schema migration pending).");
+        members = [];
+      } else {
+        throw err;
+      }
+    }
+
+    const customerDetails = await getCustomerDetails(userId);
+    const plan = customerDetails.planName ?? "Free";
+    const maxMembers = getMaxMembers(plan);
+    const planName = getPrettyPlanName(plan) || "Free";
+
+    return res.status(200).json({ members, maxMembers, planName } as ApiGetTeamMembersResponse);
   }
 
   if (req.method === "POST") {
-    const body = await req.json().catch(() => ({}));
-    return handlePost(userId, body as AddTeamMemberRequest);
+    const body: AddTeamMemberRequest = req.body || {};
+    const { email, role = "member" } = body;
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Invalid email address" });
+    }
+
+    if (role !== "admin" && role !== "member") {
+      return res.status(400).json({ error: "Role must be 'admin' or 'member'" });
+    }
+
+    // Check plan limits before adding
+    const customerDetails = await getCustomerDetails(userId);
+    const plan = customerDetails.planName ?? "Free";
+    const maxMembers = getMaxMembers(plan);
+
+    try {
+      const currentResult = await conn.execute(
+        "SELECT COUNT(*) as count FROM gc_team_members WHERE owner_user_id = ? AND status != 'revoked'",
+        [userId]
+      );
+      const currentCount = Number((currentResult.rows[0] as Record<string, unknown>).count);
+
+      // maxMembers includes the owner, so active members must be < maxMembers - 1
+      if (currentCount >= maxMembers - 1) {
+        return res.status(403).json({
+          error: `Your ${getPrettyPlanName(plan) || "Free"} plan allows up to ${maxMembers} members (including you). Please upgrade to add more.`,
+        });
+      }
+
+      // Check for duplicate
+      const existing = await conn.execute(
+        "SELECT id, status FROM gc_team_members WHERE owner_user_id = ? AND member_email = ?",
+        [userId, email.toLowerCase()]
+      );
+
+      if (existing.rows.length > 0) {
+        const row = existing.rows[0] as Record<string, unknown>;
+        if (String(row.status) !== "revoked") {
+          return res.status(409).json({ error: "A team member with this email already exists" });
+        }
+        // Re-invite a previously revoked member
+        const token = generateInviteToken();
+        await conn.execute(
+          `UPDATE gc_team_members
+           SET role = ?, status = 'pending', invite_token = ?, invited_at = NOW(),
+               accepted_at = NULL, member_user_id = NULL, updated_at = NOW()
+           WHERE id = ?`,
+          [role, token, Number(row.id)]
+        );
+
+        const updated = await conn.execute(
+          "SELECT id, member_email, member_user_id, role, status, invited_at, accepted_at FROM gc_team_members WHERE id = ?",
+          [Number(row.id)]
+        );
+        return res.status(200).json({ member: updated.rows[0] });
+      }
+
+      const token = generateInviteToken();
+      const insert = await conn.execute(
+        `INSERT INTO gc_team_members (owner_user_id, member_email, role, status, invite_token)
+         VALUES (?, ?, ?, 'pending', ?)`,
+        [userId, email.toLowerCase(), role, token]
+      );
+
+      const newId = Number((insert as unknown as { insertId: string | number }).insertId);
+      const newRow = await conn.execute(
+        "SELECT id, member_email, member_user_id, role, status, invited_at, accepted_at FROM gc_team_members WHERE id = ?",
+        [newId]
+      );
+      return res.status(201).json({ member: newRow.rows[0] });
+    } catch (err) {
+      if (isUnknownColumnOrMissingTableError(err)) {
+        return res.status(503).json({
+          error: "Team members table is not yet available. Please run database migrations.",
+        });
+      }
+      throw err;
+    }
   }
 
-  return errorResponse("Method not allowed", 405);
+  return res.status(405).json({ error: "Method not allowed" });
 }
 
 export default withErrorReporting(handler);
