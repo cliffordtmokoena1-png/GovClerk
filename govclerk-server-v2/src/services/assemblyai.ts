@@ -61,9 +61,12 @@ export async function transcribeAndDiarize(
     transcript.error?.includes('no spoken audio')
   ) {
     console.warn(`[assemblyai] Language detection failed for ${s3Key}, retrying with language_code="en"`);
-    const retryConfig = { ...config };
-    delete (retryConfig as any).language_detection;
-    (retryConfig as any).language_code = 'en';
+    // Omit language_detection and replace with an explicit language code
+    const { language_detection: _ld, ...retryBase } = config;
+    const retryConfig: Parameters<typeof client.transcripts.transcribe>[0] = {
+      ...retryBase,
+      language_code: 'en' as any,
+    };
     transcript = await transcribeWithTimeout(retryConfig);
   }
 
