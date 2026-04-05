@@ -7,6 +7,7 @@ import {
   HiBuildingOffice,
   HiWrenchScrewdriver,
   HiSignal,
+  HiUsers,
 } from "react-icons/hi2";
 
 export type SidebarSection = null | "MANAGE" | "SETTINGS" | "DEVELOPER";
@@ -55,6 +56,13 @@ export const ORG_SIDEBAR_ITEMS: OrgSidebarItem[] = [
     label: "Boards",
     icon: HiRectangleGroup,
     href: "/a/boards",
+    section: "MANAGE",
+  },
+  {
+    id: "team",
+    label: "Team Members",
+    icon: HiUsers,
+    href: "/a/team",
     section: "MANAGE",
   },
   {
