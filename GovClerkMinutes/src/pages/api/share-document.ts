@@ -43,6 +43,10 @@ async function convertToPdf(markdown: string): Promise<Buffer> {
   return Buffer.from(await response.arrayBuffer());
 }
 
+function toSafeFileName(title: string): string {
+  return title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+}
+
 function buildShareEmailHtml(
   senderName: string,
   meetingTitle: string,
@@ -205,7 +209,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
         const primaryEmailId = clerkUser?.primary_email_address_id;
         const primaryAddr = emailAddresses.find((e) => e.id === primaryEmailId);
         if (primaryAddr?.email_address) {
-          senderName = primaryAddr.email_address.split("@")[0];
+          senderName = primaryAddr.email_address.split("@")[0] || primaryAddr.email_address;
         }
       }
     }
@@ -227,7 +231,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
       const speakerMap = await getSpeakerMap(transcriptId);
       const minutes = substituteSpeakerLabels(rawMinutes, speakerMap) ?? rawMinutes;
       const pdfBuffer = await convertToPdf(minutes);
-      const safeName = meetingTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+      const safeName = toSafeFileName(meetingTitle);
       attachments.push({
         Name: `${safeName}_Minutes.pdf`,
         Content: pdfBuffer.toString("base64"),
@@ -263,7 +267,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
 
       const transcriptMarkdown = `# ${meetingTitle}\n\n## Transcript\n\n${lines}`;
       const pdfBuffer = await convertToPdf(transcriptMarkdown);
-      const safeName = meetingTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+      const safeName = toSafeFileName(meetingTitle);
       attachments.push({
         Name: `${safeName}_Transcript.pdf`,
         Content: pdfBuffer.toString("base64"),

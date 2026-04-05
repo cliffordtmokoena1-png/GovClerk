@@ -14,6 +14,7 @@ import { getPortalDbConnection } from "./portalDb";
 
 const FROM_PORTAL = '"GovClerk Portal" <admin@govclerkminutes.com>';
 const PORTAL_GREEN = "#0d5e3a";
+const PORTAL_BASE_URL = "https://govclerkminutes.com";
 
 /**
  * Send a branded GovClerk Portal verification email with a 6-digit code.
@@ -700,7 +701,7 @@ export async function distributeAgendaToOrgMembers(
   meetingTitle: string,
   meetingDate: string
 ): Promise<void> {
-  const portalUrl = `https://govclerkminutes.com/portal/${portalSlug}/meetings/${meetingId}`;
+  const portalUrl = `${PORTAL_BASE_URL}/portal/${portalSlug}/meetings/${meetingId}`;
 
   const conn = getPortalDbConnection();
   const usersResult = await conn.execute(
@@ -745,7 +746,7 @@ export async function distributeMinutesToOrgMembers(
   meetingTitle: string,
   meetingDate: string
 ): Promise<void> {
-  const portalUrl = `https://govclerkminutes.com/portal/${portalSlug}/meetings/${meetingId}`;
+  const portalUrl = `${PORTAL_BASE_URL}/portal/${portalSlug}/meetings/${meetingId}`;
 
   const conn = getPortalDbConnection();
   const usersResult = await conn.execute(

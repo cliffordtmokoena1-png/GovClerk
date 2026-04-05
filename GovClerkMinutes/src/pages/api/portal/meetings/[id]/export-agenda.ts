@@ -334,8 +334,6 @@ async function handlePost(
     };
 
     // Step 6: Distribute agenda notifications to all org members (fire-and-forget)
-    const agendaMeetingTitle = meetingTitle;
-    const agendaMeetingDate = meetingDate;
     (async () => {
       try {
         const settingsResult = await conn.execute(
@@ -350,8 +348,8 @@ async function handlePost(
             orgName,
             settings.slug,
             id,
-            agendaMeetingTitle,
-            agendaMeetingDate
+            meetingTitle,
+            meetingDate
           );
         }
       } catch (distErr) {
