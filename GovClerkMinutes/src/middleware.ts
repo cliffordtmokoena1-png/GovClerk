@@ -8,7 +8,7 @@ import {
   handleLandingPagePersonalization,
   isLandingPageRequest,
 } from "./utils/landing/landingPageMiddleware";
-import { getSiteFromHost, isGovClerk, isGovClerkMinutes, Site, SITE_HEADER } from "./utils/site";
+import { getSiteFromHost, isGovClerk, isGovClerkMinutes, isGovClerkPartners, Site, SITE_HEADER } from "./utils/site";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -44,6 +44,11 @@ const CD_LANDING_PREFIXES = [
   "/overview",
 ];
 
+const PORTAL_ROUTE_PREFIXES = [
+  "/pricing",
+  "/request-quote",
+];
+
 function getOrgRewritePath(pathname: string): string | null {
   for (const prefix of ORG_ROUTE_PREFIXES) {
     if (pathname === prefix || pathname.startsWith(prefix + "/")) {
@@ -58,6 +63,30 @@ function getCdLandingRewritePath(pathname: string): string | null {
     if (pathname === prefix || pathname.startsWith(prefix + "/")) {
       return `/cd${pathname}`;
     }
+  }
+  return null;
+}
+
+function getPortalRewritePath(pathname: string): string | null {
+  // Already under /portal — pass through
+  if (pathname === "/portal" || pathname.startsWith("/portal/")) return null;
+  // Root → portal landing
+  if (pathname === "/") return "/portal";
+  // Known portal route prefixes
+  for (const prefix of PORTAL_ROUTE_PREFIXES) {
+    if (pathname === prefix || pathname.startsWith(prefix + "/")) {
+      return `/portal${pathname}`;
+    }
+  }
+  // Dynamic slug routes: anything that isn't an API/auth/static path
+  if (
+    !pathname.startsWith("/api/") &&
+    !pathname.startsWith("/sign-in") &&
+    !pathname.startsWith("/sign-up") &&
+    !pathname.startsWith("/_next") &&
+    !pathname.startsWith("/dashboard")
+  ) {
+    return `/portal${pathname}`;
   }
   return null;
 }
@@ -77,6 +106,31 @@ function buildClerkHandler(site: Site) {
 
     if (isGovClerkMinutes(site) && isOrgRoute(req)) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    if (isGovClerkPartners(site)) {
+      // Minutes-specific routes → redirect to govclerkminutes.com
+      if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+        return NextResponse.redirect(new URL("https://govclerkminutes.com/dashboard"));
+      }
+
+      // Sign-in/sign-up — pass through (auth works on both domains)
+      if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
+        return withSiteHeader(req, site);
+      }
+
+      // API routes — pass through
+      if (pathname.startsWith("/api/")) {
+        return withSiteHeader(req, site);
+      }
+
+      // Rewrite to portal routes
+      const portalRewritePath = getPortalRewritePath(pathname);
+      if (portalRewritePath) {
+        return withSiteHeader(req, site, NextResponse.rewrite(new URL(portalRewritePath, req.url)));
+      }
+
+      return withSiteHeader(req, site);
     }
 
     if (isGovClerk(site)) {
@@ -145,11 +199,19 @@ function buildClerkMiddleware(site: Site) {
 
 const mgMiddleware = buildClerkMiddleware("GovClerkMinutes");
 const cdMiddleware = buildClerkMiddleware("GovClerk");
+const partnersMiddleware = buildClerkMiddleware("GovClerkPartners");
 
 const middleware = async (req: NextRequest, event: NextFetchEvent) => {
   const site = getSiteFromHost(req.headers.get("host"));
 
-  const activeMiddleware = isGovClerk(site) ? cdMiddleware : mgMiddleware;
+  let activeMiddleware;
+  if (isGovClerkPartners(site)) {
+    activeMiddleware = partnersMiddleware;
+  } else if (isGovClerk(site)) {
+    activeMiddleware = cdMiddleware;
+  } else {
+    activeMiddleware = mgMiddleware;
+  }
 
   if (!activeMiddleware) {
     // No Clerk middleware available — pass through the request
