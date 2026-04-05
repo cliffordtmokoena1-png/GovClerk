@@ -10,6 +10,7 @@ import { regenerateMinutesRoute } from './routes/regenerateMinutes.js';
 import { pendingTasksRoute } from './routes/pendingTasks.js';
 import { webhookRoute } from './routes/webhook.js';
 import { convertDocumentRoute } from './routes/convertDocument.js';
+import { resumeTranscribeRoute } from './routes/resumeTranscribe.js';
 
 const app = new Hono();
 
@@ -27,6 +28,7 @@ app.route('/api', regenerateMinutesRoute);
 app.route('/api', pendingTasksRoute);
 app.route('/api', webhookRoute);
 app.route('/api', convertDocumentRoute);
+app.route('/api', resumeTranscribeRoute);
 
 const port = Number(process.env.PORT) || 8000;
 console.log(`GovClerk Server v2 running on port ${port}`);
