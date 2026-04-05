@@ -59,7 +59,6 @@ export async function transcribeAndDiarize(
     transcript.status === 'error' &&
     transcript.error != null &&
     (
-      (transcript.error.includes('language_detection') && transcript.error.includes('no spoken audio')) ||
       transcript.error.includes('spoken audio') ||
       (transcript.error.includes('audio') && transcript.error.includes('duration'))
     )
@@ -79,7 +78,7 @@ export async function transcribeAndDiarize(
   }
 
   // 4. Format utterances with speaker labels like the old system used (A, B, C...)
-  let utterances = (transcript.utterances ?? []).map(u => ({
+  const rawUtterances = (transcript.utterances ?? []).map(u => ({
     speaker: u.speaker,   // already "A", "B", "C" format from AssemblyAI
     text: u.text,
     start: u.start ?? 0,
@@ -88,15 +87,18 @@ export async function transcribeAndDiarize(
 
   // Fallback: if speaker diarization returned no utterances but we have transcript text,
   // synthesize a single-speaker utterance so the pipeline doesn't fail.
-  if (utterances.length === 0 && transcript.text && transcript.text.trim()) {
+  const shouldSynthesizeUtterance = rawUtterances.length === 0 && Boolean(transcript.text?.trim());
+  if (shouldSynthesizeUtterance) {
     console.warn(`[assemblyai] No utterances from diarization for ${s3Key}, falling back to full transcript text as single speaker`);
-    utterances = [{
-      speaker: 'A',
-      text: transcript.text,
-      start: 0,
-      end: (transcript.audio_duration ?? 0) * 1000, // convert seconds to ms
-    }];
   }
+  const utterances = shouldSynthesizeUtterance
+    ? [{
+        speaker: 'A',
+        text: transcript.text,
+        start: 0,
+        end: (transcript.audio_duration ?? 0) * 1000, // convert seconds to ms
+      }]
+    : rawUtterances;
 
   const speakers = [...new Set(utterances.map(u => u.speaker))];
 
