@@ -440,13 +440,13 @@ export default function GovClerkNavBar() {
             <div className="hidden items-center gap-3 md:flex">
               {isLoaded && !userId ? (
                 <>
-                  <Link
-                    href="/portal"
+                  <a
+                    href="https://govclerkpartners.org"
                     className="flex items-center gap-1.5 rounded-md border border-green-600 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-50"
                   >
                     <LuGlobe className="h-4 w-4" />
                     Public Portal
-                  </Link>
+                  </a>
                   <Link
                     href="/sign-in"
                     className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
@@ -470,13 +470,13 @@ export default function GovClerkNavBar() {
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/portal"
+                  <a
+                    href="https://govclerkpartners.org"
                     className="flex items-center gap-1.5 rounded-md border border-green-600 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-50"
                   >
                     <LuGlobe className="h-4 w-4" />
                     Public Portal
-                  </Link>
+                  </a>
                   <Link
                     href="/dashboard"
                     className="rounded-md bg-cd-blue px-4 py-2 text-sm font-medium text-white transition-all hover:bg-cd-blue-dark hover:shadow-md"
@@ -500,13 +500,13 @@ export default function GovClerkNavBar() {
                 </a>
               ) : (
                 <>
-                  <Link
-                    href="/portal"
+                  <a
+                    href="https://govclerkpartners.org"
                     className="flex items-center gap-1.5 rounded-md border border-green-600 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 sm:px-4 sm:py-2 sm:text-sm"
                   >
                     <LuGlobe className="h-4 w-4" />
                     Portal
-                  </Link>
+                  </a>
                   <Link
                     href="/dashboard"
                     className="rounded-md bg-cd-blue px-3 py-1.5 text-xs font-medium text-white hover:bg-cd-blue-dark sm:px-4 sm:py-2 sm:text-sm"
@@ -724,14 +724,14 @@ export default function GovClerkNavBar() {
 
           {isLoaded && !userId && (
             <div className="mt-4 flex flex-col gap-0 border-t border-gray-100 pt-4">
-              <Link
-                href="/portal"
+              <a
+                href="https://govclerkpartners.org"
                 className="flex items-center gap-2 py-4 text-lg font-medium text-green-700 transition-colors hover:text-green-800"
                 onClick={handleClose}
               >
                 <LuGlobe className="h-5 w-5" />
                 Public Portal
-              </Link>
+              </a>
               <Link
                 href="/sign-in"
                 className="py-4 text-lg font-medium text-gray-900 transition-colors hover:text-blue-600"
