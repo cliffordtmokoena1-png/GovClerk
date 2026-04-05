@@ -48,6 +48,14 @@ const AdminContent = dynamic(() => import("@/components/org-dashboard/content/Ad
   ssr: false,
 });
 
+const TeamMembersContent = dynamic(
+  () => import("@/components/org-dashboard/content/TeamMembersContent"),
+  {
+    loading: () => <ContentSpinner message="Loading team members..." />,
+    ssr: false,
+  }
+);
+
 const DashboardContent = dynamic(
   () => import("@/components/org-dashboard/content/DashboardContent"),
   {
@@ -190,6 +198,8 @@ const OrgDashboardPage = ({ customerDetails, whatsappMessageTemplates, toolIndex
         return "Public Portal";
       case "boards":
         return "Boards";
+      case "team":
+        return "Team Members";
       case "admin":
         return "Admin";
       default:
@@ -216,6 +226,9 @@ const OrgDashboardPage = ({ customerDetails, whatsappMessageTemplates, toolIndex
 
       case "boards":
         return <BoardContent />;
+
+      case "team":
+        return <TeamMembersContent />;
 
       case "admin":
         if (!whatsappMessageTemplates) {
