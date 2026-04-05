@@ -30,22 +30,30 @@ GovClerkMinutes is an AI-powered meeting minutes generation platform designed fo
 ### GovClerkMinutes Pricing Plans (billed in ZAR)
 
 #### Monthly Plans (pay month-to-month, cancel any time)
-| Plan         | Price/month | Tokens/month |
-|--------------|-------------|--------------|
-| Essential    | R300/month  | 400 tokens   |
-| Professional | R450/month  | 1,000 tokens |
-| Elite        | R600/month  | 1,600 tokens |
-| Premium      | R900/month  | 2,300 tokens |
+| Plan         | Price/month | Tokens/month | Team Members |
+|--------------|-------------|--------------|--------------|
+| Essential    | R300/month  | 400 tokens   | Up to 2      |
+| Professional | R450/month  | 1,000 tokens | Up to 4      |
+| Elite        | R600/month  | 1,600 tokens | Up to 6      |
+| Premium      | R900/month  | 2,300 tokens | Up to 10     |
 
 #### Annual Plans (pay once per year, best value)
-| Plan                  | Annual Price | Effective/month | Tokens/month |
-|-----------------------|-------------|-----------------|--------------|
-| Essential Annual      | R3,000/year | R250/month      | 400 tokens   |
-| Professional Annual   | R4,500/year | R375/month      | 1,000 tokens |
-| Elite Annual          | R6,000/year | R500/month      | 1,600 tokens |
-| Premium Annual        | R8,100/year | R675/month      | 2,300 tokens |
+| Plan                  | Annual Price | Effective/month | Tokens/month | Team Members |
+|-----------------------|-------------|-----------------|--------------|--------------|
+| Essential Annual      | R3,000/year | R250/month      | 400 tokens   | Up to 2      |
+| Professional Annual   | R4,500/year | R375/month      | 1,000 tokens | Up to 4      |
+| Elite Annual          | R6,000/year | R500/month      | 1,600 tokens | Up to 6      |
+| Premium Annual        | R8,100/year | R675/month      | 2,300 tokens | Up to 10     |
 
 **Tokens** = minutes of meeting audio processed per month. 400 tokens = 400 minutes (≈ 6.7 hours), 1,000 tokens = 1,000 minutes (≈ 16.7 hours), 1,600 tokens = 1,600 minutes (≈ 26.7 hours), 2,300 tokens = 2,300 minutes (≈ 38.3 hours).
+
+### Team Members
+- Each plan includes a set number of team member seats (including the account owner).
+- The account owner can invite team members via email from the dashboard.
+- Team members get access to the owner's workspace and shared meeting records.
+- Free plan: 1 user only (no team members).
+- Essential: Up to 2 team members. Professional: Up to 4. Elite: Up to 6. Premium: Up to 10.
+- Need more seats? Contact sales@govclerkminutes.com for custom volume options.
 
 - Pricing page: https://govclerkminutes.com/pricing
 - Request pricing / sign up: https://govclerkminutes.com/request-pricing?product=minutes
