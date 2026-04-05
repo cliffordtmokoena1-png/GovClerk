@@ -1,7 +1,7 @@
 import { buildSamanthaSystemPrompt, buildGraySystemPrompt } from "./knowledgeBase";
 import { shouldEscalateByKeywords, getEscalationEmail } from "./accessControl";
 import { initializePaystackPayment } from "./paystack";
-import { sendEmail } from "@/utils/postmark";
+import { sendEmail, FROM_SALES } from "@/utils/postmark";
 import type { AgentMessage, AgentResponse, AgentIntent, PersonaType, PlanType } from "./types";
 import { ADMIN_EMAIL } from "./types";
 
@@ -45,10 +45,21 @@ export function isSalesReadyByKeywords(message: string): boolean {
 export function detectPlanChoice(message: string): PlanType | null {
   const lower = message.toLowerCase();
   // Check annual first (more specific), using word boundary \b to avoid false positives
-  if (/\bannual\b|\byearly\b|\bper year\b/.test(lower)) {
+  if (/\bannuall?y?\b|\byearly\b|\bper year\b/.test(lower)) {
     return "annual";
   }
   if (/\bmonth-to-month\b|\bmonth to month\b|\bmonthly\b|\bper month\b|\bmonth\b/.test(lower)) {
+    return "month-to-month";
+  }
+  // Recognise specific GovClerkMinutes plan tier names — default to month-to-month billing
+  // when the user names a plan but doesn't specify a billing cycle.
+  if (
+    /\bessential\b|\bprofessional\b|\belite\b|\bpremium\b|\bstarter\b|\benterprise\b/.test(lower)
+  ) {
+    return "month-to-month";
+  }
+  // Recognise price references (e.g. "R300 plan", "the R450 option")
+  if (/\br\s*300\b|\br\s*450\b|\br\s*600\b|\br\s*900\b|\br\s*2[,\s]?500\b|\br\s*8[,\s]?000\b/.test(lower)) {
     return "month-to-month";
   }
   return null;
@@ -243,7 +254,7 @@ async function processGrayMessage(
       const safeEmail = escapeHtml(emailFromHistory);
 
       await sendEmail({
-        From: "sales@govclerkminutes.com",
+        From: FROM_SALES,
         To: emailFromHistory,
         Subject: `Your GovClerkMinutes ${planLabel} Payment Link`,
         HtmlBody: `
@@ -261,7 +272,7 @@ async function processGrayMessage(
 
       // Notify admin to prepare onboarding
       await sendEmail({
-        From: "sales@govclerkminutes.com",
+        From: FROM_SALES,
         To: ADMIN_EMAIL,
         Subject: `[Action Required] New ${planLabel} customer — onboarding needed`,
         HtmlBody: `
@@ -297,10 +308,44 @@ async function processGrayMessage(
         persona: "gray",
       };
     }
+  } else {
+    // Log what's missing so failures are visible in production logs
+    if (!plan) {
+      console.warn(
+        "[ai-agent] Gray: detectPlanChoice() returned null — PayStack skipped.",
+        { userMessage }
+      );
+    }
+    if (!emailFromHistory) {
+      console.warn(
+        "[ai-agent] Gray: no email address found in conversation — PayStack skipped.",
+        { userMessage }
+      );
+    }
   }
 
   const shouldEscalate = intentResult.intent === "escalate";
   let finalReply = llmReply;
+
+  // Safety net: when the payment system didn't trigger because plan or email is
+  // missing, override the LLM reply with a targeted question so Gray cannot
+  // falsely claim a payment email was sent.
+  if ((!plan || !emailFromHistory) && intentResult.intent === "payment") {
+    const needItems: string[] = [];
+    if (!plan) {
+      needItems.push(
+        "which plan you'd like (e.g. Essential, Professional, Elite, or Premium for GovClerkMinutes) and whether you prefer monthly or annual billing"
+      );
+    }
+    if (!emailFromHistory) {
+      needItems.push("your email address so I can send you the payment link");
+    }
+    finalReply =
+      needItems.length === 1
+        ? `To send your payment link, I still need ${needItems[0]}. Could you please share that?`
+        : `To send your payment link, I still need a couple of things from you:\n• ${needItems[0]}\n• ${needItems[1]}`;
+  }
+
   if (shouldEscalate) {
     const escalationEmail = getEscalationEmail();
     finalReply += `\n\nI'm flagging this conversation for our team. You can reach us at ${escalationEmail}.`;
