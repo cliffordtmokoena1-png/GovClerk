@@ -97,7 +97,7 @@ diarizationRoute.post('/get-diarization', authMiddleware, zValidator('json', bod
   return c.json({ status: 'processing', transcript_id: transcriptId }, 202);
 });
 
-async function processTranscription(
+export async function processTranscription(
   transcriptId: number,
   userId: string,
   orgId: string | null,
