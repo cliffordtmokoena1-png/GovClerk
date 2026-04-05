@@ -1,5 +1,6 @@
 export const ESSENTIAL_FEATURES = [
   "Minutes and transcripts for 6 hours and 40 minutes of meetings",
+  "Up to 2 team members (including account owner)",
   "Basic support",
   "Basic speaker recognition",
   "Download as Word or copy to clipboard",
@@ -10,6 +11,7 @@ export const ESSENTIAL_FEATURES = [
 
 export const PROFESSIONAL_FEATURES = [
   "Minutes and transcripts for 16 hours and 40 minutes of meetings",
+  "Up to 4 team members (including account owner)",
   "Priority support",
   "Speaker recognition across meetings",
   "Download as Word or copy to clipboard",
@@ -21,6 +23,7 @@ export const PROFESSIONAL_FEATURES = [
 export const PROFESSIONAL_ANNUAL_FEATURES = [
   "Everything from Essential",
   "Minutes and transcripts for 16 hours and 40 minutes of meetings",
+  "Up to 4 team members (including account owner)",
   "Priority support",
   "Speaker recognition across meetings",
   "Download as Word or copy to clipboard",
@@ -29,6 +32,7 @@ export const PROFESSIONAL_ANNUAL_FEATURES = [
 
 export const ELITE_FEATURES = [
   "Minutes and transcripts for 26 hours and 40 minutes of meetings",
+  "Up to 6 team members (including account owner)",
   "Priority support over email and chat",
   "Advanced speaker recognition across meetings",
   "Download as Word, PDF, or copy to clipboard",
@@ -40,6 +44,7 @@ export const ELITE_FEATURES = [
 export const ELITE_ANNUAL_FEATURES = [
   "Everything from Professional",
   "Minutes and transcripts for 26 hours and 40 minutes of meetings",
+  "Up to 6 team members (including account owner)",
   "Priority support over email and chat",
   "Advanced speaker recognition across meetings",
   "Download as Word, PDF, or copy to clipboard",
@@ -48,6 +53,7 @@ export const ELITE_ANNUAL_FEATURES = [
 
 export const PREMIUM_FEATURES = [
   "Minutes and transcripts for 38 hours and 20 minutes of meetings",
+  "Up to 10 team members (including account owner)",
   "24/7 Dedicated priority support",
   "Premium speaker recognition & custom vocabulary",
   "Advanced export options",
@@ -59,6 +65,7 @@ export const PREMIUM_FEATURES = [
 export const PREMIUM_ANNUAL_FEATURES = [
   "Everything from Elite",
   "Minutes and transcripts for 38 hours and 20 minutes of meetings",
+  "Up to 10 team members (including account owner)",
   "24/7 Dedicated priority support",
   "Premium speaker recognition & custom vocabulary",
   "Advanced export options (Word, PDF, SRT, Text)",
@@ -67,6 +74,7 @@ export const PREMIUM_ANNUAL_FEATURES = [
 
 export const CUSTOM_FEATURES = [
   "Everything from Premium",
+  "Unlimited team members",
   "Custom minutes and transcripts volume",
   "Priority support over email and chat",
   "14 day money back guarantee",

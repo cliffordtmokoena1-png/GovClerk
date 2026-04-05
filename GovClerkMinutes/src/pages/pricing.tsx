@@ -55,6 +55,7 @@ const PLANS: Plan[] = [
     hoursApprox: "~30 min",
     features: [
       "30 tokens (~30 minutes of audio)",
+      "1 user (no team members)",
       "Basic AI transcription",
       "1 test meeting upload",
       "Preview minutes output",
@@ -73,6 +74,7 @@ const PLANS: Plan[] = [
     hoursApprox: "~6.7 hrs",
     features: [
       "400 tokens/month (~6.7 hours of audio)",
+      "Up to 2 team members",
       "AI Meeting Minutes Generation",
       "Transcript Generation",
       "Export to Word & PDF",
@@ -101,6 +103,7 @@ const PLANS: Plan[] = [
     popular: true,
     features: [
       "1,000 tokens/month (~16.7 hours of audio)",
+      "Up to 4 team members",
       "Everything in Essential, plus:",
       "Cross-meeting Speaker Recognition",
       "Create Template from Example",
@@ -119,6 +122,7 @@ const PLANS: Plan[] = [
     hoursApprox: "~26.7 hrs",
     features: [
       "1,600 tokens/month (~26.7 hours of audio)",
+      "Up to 6 team members",
       "Everything in Professional, plus:",
       "Higher monthly usage capacity",
     ],
@@ -135,6 +139,7 @@ const PLANS: Plan[] = [
     hoursApprox: "~38.3 hrs",
     features: [
       "2,300 tokens/month (~38.3 hours of audio)",
+      "Up to 10 team members",
       "Everything in Elite, plus:",
       "Custom Volume options",
       "Dedicated Account Manager",
