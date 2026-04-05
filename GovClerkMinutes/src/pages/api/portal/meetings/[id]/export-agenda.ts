@@ -335,8 +335,8 @@ async function handlePost(
 
     // Step 6: Distribute agenda notifications to all org members (fire-and-forget)
     // Guards: only on first publish (no prior agenda_pdf artifacts) and portal must be enabled.
-    // The dedup check runs after artifact creation to avoid a pre-creation race condition:
-    // if another artifact exists (id != artifactId), this is a re-publish — skip notification.
+    // The dedup check runs after artifact creation and counts other artifacts for this meeting,
+    // preventing re-export notifications when an agenda has been published before.
     (async () => {
       try {
         const dedupResult = await conn.execute(
