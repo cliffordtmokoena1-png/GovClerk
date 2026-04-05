@@ -214,6 +214,41 @@ export async function processTranscription(
       console.log(`[diarization] Inserted ${result.utterances.length} segments into gc_segments for transcript ${transcriptId}`);
     }
 
+    // 5.6. Insert speaker rows so the frontend can display and rename each speaker.
+    // Mirrors what the Rust server does: one row per unique speaker label detected.
+    if (result.speakers.length > 0) {
+      try {
+        const speakerPlaceholders = result.speakers.map(() => '(?, ?, ?, ?, 0, 0, ?)').join(', ');
+        const speakerValues: (string | number)[] = [];
+        result.speakers.forEach((label, i) => {
+          speakerValues.push(userId, transcriptId, label, `Speaker ${i + 1}`, '[]');
+        });
+        await execute(
+          `INSERT INTO speakers (userId, transcriptId, label, name, uses, fast_mode, embedding) VALUES ${speakerPlaceholders}`,
+          speakerValues
+        );
+        console.log(`[diarization] Inserted ${result.speakers.length} speaker rows for transcript ${transcriptId}`);
+      } catch (err: unknown) {
+        if (!isUnknownColumnError(err)) throw err;
+        console.warn('[diarization] Some columns missing in speakers table, retrying without fast_mode');
+        try {
+          const speakerPlaceholders = result.speakers.map(() => '(?, ?, ?, ?, 0, ?)').join(', ');
+          const speakerValues: (string | number)[] = [];
+          result.speakers.forEach((label, i) => {
+            speakerValues.push(userId, transcriptId, label, `Speaker ${i + 1}`, '[]');
+          });
+          await execute(
+            `INSERT INTO speakers (userId, transcriptId, label, name, uses, embedding) VALUES ${speakerPlaceholders}`,
+            speakerValues
+          );
+          console.log(`[diarization] Inserted ${result.speakers.length} speaker rows for transcript ${transcriptId}`);
+        } catch (err2: unknown) {
+          if (!isUnknownColumnError(err2)) throw err2;
+          console.warn('[diarization] embedding column also missing in speakers table, skipping speaker insertion');
+        }
+      }
+    }
+
     // 6. Update job status
     activeJobs.set(transcriptId, {
       transcript_id: transcriptId,
