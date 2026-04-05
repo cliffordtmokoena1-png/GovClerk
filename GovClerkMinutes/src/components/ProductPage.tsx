@@ -166,7 +166,8 @@ const ProductPage = ({
     mutateTranscriptStatus,
   });
 
-  const { onDrop, isTransitioning, showWarningModal, onWarningAccepted } = useFileUploadHandler({});
+  const { onDrop, onDropWithLanguage, isTransitioning, showWarningModal, onWarningAccepted } =
+    useFileUploadHandler({});
 
   // Create a hidden dropzone for file picker functionality
   const { getInputProps } = useDropzone({
@@ -395,7 +396,7 @@ const ProductPage = ({
       {transcriptId == null ? (
         <Flex w="full" h="full" pt={2} alignItems="center" justifyContent="center">
           <MediaUploadInterface
-            onDrop={onDrop}
+            onDropWithLanguage={onDropWithLanguage}
             isTransitioning={isTransitioning}
             isSupported={typeof window !== "undefined" && "MediaRecorder" in window}
             layoutKind={layoutKind}

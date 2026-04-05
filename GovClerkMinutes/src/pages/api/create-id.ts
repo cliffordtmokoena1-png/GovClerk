@@ -23,10 +23,11 @@ export type CreateIdParams = {
   fileSize: number | null;
   region: string | null;
   isRecording?: boolean; // For recorder uploads
+  language?: string; // Optional language code (e.g. "en", "zu", "xh"); omit for auto-detect
 };
 
 export async function createId(params: CreateIdParams): Promise<ApiCreateIdResponse> {
-  const { userId, orgId, title, uploadKind, fileSize, region, isRecording } = params;
+  const { userId, orgId, title, uploadKind, fileSize, region, isRecording, language } = params;
 
   const conn = connect({
     host: process.env.PLANETSCALE_DB_HOST,
@@ -45,14 +46,32 @@ export async function createId(params: CreateIdParams): Promise<ApiCreateIdRespo
 
   const extension = title && (title.match(/\.([^.]+)$/)?.[1] ?? null);
 
+  // Include language in the INSERT only when a specific language was selected
+  const hasLanguage = !!language && language !== "";
+  const maybeLanguageSql = hasLanguage ? ", language" : "";
+  const maybeLanguageValue = hasLanguage ? ", ?" : "";
+  const insertValues: (string | number | boolean | null | undefined)[] = [
+    userId,
+    orgId,
+    title,
+    fileSize,
+    region,
+    uploadKind,
+    isRecording ? 0 : -1,
+    extension,
+  ];
+  if (hasLanguage) {
+    insertValues.push(language);
+  }
+
   const insertId = await conn
     .execute(
       `
       INSERT INTO transcripts
-      (userId, org_id, dateCreated, title, file_size, aws_region, upload_kind${maybeFailSql}, recording_state, extension)
-      VALUES (?, ?, UTC_TIMESTAMP(), ?, ?, ?, ?${maybeFailSqlValue}, ?, ?);
+      (userId, org_id, dateCreated, title, file_size, aws_region, upload_kind${maybeFailSql}, recording_state, extension${maybeLanguageSql})
+      VALUES (?, ?, UTC_TIMESTAMP(), ?, ?, ?, ?${maybeFailSqlValue}, ?, ?${maybeLanguageValue});
       `,
-      [userId, orgId, title, fileSize, region, uploadKind, isRecording ? 0 : -1, extension]
+      insertValues
     )
     .then((result) => result.insertId);
 
@@ -90,6 +109,7 @@ async function handler(req: NextRequest) {
   const fileSize = body.fileSize as number | null;
   const region = body.region as string | null;
   const isRecording = body.isRecording as boolean | undefined;
+  const language = body.language as string | undefined;
 
   const { userId, orgId } = await resolveRequestContext(auth.userId, body.orgId, req.headers);
 
@@ -101,6 +121,7 @@ async function handler(req: NextRequest) {
     fileSize,
     region,
     isRecording,
+    language,
   });
 
   return new Response(JSON.stringify(result), {

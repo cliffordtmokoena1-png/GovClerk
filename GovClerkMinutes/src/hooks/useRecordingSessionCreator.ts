@@ -10,7 +10,7 @@ type UseRecordingSessionCreatorParams = {
 };
 
 type UseRecordingSessionCreatorResult = {
-  createSessionAndNavigate: () => Promise<void>;
+  createSessionAndNavigate: (language?: string) => Promise<void>;
   isCreating: boolean;
   error: string | null;
   clearError: () => void;
@@ -28,7 +28,7 @@ export default function useRecordingSessionCreator({
     setError(null);
   }, []);
 
-  const createSessionAndNavigate = useCallback(async () => {
+  const createSessionAndNavigate = useCallback(async (language?: string) => {
     setIsCreating(true);
     setError(null);
 
@@ -50,6 +50,7 @@ export default function useRecordingSessionCreator({
           uploadKind: "audio",
           isRecording: true,
           orgId,
+          language: language || undefined,
         }),
       });
 

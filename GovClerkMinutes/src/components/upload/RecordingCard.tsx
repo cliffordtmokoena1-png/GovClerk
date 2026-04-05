@@ -11,6 +11,7 @@ type RecordingCardProps = {
   isSupported: boolean;
   layoutKind: LayoutKind;
   disabled?: boolean;
+  selectedLanguage?: string;
 };
 
 export default function RecordingCard({
@@ -18,6 +19,7 @@ export default function RecordingCard({
   isSupported: propIsSupported,
   layoutKind,
   disabled = false,
+  selectedLanguage,
 }: RecordingCardProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -48,7 +50,7 @@ export default function RecordingCard({
     if (error) {
       clearError();
     } else {
-      createSessionAndNavigate();
+      createSessionAndNavigate(selectedLanguage);
     }
   };
 
@@ -58,7 +60,7 @@ export default function RecordingCard({
       if (error) {
         clearError();
       } else {
-        createSessionAndNavigate();
+        createSessionAndNavigate(selectedLanguage);
       }
     }
   };
