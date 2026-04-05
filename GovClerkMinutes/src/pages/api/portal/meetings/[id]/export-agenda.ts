@@ -348,8 +348,8 @@ async function handlePost(
             orgName,
             settings.slug,
             id,
-            meetingTitle,
-            meetingDate
+            meeting.title || meetingTitle,
+            meeting.meeting_date || meetingDate
           );
         }
       } catch (distErr) {
