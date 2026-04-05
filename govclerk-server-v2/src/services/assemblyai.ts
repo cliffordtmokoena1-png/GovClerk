@@ -51,16 +51,21 @@ export async function transcribeAndDiarize(
   // 3. Wait for transcription to complete (AssemblyAI polls internally).
   // Wrap with a 60-minute timeout so the process doesn't hang indefinitely
   // for very large recordings.
-  const TRANSCRIPTION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
-  const transcript = await Promise.race([
-    client.transcripts.transcribe(config),
-    new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`AssemblyAI transcription timed out after ${TRANSCRIPTION_TIMEOUT_MS / 60_000} minutes`)),
-        TRANSCRIPTION_TIMEOUT_MS
-      )
-    ),
-  ]);
+  let transcript = await transcribeWithTimeout(config);
+
+  // If language_detection fails (common with WebM recordings from the in-app recorder),
+  // retry with explicit English as fallback to bypass language detection entirely.
+  if (
+    transcript.status === 'error' &&
+    transcript.error?.includes('language_detection') &&
+    transcript.error?.includes('no spoken audio')
+  ) {
+    console.warn(`[assemblyai] Language detection failed for ${s3Key}, retrying with language_code="en"`);
+    const retryConfig = { ...config };
+    delete (retryConfig as any).language_detection;
+    (retryConfig as any).language_code = 'en';
+    transcript = await transcribeWithTimeout(retryConfig);
+  }
 
   if (transcript.status === 'error') {
     throw new Error(`AssemblyAI transcription failed: ${transcript.error}`);
@@ -82,6 +87,23 @@ export async function transcribeAndDiarize(
     speakers,
     audio_duration: transcript.audio_duration ?? 0,
   };
+}
+
+/**
+ * Submits a transcription config to AssemblyAI and waits for completion,
+ * with a 60-minute timeout to prevent indefinite hangs on large recordings.
+ */
+async function transcribeWithTimeout(config: Parameters<typeof client.transcripts.transcribe>[0]) {
+  const TRANSCRIPTION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
+  return Promise.race([
+    client.transcripts.transcribe(config),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`AssemblyAI transcription timed out after ${TRANSCRIPTION_TIMEOUT_MS / 60_000} minutes`)),
+        TRANSCRIPTION_TIMEOUT_MS
+      )
+    ),
+  ]);
 }
 
 /**
