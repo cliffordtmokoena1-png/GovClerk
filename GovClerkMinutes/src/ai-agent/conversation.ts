@@ -45,7 +45,7 @@ export function isSalesReadyByKeywords(message: string): boolean {
 export function detectPlanChoice(message: string): PlanType | null {
   const lower = message.toLowerCase();
   // Check annual first (more specific), using word boundary \b to avoid false positives
-  if (/\bannuall?y?\b|\byearly\b|\bper year\b/.test(lower)) {
+  if (/\bannual(ly)?\b|\byearly\b|\bper year\b/.test(lower)) {
     return "annual";
   }
   if (/\bmonth-to-month\b|\bmonth to month\b|\bmonthly\b|\bper month\b|\bmonth\b/.test(lower)) {
@@ -58,7 +58,9 @@ export function detectPlanChoice(message: string): PlanType | null {
   ) {
     return "month-to-month";
   }
-  // Recognise price references (e.g. "R300 plan", "the R450 option")
+  // Recognise price references (e.g. "R300 plan", "the R450 option").
+  // Prices correspond to GovClerkMinutes tiers (R300/R450/R600/R900) and
+  // GovClerk Portal tiers (R2500/R8000). Update these if pricing changes.
   if (/\br\s*300\b|\br\s*450\b|\br\s*600\b|\br\s*900\b|\br\s*2[,\s]?500\b|\br\s*8[,\s]?000\b/.test(lower)) {
     return "month-to-month";
   }
@@ -340,10 +342,11 @@ async function processGrayMessage(
     if (!emailFromHistory) {
       needItems.push("your email address so I can send you the payment link");
     }
-    finalReply =
-      needItems.length === 1
-        ? `To send your payment link, I still need ${needItems[0]}. Could you please share that?`
-        : `To send your payment link, I still need a couple of things from you:\n• ${needItems[0]}\n• ${needItems[1]}`;
+    if (needItems.length === 1) {
+      finalReply = `To send your payment link, I still need ${needItems[0]}. Could you please share that?`;
+    } else if (needItems.length >= 2) {
+      finalReply = `To send your payment link, I still need a couple of things from you:\n• ${needItems[0]}\n• ${needItems[1]}`;
+    }
   }
 
   if (shouldEscalate) {
