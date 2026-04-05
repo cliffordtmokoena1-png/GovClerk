@@ -1,5 +1,13 @@
 import { AssemblyAI } from 'assemblyai';
-import { getSignedAudioUrl } from './s3.js';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import { promises as fsp } from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
+import { getSignedAudioUrl, downloadS3Object } from './s3.js';
+
+const execFileAsync = promisify(execFile);
 
 const client = new AssemblyAI({
   apiKey: process.env.ASSEMBLYAI_API_KEY!,
@@ -30,8 +38,26 @@ export async function transcribeAndDiarize(
   region: string,
   language?: string,
 ): Promise<DiarizationResult> {
-  // 1. Generate a short-lived presigned URL so AssemblyAI can fetch the audio
-  const audioUrl = await getSignedAudioUrl(s3Key, region);
+  // 1. Determine the audio URL to submit to AssemblyAI.
+  //    WebM files from the in-app recorder are assembled from chunked MediaRecorder parts.
+  //    Concatenated WebM chunks lack valid cluster sync points, causing AssemblyAI to
+  //    produce empty transcripts even though the file has audio duration.
+  //    Fix: download the file, detect WebM by content-type, convert to WAV via ffmpeg,
+  //    then upload the clean WAV directly to AssemblyAI instead of using a presigned URL.
+  let audioUrl: string;
+
+  const { buffer, contentType } = await downloadS3Object(s3Key, region);
+  const isWebM = (contentType ?? '').toLowerCase().includes('webm');
+
+  if (isWebM) {
+    console.log(`[assemblyai] WebM detected for ${s3Key} (content-type: ${contentType}) — converting to WAV via ffmpeg`);
+    const wavBuffer = await convertWebmToWav(buffer);
+    audioUrl = await client.files.upload(wavBuffer);
+    console.log(`[assemblyai] WAV uploaded to AssemblyAI for ${s3Key}: ${audioUrl}`);
+  } else {
+    // Non-WebM formats (m4a, mp3, wav, etc.) are already clean — use presigned URL.
+    audioUrl = await getSignedAudioUrl(s3Key, region);
+  }
 
   // 2. Submit to AssemblyAI with speaker diarization enabled
   const config: Parameters<typeof client.transcripts.transcribe>[0] = {
@@ -108,6 +134,29 @@ export async function transcribeAndDiarize(
     speakers,
     audio_duration: transcript.audio_duration ?? 0,
   };
+}
+
+/**
+ * Converts a WebM audio buffer to a WAV buffer using ffmpeg.
+ * This is necessary because chunked WebM recordings from MediaRecorder lack
+ * valid cluster sync points at chunk boundaries, making the concatenated file
+ * undecodable by AssemblyAI. Converting to WAV produces a clean, fully decodable file.
+ */
+async function convertWebmToWav(inputBuffer: Buffer): Promise<Buffer> {
+  const tmpDir = os.tmpdir();
+  const id = randomUUID();
+  const inputPath = path.join(tmpDir, `govclerk_audio_${id}.webm`);
+  const outputPath = path.join(tmpDir, `govclerk_audio_${id}.wav`);
+  try {
+    await fsp.writeFile(inputPath, inputBuffer);
+    // -y: overwrite output; -acodec pcm_s16le: lossless PCM; -ar 16000: 16 kHz sample rate;
+    // -ac 1: mono (sufficient for speech transcription, halves file size)
+    await execFileAsync('ffmpeg', ['-y', '-i', inputPath, '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', outputPath]);
+    return await fsp.readFile(outputPath);
+  } finally {
+    await fsp.unlink(inputPath).catch(() => { /* ignore */ });
+    await fsp.unlink(outputPath).catch(() => { /* ignore */ });
+  }
 }
 
 /**
