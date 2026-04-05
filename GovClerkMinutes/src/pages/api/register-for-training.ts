@@ -79,11 +79,11 @@ async function handler(req: NextRequest) {
   await addBrevoContactToWebinarList(email, firstName, url, eventTime, prettyEventTime);
 
   sendEmail({
-    From: '"Max from GovClerkMinutes" <max@mail.GovClerkMinutes.com>',
+    From: '"Cliff from GovClerk" <admin@govclerkminutes.com>',
     To: email,
     Subject: `See you Thursday, ${firstName}!`,
-    HtmlBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.<br /><br />Add this to your calendar!<br /><br />Here's the <a href=${url}>FB event for our free training.</a><br /><br />It will go live at ${prettyEventTime}.<br /><br />See you there!<br />Max Sherman`,
-    TextBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.\n\nAdd this to your calendar!\n\nHere's the FB event for our free training: ${url}\n\nIt will go live at ${prettyEventTime}.\n\nSee you there!\nMax Sherman`,
+    HtmlBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.<br /><br />Add this to your calendar!<br /><br />Here's the <a href=${url}>FB event for our free training.</a><br /><br />It will go live at ${prettyEventTime}.<br /><br />See you there!<br />GovClerk`,
+    TextBody: `${firstName} - after this training, generating quality meeting minutes will be fast and easy.\n\nAdd this to your calendar!\n\nHere's the FB event for our free training: ${url}\n\nIt will go live at ${prettyEventTime}.\n\nSee you there!\nGovClerk`,
     MessageStream: "outbound",
     Attachments: [
       {
@@ -93,8 +93,8 @@ async function handler(req: NextRequest) {
           eventTitle: "Free Training: Meeting Minutes Fast, Easy, and Detailed",
           eventDescription: `Join us for a live training on how to generate high quality meeting minutes.  You'll save hours of time and pain by automating your workflow.\n\nWe will give you a special discount in the session.\n\nJoin the session at: ${url}`,
           location: "Facebook Live",
-          senderEmail: "max@mail.GovClerkMinutes.com",
-          senderName: "Max from GovClerkMinutes",
+          senderEmail: "admin@govclerkminutes.com",
+          senderName: "Cliff from GovClerk",
           receiverEmail: email,
           receiverName: firstName,
           eventTime,

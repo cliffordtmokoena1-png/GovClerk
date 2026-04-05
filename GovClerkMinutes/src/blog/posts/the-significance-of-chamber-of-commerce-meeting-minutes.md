@@ -1,7 +1,7 @@
 ---
 title: "The Significance of Chamber of Commerce Meeting Minutes"
 description: "This article underscores the importance of precise Chamber of Commerce meeting minutes for accountability and informed decision-making, and highlights how AI tools streamline and enhance the minute-taking process."
-author: "Max Sherman"
+author: "GovClerk"
 date: "July 28, 2023"
 imgUri: "/blog/images/chamber-of-commerce-533x400.jpg"
 ---

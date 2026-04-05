@@ -1,7 +1,7 @@
 ---
 title: "GovClerkMinutes: The Ultimate Meeting Minutes Tool"
 description: "This blog post introduces GovClerkMinutes, a revolutionary AI-powered tool that automates the process of turning meeting recordings into professionally structured minutes. With easy-to-follow steps and insightful examples, learn how GovClerkMinutes enhances workflow efficiency and transforms meeting management."
-author: "Max Sherman"
+author: "GovClerk"
 date: "July 26, 2023"
 imgUri: "/blog/images/people-having-meeting-3997x2665.jpg"
 ---

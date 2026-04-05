@@ -79,7 +79,7 @@ npm run dev
 
    - **Log in to Vercel**: Select your preferred method.
    - **Set up “govclerk-minutes”**: Confirm the setup for the cloned directory.
-   - **Which scope should contain your project?**: Max Sherman's projects
+   - **Which scope should contain your project?**: GovClerk's projects
    - **Link to existing project?**: yes
    - **What’s the name of your existing project?**: transcribe-summary
 

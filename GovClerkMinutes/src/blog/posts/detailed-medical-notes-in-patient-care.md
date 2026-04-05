@@ -1,7 +1,7 @@
 ---
 title: "Detailed Medical Notes in Patient Care"
 description: "AI-powered transcription services, like GovClerkMinutes, enhance medical scribing, ensuring accuracy and improving patient outcomes through detailed medical notes."
-author: "Max Sherman"
+author: "GovClerk"
 date: "July 30, 2023"
 imgUri: "/blog/images/laptop-doctor-hands-600x400.jpg"
 ---
