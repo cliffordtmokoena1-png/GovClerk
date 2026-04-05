@@ -57,8 +57,12 @@ export async function transcribeAndDiarize(
   // retry with explicit English as fallback to bypass language detection entirely.
   if (
     transcript.status === 'error' &&
-    transcript.error?.includes('language_detection') &&
-    transcript.error?.includes('no spoken audio')
+    transcript.error != null &&
+    (
+      (transcript.error.includes('language_detection') && transcript.error.includes('no spoken audio')) ||
+      transcript.error.includes('spoken audio') ||
+      (transcript.error.includes('audio') && transcript.error.includes('duration'))
+    )
   ) {
     console.warn(`[assemblyai] Language detection failed for ${s3Key}, retrying with language_code="en"`);
     // Omit language_detection and replace with an explicit language code
@@ -75,12 +79,24 @@ export async function transcribeAndDiarize(
   }
 
   // 4. Format utterances with speaker labels like the old system used (A, B, C...)
-  const utterances = (transcript.utterances ?? []).map(u => ({
+  let utterances = (transcript.utterances ?? []).map(u => ({
     speaker: u.speaker,   // already "A", "B", "C" format from AssemblyAI
     text: u.text,
     start: u.start ?? 0,
     end: u.end ?? 0,
   }));
+
+  // Fallback: if speaker diarization returned no utterances but we have transcript text,
+  // synthesize a single-speaker utterance so the pipeline doesn't fail.
+  if (utterances.length === 0 && transcript.text && transcript.text.trim()) {
+    console.warn(`[assemblyai] No utterances from diarization for ${s3Key}, falling back to full transcript text as single speaker`);
+    utterances = [{
+      speaker: 'A',
+      text: transcript.text,
+      start: 0,
+      end: (transcript.audio_duration ?? 0) * 1000, // convert seconds to ms
+    }];
+  }
 
   const speakers = [...new Set(utterances.map(u => u.speaker))];
 
