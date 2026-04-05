@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Flex,
@@ -11,8 +11,28 @@ import {
   MenuGroup,
   MenuDivider,
   Text,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Wrap,
+  WrapItem,
+  useDisclosure,
+  InputGroup,
+  InputRightElement,
+  IconButton,
 } from "@chakra-ui/react";
-import { FiChevronDown, FiCopy, FiFileText } from "react-icons/fi";
+import { FiChevronDown, FiCopy, FiFileText, FiMail, FiPlus } from "react-icons/fi";
 import Image from "next/image";
 import saveAs from "file-saver";
 import { safeCapture } from "@/utils/safePosthog";
@@ -65,6 +85,98 @@ export default function ExportButton({
   const isExporting = isMdLoading || isImgLoading;
 
   const [selectedExportVersion, setSelectedExportVersion] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (minutesData?.minutes && minutesData.minutes.length > 1) {
+      setSelectedExportVersion(minutesData.minutes.length - 1);
+    } else {
+      setSelectedExportVersion(selectedTabIndex);
+    }
+  }, [selectedTabIndex, minutesData?.minutes]);
+
+  // Share via Email state
+  const { isOpen: isShareOpen, onOpen: onShareOpen, onClose: onShareClose } = useDisclosure();
+  const [shareEmails, setShareEmails] = useState<string[]>([]);
+  const [emailInput, setEmailInput] = useState("");
+  const [shareDocType, setShareDocType] = useState<"minutes" | "transcript" | "both">("minutes");
+  const [isSending, setIsSending] = useState(false);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  const addEmail = () => {
+    const trimmed = emailInput.trim().toLowerCase();
+    if (!trimmed) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(trimmed)) {
+      toast({ title: "Invalid email address", status: "error", duration: 3000, isClosable: true });
+      return;
+    }
+    if (shareEmails.includes(trimmed)) {
+      toast({ title: "Email already added", status: "warning", duration: 2000, isClosable: true });
+      return;
+    }
+    if (shareEmails.length >= 20) {
+      toast({ title: "Maximum 20 email addresses", status: "warning", duration: 2000, isClosable: true });
+      return;
+    }
+    setShareEmails((prev) => [...prev, trimmed]);
+    setEmailInput("");
+  };
+
+  const removeEmail = (email: string) => {
+    setShareEmails((prev) => prev.filter((e) => e !== email));
+  };
+
+  const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addEmail();
+    }
+  };
+
+  const handleSendShare = async () => {
+    if (shareEmails.length === 0) {
+      toast({ title: "Add at least one email address", status: "warning", duration: 3000, isClosable: true });
+      return;
+    }
+    if (!transcriptId) return;
+
+    setIsSending(true);
+    try {
+      const response = await fetch("/api/share-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcriptId, emails: shareEmails, documentType: shareDocType }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to send");
+      }
+      safeCapture("document_shared_via_email", {
+        transcript_id: transcriptId,
+        recipient_count: shareEmails.length,
+        document_type: shareDocType,
+      });
+      toast({
+        title: `Sent to ${result.sent} recipient${result.sent !== 1 ? "s" : ""}`,
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+      setShareEmails([]);
+      setEmailInput("");
+      onShareClose();
+    } catch (err) {
+      toast({
+        title: "Failed to send",
+        description: err instanceof Error ? err.message : String(err),
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   useEffect(() => {
     if (minutesData?.minutes && minutesData.minutes.length > 1) {
@@ -358,7 +470,98 @@ export default function ExportButton({
             </Flex>
           </MenuItem>
         </MenuGroup>
+
+        <MenuDivider />
+
+        <MenuGroup title="Share">
+          <MenuItem
+            onClick={onShareOpen}
+            isDisabled={!transcriptId}
+          >
+            <Flex alignItems="center" gap={2}>
+              <FiMail size={16} />
+              Share via Email
+            </Flex>
+          </MenuItem>
+        </MenuGroup>
       </MenuList>
+
+      {/* Share via Email Modal */}
+      <Modal isOpen={isShareOpen} onClose={onShareClose} size="md" isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Share via Email</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl mb={4}>
+              <FormLabel fontSize="sm">What to share</FormLabel>
+              <Select
+                value={shareDocType}
+                onChange={(e) => setShareDocType(e.target.value as "minutes" | "transcript" | "both")}
+                size="sm"
+              >
+                <option value="minutes">Minutes</option>
+                <option value="transcript">Transcript</option>
+                <option value="both">Minutes &amp; Transcript</option>
+              </Select>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontSize="sm">Recipient email addresses</FormLabel>
+              <InputGroup size="sm" mb={2}>
+                <Input
+                  ref={emailInputRef}
+                  placeholder="Enter email and press Enter or +"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyDown={handleEmailKeyDown}
+                  type="email"
+                  pr="40px"
+                />
+                <InputRightElement>
+                  <IconButton
+                    aria-label="Add email"
+                    icon={<FiPlus />}
+                    size="xs"
+                    variant="ghost"
+                    onClick={addEmail}
+                  />
+                </InputRightElement>
+              </InputGroup>
+              {shareEmails.length > 0 && (
+                <Wrap mt={2} spacing={2}>
+                  {shareEmails.map((email) => (
+                    <WrapItem key={email}>
+                      <Tag size="sm" colorScheme="blue" borderRadius="full">
+                        <TagLabel>{email}</TagLabel>
+                        <TagCloseButton onClick={() => removeEmail(email)} />
+                      </Tag>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              )}
+              <Text fontSize="xs" color="gray.500" mt={2}>
+                Recipients will receive the PDF by email. Max 20 addresses.
+              </Text>
+            </FormControl>
+          </ModalBody>
+          <ModalFooter gap={2}>
+            <Button variant="ghost" size="sm" onClick={onShareClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              size="sm"
+              leftIcon={<FiMail />}
+              onClick={handleSendShare}
+              isLoading={isSending}
+              isDisabled={shareEmails.length === 0}
+            >
+              Send
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Menu>
   );
 }

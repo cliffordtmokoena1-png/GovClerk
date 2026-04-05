@@ -27,6 +27,7 @@ import {
   completeOperation,
   failOperation,
 } from "@/utils/progressDb";
+import { distributeMinutesToOrgMembers } from "@/utils/portalEmails";
 
 export const config = {
   runtime: "nodejs",
@@ -656,6 +657,45 @@ async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void>
       } catch (progressError) {
         console.error("[generate-artifacts] Failed to complete progress operation:", progressError);
       }
+    }
+
+    // Distribute minutes notifications to all org members (fire-and-forget)
+    if (artifacts.minutesDocx || artifacts.minutesPdf) {
+      (async () => {
+        try {
+          const settingsResult = await conn.execute(
+            "SELECT slug, page_title FROM gc_portal_settings WHERE id = ?",
+            [portalSettingsId]
+          );
+          if (settingsResult.rows.length > 0) {
+            const settings = settingsResult.rows[0] as {
+              slug: string;
+              page_title: string | null;
+            };
+            const meetingDateResult = await conn.execute(
+              "SELECT meeting_date FROM gc_meetings WHERE id = ? AND org_id = ?",
+              [meetingId, orgId]
+            );
+            const meetingDate =
+              meetingDateResult.rows.length > 0
+                ? String((meetingDateResult.rows[0] as { meeting_date: string }).meeting_date)
+                : new Date().toISOString();
+            await distributeMinutesToOrgMembers(
+              orgId,
+              settings.page_title || orgId,
+              settings.slug,
+              meetingId,
+              meetingTitle,
+              meetingDate
+            );
+          }
+        } catch (distErr) {
+          console.error(
+            "[generate-artifacts] Failed to distribute minutes notifications:",
+            distErr
+          );
+        }
+      })();
     }
 
     res.status(200).json({

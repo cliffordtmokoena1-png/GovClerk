@@ -10,6 +10,7 @@
  */
 
 import { sendEmail } from "./postmark";
+import { getPortalDbConnection } from "./portalDb";
 
 const FROM_PORTAL = '"GovClerk Portal" <admin@govclerkminutes.com>';
 const PORTAL_GREEN = "#0d5e3a";
@@ -483,4 +484,290 @@ GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
     TextBody: textBody,
     MessageStream: "signup_and_purchase",
   });
+}
+
+/**
+ * Send a branded GovClerk Portal notification when a meeting agenda is published.
+ *
+ * @param email        Recipient email address
+ * @param orgName      Organisation name
+ * @param meetingTitle Title of the meeting
+ * @param meetingDate  ISO date string of the meeting
+ * @param portalUrl    Public portal URL for the meeting page
+ */
+export async function sendAgendaPublishedEmail(
+  email: string,
+  orgName: string,
+  meetingTitle: string,
+  meetingDate: string,
+  portalUrl: string
+): Promise<void> {
+  const formattedDate = new Date(meetingDate).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color:${PORTAL_GREEN};padding:28px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;letter-spacing:0.5px;">GovClerk Portal</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">${orgName}</p>
+        </td>
+      </tr>
+      <!-- Body -->
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <p style="margin:0 0 16px;font-size:16px;color:#2d3748;">Hello,</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#4a5568;line-height:1.7;">The agenda for the following meeting has been published and is now available for review:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7fafc;border-left:4px solid ${PORTAL_GREEN};border-radius:4px;margin:0 0 28px;">
+            <tr><td style="padding:20px 24px;">
+              <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#1a202c;">${meetingTitle}</p>
+              <p style="margin:0;font-size:14px;color:#718096;">${formattedDate}</p>
+            </td></tr>
+          </table>
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="padding:0 0 32px;">
+                <a href="${portalUrl}" style="display:inline-block;padding:14px 32px;background-color:${PORTAL_GREEN};color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.3px;">View Agenda &rarr;</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:0 0 8px;font-size:14px;color:#718096;line-height:1.7;">You are receiving this notification because you are a member of the ${orgName} portal. If you have any questions, please contact your portal administrator.</p>
+          <p style="margin:24px 0 0;font-size:15px;color:#2d3748;">Yours in public service,<br/><strong>The GovClerk Portal Team</strong></p>
+        </td>
+      </tr>
+      <!-- Footer -->
+      <tr>
+        <td style="background-color:#f8f9fb;padding:20px 40px;border-top:1px solid #e8ecf0;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#8a94a6;">GovClerk Portal &middot; Powered by GovClerk Minutes &middot; <a href="https://govclerkminutes.com" style="color:${PORTAL_GREEN};text-decoration:none;">govclerkminutes.com</a></p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+  const textBody = `Hello,
+
+The agenda for the following meeting has been published and is now available for review:
+
+Meeting: ${meetingTitle}
+Date: ${formattedDate}
+
+View the agenda here: ${portalUrl}
+
+You are receiving this notification because you are a member of the ${orgName} portal.
+
+Yours in public service,
+The GovClerk Portal Team
+
+GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
+
+  await sendEmail({
+    From: FROM_PORTAL,
+    To: email,
+    Subject: `Agenda Published: ${meetingTitle}`,
+    HtmlBody: htmlBody,
+    TextBody: textBody,
+    MessageStream: "transactional",
+  });
+}
+
+/**
+ * Send a branded GovClerk Portal notification when meeting minutes are published/finalized.
+ *
+ * @param email        Recipient email address
+ * @param orgName      Organisation name
+ * @param meetingTitle Title of the meeting
+ * @param meetingDate  ISO date string of the meeting
+ * @param portalUrl    Public portal URL for the meeting page
+ */
+export async function sendMinutesPublishedEmail(
+  email: string,
+  orgName: string,
+  meetingTitle: string,
+  meetingDate: string,
+  portalUrl: string
+): Promise<void> {
+  const formattedDate = new Date(meetingDate).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color:${PORTAL_GREEN};padding:28px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;letter-spacing:0.5px;">GovClerk Portal</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">${orgName}</p>
+        </td>
+      </tr>
+      <!-- Body -->
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          <p style="margin:0 0 16px;font-size:16px;color:#2d3748;">Hello,</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#4a5568;line-height:1.7;">The minutes for the following meeting have been finalised and are now available on the portal:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7fafc;border-left:4px solid ${PORTAL_GREEN};border-radius:4px;margin:0 0 28px;">
+            <tr><td style="padding:20px 24px;">
+              <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#1a202c;">${meetingTitle}</p>
+              <p style="margin:0;font-size:14px;color:#718096;">${formattedDate}</p>
+            </td></tr>
+          </table>
+          <!-- CTA Button -->
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="padding:0 0 32px;">
+                <a href="${portalUrl}" style="display:inline-block;padding:14px 32px;background-color:${PORTAL_GREEN};color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.3px;">View Minutes &rarr;</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:0 0 8px;font-size:14px;color:#718096;line-height:1.7;">You are receiving this notification because you are a member of the ${orgName} portal. If you have any questions, please contact your portal administrator.</p>
+          <p style="margin:24px 0 0;font-size:15px;color:#2d3748;">Yours in public service,<br/><strong>The GovClerk Portal Team</strong></p>
+        </td>
+      </tr>
+      <!-- Footer -->
+      <tr>
+        <td style="background-color:#f8f9fb;padding:20px 40px;border-top:1px solid #e8ecf0;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#8a94a6;">GovClerk Portal &middot; Powered by GovClerk Minutes &middot; <a href="https://govclerkminutes.com" style="color:${PORTAL_GREEN};text-decoration:none;">govclerkminutes.com</a></p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
+  const textBody = `Hello,
+
+The minutes for the following meeting have been finalised and are now available on the portal:
+
+Meeting: ${meetingTitle}
+Date: ${formattedDate}
+
+View the minutes here: ${portalUrl}
+
+You are receiving this notification because you are a member of the ${orgName} portal.
+
+Yours in public service,
+The GovClerk Portal Team
+
+GovClerk Portal · Powered by GovClerk Minutes · govclerkminutes.com`;
+
+  await sendEmail({
+    From: FROM_PORTAL,
+    To: email,
+    Subject: `Minutes Published: ${meetingTitle}`,
+    HtmlBody: htmlBody,
+    TextBody: textBody,
+    MessageStream: "transactional",
+  });
+}
+
+/**
+ * Distribute agenda published notifications to all active members of a portal organisation.
+ *
+ * @param orgId        Organisation ID
+ * @param orgName      Organisation name (for email personalisation)
+ * @param portalSlug   Public portal slug (e.g. "capetown")
+ * @param meetingId    Meeting ID
+ * @param meetingTitle Title of the meeting
+ * @param meetingDate  ISO date string of the meeting
+ */
+export async function distributeAgendaToOrgMembers(
+  orgId: string,
+  orgName: string,
+  portalSlug: string,
+  meetingId: string | number,
+  meetingTitle: string,
+  meetingDate: string
+): Promise<void> {
+  const portalUrl = `https://govclerkminutes.com/portal/${portalSlug}/meetings/${meetingId}`;
+
+  const conn = getPortalDbConnection();
+  const usersResult = await conn.execute(
+    "SELECT email FROM gc_portal_users WHERE org_id = ? AND is_active = 1",
+    [orgId]
+  );
+
+  const emails = (usersResult.rows as { email: string }[]).map((r) => r.email);
+  if (emails.length === 0) {
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    emails.map((email) =>
+      sendAgendaPublishedEmail(email, orgName, meetingTitle, meetingDate, portalUrl)
+    )
+  );
+
+  const failed = results.filter((r) => r.status === "rejected");
+  if (failed.length > 0) {
+    console.error(
+      `[distributeAgendaToOrgMembers] ${failed.length}/${emails.length} emails failed for org ${orgId}`
+    );
+  }
+}
+
+/**
+ * Distribute minutes published notifications to all active members of a portal organisation.
+ *
+ * @param orgId        Organisation ID
+ * @param orgName      Organisation name (for email personalisation)
+ * @param portalSlug   Public portal slug (e.g. "capetown")
+ * @param meetingId    Meeting ID
+ * @param meetingTitle Title of the meeting
+ * @param meetingDate  ISO date string of the meeting
+ */
+export async function distributeMinutesToOrgMembers(
+  orgId: string,
+  orgName: string,
+  portalSlug: string,
+  meetingId: string | number,
+  meetingTitle: string,
+  meetingDate: string
+): Promise<void> {
+  const portalUrl = `https://govclerkminutes.com/portal/${portalSlug}/meetings/${meetingId}`;
+
+  const conn = getPortalDbConnection();
+  const usersResult = await conn.execute(
+    "SELECT email FROM gc_portal_users WHERE org_id = ? AND is_active = 1",
+    [orgId]
+  );
+
+  const emails = (usersResult.rows as { email: string }[]).map((r) => r.email);
+  if (emails.length === 0) {
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    emails.map((email) =>
+      sendMinutesPublishedEmail(email, orgName, meetingTitle, meetingDate, portalUrl)
+    )
+  );
+
+  const failed = results.filter((r) => r.status === "rejected");
+  if (failed.length > 0) {
+    console.error(
+      `[distributeMinutesToOrgMembers] ${failed.length}/${emails.length} emails failed for org ${orgId}`
+    );
+  }
 }
