@@ -204,9 +204,13 @@ const partnersMiddleware = buildClerkMiddleware("GovClerkPartners");
 const middleware = async (req: NextRequest, event: NextFetchEvent) => {
   const site = getSiteFromHost(req.headers.get("host"));
 
-  let activeMiddleware = isGovClerk(site) ? cdMiddleware : mgMiddleware;
+  let activeMiddleware;
   if (isGovClerkPartners(site)) {
     activeMiddleware = partnersMiddleware;
+  } else if (isGovClerk(site)) {
+    activeMiddleware = cdMiddleware;
+  } else {
+    activeMiddleware = mgMiddleware;
   }
 
   if (!activeMiddleware) {
