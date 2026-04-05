@@ -68,7 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       members = result.rows;
     } catch (err) {
       if (isUnknownColumnOrMissingTableError(err)) {
-        console.warn("[team-members] gc_team_members table not found (schema migration pending).);");
+        console.warn("[team-members] gc_team_members table not found (schema migration pending).");
         members = [];
       } else {
         throw err;
