@@ -303,7 +303,7 @@ export default function TokenManagementForm({ onSuccess, initialWhatsappId }: Pr
                       Org Hours:
                     </Text>
                     <Text fontSize="xl" fontWeight="bold" color="purple.500">
-                      {(userInfo.portalOrg.streamHoursIncluded - userInfo.portalOrg.streamHoursUsed).toFixed(1)}h remaining
+                      {Math.max(0, userInfo.portalOrg.streamHoursIncluded - userInfo.portalOrg.streamHoursUsed).toFixed(1)}h remaining
                     </Text>
                     <Text fontSize="xs" color="gray.500">
                       {userInfo.portalOrg.streamHoursUsed.toFixed(1)} / {userInfo.portalOrg.streamHoursIncluded.toFixed(1)}h used
