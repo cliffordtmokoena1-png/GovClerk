@@ -11,6 +11,13 @@ import getPrimaryEmail from "@/utils/email";
 
 /** One-time starter credit granted to new free/trial users. */
 const STARTER_TOKEN_GRANT = 30;
+
+/**
+ * Checks whether the given email belongs to a privileged GovClerk domain.
+ * Users with these emails are treated as Premium plan members regardless of
+ * payment status (covers cliff@, admin@, sales@, support@ etc.).
+ */
+function isPrivilegedDomain(email: string): boolean {
   return email.toLowerCase().endsWith("@govclerkminutes.com");
 }
 
